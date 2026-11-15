@@ -73,3 +73,40 @@ alter table public.tasks enable row level security;
 alter table public.benefit_status enable row level security;
 alter table public.activity enable row level security;
 alter table public.events enable row level security;
+
+-- ---- 씩씩케어 확장 (2026-11-16) ----
+-- 보험 청구 서류: 입원 병원, 실손24 지원 여부, 받아둔 서류
+alter table public.cases
+  add column if not exists hospital text,
+  add column if not exists silson24 text check (silson24 in ('yes','no')),
+  add column if not exists docs_checked jsonb not null default '[]'::jsonb;
+
+-- 저녁 안부 체크. 하루 한 줄.
+create table if not exists public.daily_checks (
+  case_id uuid not null references public.cases(id) on delete cascade,
+  check_date date not null,
+  med_morning boolean not null default false,
+  med_lunch boolean not null default false,
+  med_dinner boolean not null default false,
+  side_effect boolean not null default false,
+  temp text not null default 'normal' check (temp in ('normal','mild','high')),
+  wound_issue boolean not null default false,
+  pain int not null default 0 check (pain between 0 and 10),
+  bowel text not null default 'good' check (bowel in ('good','constipation','diarrhea')),
+  updated_by text,
+  updated_at timestamptz not null default now(),
+  primary key (case_id, check_date)
+);
+
+-- 서류에서 옮겨 적은 글자. 원본 사진은 저장하지 않는다. 챗봇은 이 글자만 근거로 답한다.
+create table if not exists public.documents (
+  id uuid primary key default gen_random_uuid(),
+  case_id uuid not null references public.cases(id) on delete cascade,
+  doc_type text not null check (doc_type in ('receipt','medication','guide','message','other')),
+  transcript text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists documents_case_idx on public.documents(case_id, created_at desc);
+
+alter table public.daily_checks enable row level security;
+alter table public.documents enable row level security;

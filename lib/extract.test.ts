@@ -45,5 +45,5 @@ test("일정인데 날짜가 불분명하면 확인 필요", () => {
 
 test("모델 JSON 파싱: 코드펜스 제거, 깨진 JSON은 빈 결과", () => {
   assert.equal(parseModelJson('```json\n{"transcript":"a","items":[{"kind":"caution","text":"b"},{"kind":"x","text":"c"}]}\n```').items.length, 1);
-  assert.deepEqual(parseModelJson("죄송합니다"), { transcript: "", items: [] });
+  assert.deepEqual(parseModelJson("죄송합니다"), { docType: "other", transcript: "", items: [] });
 });

@@ -2,14 +2,13 @@
 import { useState } from "react";
 import { updateCase, deleteCase } from "@/app/actions";
 import type { Auth } from "@/lib/db";
-import type { CaseInput, Living, Reason } from "@/lib/benefits";
-import { SIDO, SEOUL_GU, REASON_LABEL, LIVING_LABEL } from "@/lib/options";
-import { addDays } from "@/lib/timeline";
+import type { CaseInput, Income, Living, Reason } from "@/lib/benefits";
+import { SIDO, SEOUL_GU, REASON_LABEL, LIVING_LABEL, INCOME_OPTIONS } from "@/lib/options";
 import { useAct } from "@/components/useAct";
 
 const field = "mt-1 w-full rounded-xl border border-line bg-card px-4 py-3";
 
-export function CaseForm({ auth, input, today }: { auth: Auth; input: CaseInput; today: string }) {
+export function CaseForm({ auth, input }: { auth: Auth; input: CaseInput }) {
   const [v, setV] = useState({ ...input, undecided: input.dischargeDate === null, date: input.dischargeDate ?? "", birth: String(input.birthYear) });
   const [saved, setSaved] = useState(false);
   const { run, pending, err } = useAct();
@@ -21,12 +20,12 @@ export function CaseForm({ auth, input, today }: { auth: Auth; input: CaseInput;
       className="mt-3 space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
-        run(() => updateCase(auth, { ...input, dischargeDate: v.undecided ? null : v.date, birthYear: Number(v.birth), sido: v.sido, sigungu: v.sigungu, reason: v.reason, living: v.living, helpers: v.helpers }), () => setSaved(true));
+        run(() => updateCase(auth, { ...input, dischargeDate: v.undecided ? null : v.date, birthYear: Number(v.birth), sido: v.sido, sigungu: v.sigungu, reason: v.reason, living: v.living, income: v.income }), () => setSaved(true));
       }}
     >
       <div>
-        <label htmlFor="sd" className="text-sm font-medium">퇴원 예정일</label>
-        <input id="sd" type="date" disabled={v.undecided} value={v.date} min={addDays(today, -30)} max={addDays(today, 60)} onChange={(e) => set({ date: e.target.value })} className={`${field} disabled:opacity-40`} />
+        <label htmlFor="sd" className="text-sm font-medium">퇴원일</label>
+        <input id="sd" type="date" disabled={v.undecided} value={v.date} onChange={(e) => set({ date: e.target.value })} className={`${field} disabled:opacity-40`} />
         <label className="mt-2 flex items-center gap-3"><input type="checkbox" className="h-5 w-5" checked={v.undecided} onChange={(e) => set({ undecided: e.target.checked })} /> 아직 미정이에요</label>
       </div>
       <div>
@@ -47,8 +46,12 @@ export function CaseForm({ auth, input, today }: { auth: Auth; input: CaseInput;
         <select id="sr" value={v.reason} onChange={(e) => set({ reason: e.target.value as Reason })} className={field}>{REASON_LABEL.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
       </div>
       <div>
-        <label htmlFor="sl" className="text-sm font-medium">퇴원 후 함께 지내는 분</label>
+        <label htmlFor="sl" className="text-sm font-medium">낮 시간 돌봄</label>
         <select id="sl" value={v.living} onChange={(e) => set({ living: e.target.value as Living })} className={field}>{LIVING_LABEL.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+      </div>
+      <div>
+        <label htmlFor="si" className="text-sm font-medium">가구 소득</label>
+        <select id="si" value={v.income} onChange={(e) => set({ income: e.target.value as Income })} className={field}>{INCOME_OPTIONS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
       </div>
       {err && <p role="alert" className="text-warn">{err}</p>}
       {saved && <p role="status" className="text-accent">저장했어요. 지원 판정과 날짜를 다시 계산했어요.</p>}
@@ -80,7 +83,7 @@ export function DeleteCase({ auth }: { auth: Auth }) {
       <input id="del" value={text} onChange={(e) => setText(e.target.value)} className={field} autoComplete="off" />
       {err && <p role="alert" className="mt-1 text-warn">{err}</p>}
       <button disabled={pending || text.trim() !== "삭제"} onClick={() => run(() => deleteCase(auth))} className="mt-3 w-full rounded-xl bg-warn px-5 py-3 font-bold text-white disabled:opacity-40">
-        {pending ? "삭제하는 중…" : "퇴원노트 전체 삭제"}
+        {pending ? "삭제하는 중…" : "기록 전체 삭제"}
       </button>
     </div>
   );

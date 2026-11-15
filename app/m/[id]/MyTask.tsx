@@ -29,6 +29,9 @@ export default function MyTask({ auth, task, when, overdue }: { auth: Auth; task
         </form>
       )}
       {err && <p role="alert" className="mt-2 text-warn">{err}</p>}
+      {!task.done && task.due_date && (
+        <a href={`/ics/${auth.k}/${auth.v}/${task.id}`} className="mt-2 block text-accent underline">내 캘린더에 넣기 (전날 저녁·당일 아침 알림)</a>
+      )}
 
       {!editing && (
         <div className="mt-3 flex gap-2">

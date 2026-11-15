@@ -1,9 +1,13 @@
 // 지원 제도 규칙표. 판정은 규칙만 쓴다(AI 판정 없음). 제도가 바뀌면 이 파일만 고친다.
 // 출처·확인일은 화면에 그대로 노출된다.
 
-export type Living = "alone" | "spouse" | "family";
+// 낮 시간 돌봄: 혼자 거주 / 가족과 살지만 낮에는 부재(맞벌이) / 낮에도 돌볼 가족이 있음
+import { MORE } from "./benefit-list.ts";
+
+export type Living = "alone" | "away" | "home";
 export type Reason = "ortho" | "cancer" | "brain" | "heart" | "surgery" | "internal" | "other";
-export type Income = "basic" | "near" | "none" | "unknown";
+// 소득: 수급·차상위 / 중위소득 100% 이하 / 일반 / 모름
+export type Income = "basic" | "mid" | "general" | "unknown";
 
 export interface CaseInput {
   dischargeDate: string | null; // YYYY-MM-DD, 미정이면 null
@@ -12,8 +16,7 @@ export interface CaseInput {
   sigungu: string;
   reason: Reason;
   living: Living;
-  helpers: number;
-  income: Income | null;
+  income: Income;
 }
 
 export type Verdict = "high" | "check" | "no";
@@ -25,7 +28,8 @@ interface Apply {
 }
 
 interface Rule {
-  when: { sido?: string; living?: Living[]; reason?: Reason[]; age?: "65+" | "under65" };
+  // sido는 "서울" 또는 "!서울"(서울 제외), region은 여러 시·도 중 하나. income 조건이 있는데 소득을 모르면 엔진이 '소득 확인 필요'로 돌린다.
+  when: { sido?: string; region?: string[]; living?: Living[]; reason?: Reason[]; age?: "65+" | "under65"; income?: Income[] };
   verdict: Verdict;
   reason: string;
   apply?: Apply; // 지역별로 창구가 다를 때 덮어쓴다
@@ -43,10 +47,10 @@ export interface Benefit {
   rules: Rule[]; // 위에서부터 처음 맞는 규칙이 판정
   fallback: { verdict: Verdict; reason: string };
   source: { label: string; url: string };
-  lastVerified: string;
+  lastVerified: string | null; // 공식 출처로 확인한 날. null이면 화면에 초안으로 표시한다
 }
 
-export const BENEFITS: Benefit[] = [
+const BASE: Benefit[] = [
   {
     id: "seoul_recovery",
     name: "서울 퇴원 후 일상회복서비스",
@@ -58,9 +62,9 @@ export const BENEFITS: Benefit[] = [
     deadline: { fromDaysBefore: 1, toDaysAfter: 30 },
     rules: [
       { when: { sido: "!서울" }, verdict: "no", reason: "서울 거주자 대상 제도예요" },
-      { when: { reason: ["internal"], living: ["spouse", "family"] }, verdict: "check", reason: "일반 질환 퇴원은 제외될 수 있고, 보호자 유무 기준도 확인이 필요해요" },
+      { when: { reason: ["internal"], living: ["away", "home"] }, verdict: "check", reason: "일반 질환 퇴원은 제외될 수 있고, 보호자 유무 기준도 확인이 필요해요" },
       { when: { living: ["alone"] }, verdict: "high", reason: "서울 거주, 혼자 지내실 예정이라 조건에 맞을 가능성이 높아요" },
-      { when: { living: ["spouse", "family"] }, verdict: "check", reason: "서울시 안내에 '보호자 없는 시민'과 '1인가구 여부 무관, 퇴원한 시민 누구나'가 함께 있어 기관 확인이 필요해요" },
+      { when: { living: ["away", "home"] }, verdict: "check", reason: "서울시 안내에 '보호자 없는 시민'과 '1인가구 여부 무관, 퇴원한 시민 누구나'가 함께 있어 기관 확인이 필요해요" },
     ],
     fallback: { verdict: "check", reason: "조건 확인이 필요해요" },
     source: { label: "내 손안에 서울 (서울시)", url: "https://mediahub.seoul.go.kr/archives/2007368" },
@@ -120,7 +124,7 @@ export const BENEFITS: Benefit[] = [
     id: "private_insurance",
     name: "민간보험 청구 (실손·진단비·간병)",
     operator: "가입 보험사",
-    summary: "부모님 가입 보험이 있다면 입원·수술비 청구를 챙기세요. 보험마다 청구 기한이 달라요.",
+    summary: "환자가 가입한 보험이 있다면 입원·수술비 청구를 챙기세요. 보험마다 청구 기한이 달라요.",
     cost: "환급 (받는 쪽)",
     apply: { place: "가입 보험사 앱·고객센터·팩스" },
     docs: ["입퇴원확인서", "진단서(필요 시)", "진료비 영수증·세부내역서"],
@@ -132,8 +136,18 @@ export const BENEFITS: Benefit[] = [
   },
 ];
 
+export const BENEFITS: Benefit[] = [...BASE, ...MORE];
+
 export const REASONS: Reason[] = ["ortho", "cancer", "brain", "heart", "surgery", "internal", "other"];
-export const LIVINGS: Living[] = ["alone", "spouse", "family"];
+export const LIVINGS: Living[] = ["alone", "away", "home"];
+export const INCOMES: Income[] = ["basic", "mid", "general", "unknown"];
+
+// 구버전(퇴원노트) 케이스의 값을 지금 분류로 옮긴다
+export function normalizeInput(raw: Record<string, unknown>): CaseInput {
+  const living = raw.living === "spouse" || raw.living === "family" ? "home" : raw.living;
+  const income = raw.income === "near" ? "basic" : raw.income === "none" ? "general" : raw.income ?? "unknown";
+  return { ...(raw as unknown as CaseInput), living: living as Living, income: income as Income };
+}
 
 // 신뢰 경계 검증: 클라이언트가 보낸 값을 그대로 믿지 않는다. 잘못되면 null.
 export function validateInput(raw: unknown, today: string): CaseInput | null {
@@ -143,19 +157,21 @@ export function validateInput(raw: unknown, today: string): CaseInput | null {
   if (d !== null) {
     if (typeof d !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(d) || Number.isNaN(Date.parse(d))) return null;
     const diff = dayDiff(d, today);
-    if (diff < -30 || diff > 60) return null;
+    if (diff < -365 || diff > 365) return null; // 이미 퇴원한 뒤에 시작하는 보호자도 받는다
   }
   if (!Number.isInteger(r.birthYear) || r.birthYear! < 1900 || r.birthYear! > Number(today.slice(0, 4))) return null;
   if (!REASONS.includes(r.reason as Reason) || !LIVINGS.includes(r.living as Living)) return null;
   if (typeof r.sido !== "string" || !r.sido || r.sido.length > 10) return null;
-  const helpers = Number(r.helpers);
   return {
     dischargeDate: d, birthYear: r.birthYear!, sido: r.sido, sigungu: typeof r.sigungu === "string" ? r.sigungu.slice(0, 20) : "",
     reason: r.reason as Reason, living: r.living as Living,
-    helpers: Number.isFinite(helpers) ? Math.min(5, Math.max(0, Math.trunc(helpers))) : 0,
-    income: (["basic", "near", "none", "unknown"] as const).includes(r.income as Income) ? (r.income as Income) : null,
+    income: INCOMES.includes(r.income as Income) ? (r.income as Income) : "unknown",
   };
 }
+
+export const INCOME_LABEL: Record<Income, string> = {
+  basic: "기초생활수급·차상위", mid: "중위소득 100% 이하", general: "일반 가구", unknown: "잘 모르겠어요",
+};
 
 export const STATUS_LABEL: Record<string, string> = {
   none: "미신청", applied: "신청함", approved: "승인", rejected: "거절", dropped: "포기",
@@ -178,6 +194,7 @@ function ageClass(birthYear: number, year: number): "65+" | "under65" | null {
 export interface Result {
   benefit: Benefit;
   verdict: Verdict;
+  needsIncome: boolean; // 소득을 몰라서 '확인 필요'가 된 경우
   reason: string;
   apply: Apply;
   deadline: { state: "unknown" | "open" | "closed"; daysLeft?: number; endDate?: string };
@@ -191,6 +208,7 @@ export function evaluate(input: CaseInput, today: string): Result[] {
     let verdict = b.fallback.verdict;
     let reason = b.fallback.reason;
     let apply = b.apply;
+    let needsIncome = false;
 
     // 나이가 경계(65세 전후 1년)면 나이 조건이 걸린 규칙은 확인 필요로 돌린다
     const ageBoundary = age === null && b.rules.some((r) => r.when.age);
@@ -201,16 +219,26 @@ export function evaluate(input: CaseInput, today: string): Result[] {
       for (const r of b.rules) {
         const w = r.when;
         const sidoOk = !w.sido || (w.sido.startsWith("!") ? input.sido !== w.sido.slice(1) : input.sido === w.sido);
-        if (sidoOk && (!w.living || w.living.includes(input.living)) && (!w.reason || w.reason.includes(input.reason)) && (!w.age || w.age === age)) {
-          verdict = r.verdict;
-          reason = r.reason;
-          if (r.apply) apply = r.apply;
-          break;
+        const rest = sidoOk && (!w.region || w.region.includes(input.sido))
+          && (!w.living || w.living.includes(input.living)) && (!w.reason || w.reason.includes(input.reason)) && (!w.age || w.age === age);
+        if (!rest) continue;
+        if (w.income) {
+          if (input.income === "unknown") {
+            if (r.verdict === "no") continue; // 소득을 모르면 소득 때문에 탈락시키지 않는다
+            verdict = "check";
+            needsIncome = true;
+            reason = `다른 조건은 맞아요. 소득 기준(${w.income.map((i) => INCOME_LABEL[i]).join("·")})에 해당하는지 확인이 필요해요`;
+            if (r.apply) apply = r.apply;
+            break;
+          }
+          if (!w.income.includes(input.income)) continue;
         }
+        verdict = r.verdict;
+        reason = r.reason;
+        if (r.apply) apply = r.apply;
+        break;
       }
     }
-
-    // 소득 모름이면 소득 조건 제도는 확인 필요 (현재 규칙표엔 소득 조건 제도가 없음 — 생기면 여기서 처리)
 
     let deadline: Result["deadline"] = { state: "unknown" };
     if (b.deadline && input.dischargeDate) {
@@ -218,7 +246,7 @@ export function evaluate(input: CaseInput, today: string): Result[] {
       const daysLeft = dayDiff(endDate, today);
       deadline = daysLeft < 0 ? { state: "closed", endDate } : { state: "open", daysLeft, endDate };
     }
-    return { benefit: b, verdict, reason, apply, deadline };
+    return { benefit: b, verdict, needsIncome, reason, apply, deadline };
   });
 }
 

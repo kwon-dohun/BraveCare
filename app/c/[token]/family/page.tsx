@@ -4,7 +4,7 @@ import { Invite, RemoveMember } from "@/components/InviteButton";
 import { addDays } from "@/lib/timeline";
 import { dateLabel } from "@/lib/format";
 
-export const metadata = { title: "가족 · 퇴원노트" };
+export const metadata = { title: "가족 · 씩씩케어" };
 
 const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 

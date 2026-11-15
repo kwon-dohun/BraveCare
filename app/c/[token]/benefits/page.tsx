@@ -1,7 +1,7 @@
 import { adminPage } from "@/lib/page-auth";
 import BenefitCard from "@/components/BenefitCard";
 
-export const metadata = { title: "지원 · 퇴원노트" };
+export const metadata = { title: "지원 · 씩씩케어" };
 
 export default async function Benefits(props: PageProps<"/c/[token]/benefits">) {
   const { token } = await props.params;
@@ -14,7 +14,8 @@ export default async function Benefits(props: PageProps<"/c/[token]/benefits">) 
 
   return (
     <>
-      <h1 className="text-2xl font-bold">받을 수 있는 지원</h1>
+      <h1 className="text-2xl font-bold">우리 가족 조건에 맞는 지원</h1>
+      <p className="mt-1 text-sm text-muted">공공 지원 {results.length}가지를 입력한 조건으로 가려냈어요. 특정 업체로 연결하지 않아요.</p>
       <section className="mt-5">
         <h2 className="mb-2 font-bold">대상 가능성 높음 ({high.length})</h2>
         <ul className="space-y-3">{high.length ? high.map(card) : <li className="text-muted">아직 없어요</li>}</ul>

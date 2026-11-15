@@ -19,7 +19,7 @@ export function Invite({ auth, path, expiresAt, expired }: { auth: Auth; path: s
     catch { setMsg(url()); } // 복사가 막힌 환경에서는 링크를 그대로 보여준다
   };
   const share = async () => {
-    try { await navigator.share({ title: "퇴원노트", text: TEXT, url: url() }); } catch {}
+    try { await navigator.share({ title: "씩씩케어", text: TEXT, url: url() }); } catch {}
   };
   const row = "flex w-full items-center justify-between rounded-xl border border-line bg-card px-4 py-3 text-left";
 

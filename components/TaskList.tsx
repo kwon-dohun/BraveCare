@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { toggleTask, assignTask } from "@/app/actions";
+import { toggleTask, assignTask, claimTask } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import { KIND_LABEL } from "@/lib/timeline";
 import { dateLabel } from "@/lib/format";
@@ -56,8 +56,13 @@ export default function TaskList({ tasks, members, auth, meId, canAssign, today,
                     <option value="">담당자 없음</option>
                     {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                   </select>
-                ) : (
+                ) : t.assignee_id || t.done ? (
                   <p className="text-sm text-muted">담당: {nameOf(t.assignee_id) ?? "없음"}</p>
+                ) : (
+                  <button onClick={() => run(() => claimTask(auth, t.id))} className="mt-1 rounded-lg border border-accent px-3 py-1.5 text-sm font-bold text-accent">내가 할게</button>
+                )}
+                {t.assignee_id === meId && !t.done && t.due_date && (
+                  <a href={`/ics/${auth.k}/${auth.v}/${t.id}`} className="mt-1 block text-sm text-accent underline">내 캘린더에 넣기 (알림 포함)</a>
                 )}
               </div>
             </li>

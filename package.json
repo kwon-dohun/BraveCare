@@ -1,5 +1,5 @@
 {
-  "name": "toewon-note",
+  "name": "bravecare",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test lib/benefits.test.ts lib/extract.test.ts"
+    "test": "node --test lib/*.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",

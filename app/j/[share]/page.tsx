@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import JoinForm from "./JoinForm";
 
-export const metadata = { title: "가족으로 참여하기 · 퇴원노트" };
+export const metadata = { title: "가족으로 참여하기 · 씩씩케어" };
 
 export default async function Join(props: PageProps<"/j/[share]">) {
   const { share } = await props.params;
@@ -13,7 +13,7 @@ export default async function Join(props: PageProps<"/j/[share]">) {
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-10">
-      <p className="text-sm font-medium text-accent">퇴원노트</p>
+      <p className="text-sm font-medium text-accent">씩씩케어</p>
       {expired ? (
         <>
           <h1 className="mt-3 text-2xl font-bold">초대 링크가 만료됐어요</h1>

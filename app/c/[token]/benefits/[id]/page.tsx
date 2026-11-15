@@ -15,14 +15,14 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
   if (!r) notFound();
   const b = r.benefit;
   const d = r.deadline;
-  const stale = dayDiff(data.today, b.lastVerified) > STALE_DAYS;
+  const stale = !b.lastVerified || dayDiff(data.today, b.lastVerified) > STALE_DAYS;
   const active = r.verdict !== "no" && d.state !== "closed";
 
   return (
     <>
       <Link href={`${base}/benefits`} className="flex items-center text-muted">‹ 지원 목록</Link>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Badge verdict={r.verdict} />
+        <Badge verdict={r.verdict} needsIncome={r.needsIncome} />
         {d.state === "open" && <span className="font-medium text-warn">{dday(d.daysLeft!)} ({d.endDate}까지)</span>}
         {d.state === "closed" && <span className="text-muted">신청 기간 종료 ({d.endDate})</span>}
         {d.state === "unknown" && b.deadline && <span className="text-muted">퇴원일 확정 시 마감 계산</span>}
@@ -42,7 +42,7 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
       <section className="mt-6">
         <h2 className="font-bold">신청 방법</h2>
         <p className="mt-1">{r.apply.place}</p>
-        {b.deadline && <p className="mt-1 text-sm text-muted">신청 기간: 퇴원 {b.deadline.fromDaysBefore}일 전부터 퇴원 후 {b.deadline.toDaysAfter}일까지</p>}
+        {b.deadline && <p className="mt-1 text-sm text-muted">신청 기간: {b.deadline.toDaysAfter === 0 ? "퇴원 전까지" : `퇴원 후 ${b.deadline.toDaysAfter}일까지`}</p>}
         {r.apply.phone && active && (
           <a href={`tel:${r.apply.phone.replaceAll("-", "")}`} className="mt-3 flex items-center justify-center rounded-xl bg-accent px-5 py-4 text-lg font-bold text-white">
             {r.apply.phone} 전화 걸기
@@ -64,7 +64,7 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
       </section>
 
       <p className="mt-6 text-sm text-muted">
-        정보 마지막 확인: {b.lastVerified}
+        정보 마지막 확인: {b.lastVerified ?? "공식 확인 전 초안이에요"}
         <br />최종 대상 여부는 운영 기관에서 결정돼요. 신청 전에 위 문의처에서 꼭 확인하세요.
       </p>
     </>

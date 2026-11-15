@@ -5,7 +5,7 @@ import Remember from "@/components/Remember";
 import MyTask from "./MyTask";
 import { dischargeLabel, dateLabel } from "@/lib/format";
 
-export const metadata = { title: "내 할 일 · 퇴원노트" };
+export const metadata = { title: "내 할 일 · 씩씩케어" };
 
 export default async function MemberHome(props: PageProps<"/m/[id]">) {
   const { id } = await props.params;
@@ -25,6 +25,10 @@ export default async function MemberHome(props: PageProps<"/m/[id]">) {
       <p className="text-muted">{actor.name}님, 안녕하세요</p>
       <h1 className="mt-1 text-3xl font-bold">{dischargeLabel(data.input.dischargeDate, today)}</h1>
 
+      {data.input.dischargeDate && today > data.input.dischargeDate && (
+        <Link href={`/m/${id}/daily`} className="mt-4 flex items-center justify-between rounded-xl border border-line bg-card px-4 py-3"><span>저녁 안부 체크 남기기</span><span aria-hidden className="text-muted">›</span></Link>
+      )}
+
       <nav aria-label="보기" className="mt-5 flex">
         <Link href={`/m/${id}`} aria-current={tab === "mine" ? "page" : undefined} className={tabCls(tab === "mine")}>내 할 일 ({open.length})</Link>
         <Link href={`/m/${id}?tab=all`} aria-current={tab === "all" ? "page" : undefined} className={tabCls(tab === "all")}>가족 전체</Link>
@@ -38,7 +42,7 @@ export default async function MemberHome(props: PageProps<"/m/[id]">) {
               <ul className="space-y-3">{now.map((t) => <MyTask key={t.id} auth={auth} task={t} when={dateLabel(t.due_date, t.rel_day, today)} overdue={!!t.due_date && t.due_date < today} />)}</ul>
             ) : (
               <p className="rounded-xl border border-line bg-card p-4 text-muted">
-                {open.length ? "오늘은 할 일이 없어요" : mine.length ? "맡은 일을 모두 끝냈어요. 고마워요" : "아직 맡은 일이 없어요. 가족이 나눠주면 여기에 나와요"}
+                {open.length ? "오늘은 할 일이 없어요" : mine.length ? "맡은 일을 모두 끝냈어요. 고마워요" : "아직 맡은 일이 없어요. '가족 전체'에서 할 수 있는 일을 골라 맡아보세요"}
               </p>
             )}
           </section>
@@ -57,7 +61,7 @@ export default async function MemberHome(props: PageProps<"/m/[id]">) {
         </>
       ) : (
         <section className="mt-5">
-          <p className="mb-2 text-sm text-muted">가족 모두의 남은 할 일이에요. 내 담당만 체크할 수 있어요.</p>
+          <p className="mb-2 text-sm text-muted">가족 모두의 남은 할 일이에요. 담당자가 없는 일은 &lsquo;내가 할게&rsquo;로 맡을 수 있고, 내 담당만 체크할 수 있어요.</p>
           <TaskList tasks={data.tasks.filter((t) => !t.done)} members={data.members} auth={auth} meId={actor.memberId} canAssign={false} today={today} emptyText="남은 할 일이 없어요" />
         </section>
       )}

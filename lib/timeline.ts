@@ -1,45 +1,62 @@
 import type { CaseInput, Reason, Result } from "./benefits.ts";
 
-// 템플릿 문구는 의료 지시를 하지 않는다. "~하세요"가 아니라 병원에 확인할 질문 형태로 쓴다.
+// 템플릿 문구는 의료 지시를 하지 않는다(의료법 제27조). "~하세요"가 아니라 의료진에게 확인할 질문 형태로 쓴다.
+// kind "schedule"은 실제 병원 방문 일정(안내문·직접 입력)에만 쓴다. 홈의 '외래 당일' 판단이 이걸 본다.
 export type TaskKind = "prep" | "question" | "schedule" | "admin" | "custom";
 export interface TaskSeed {
   title: string;
   kind: TaskKind;
   rel: number; // 퇴원일 기준 D±n
   source: "template" | "benefit";
+  preOnly?: boolean; // 퇴원 뒤에는 의미가 없는 일. 이미 지난 시점에 시작한 사람에게는 만들지 않는다
 }
 
 const COMMON: TaskSeed[] = [
-  { rel: -3, kind: "question", title: "퇴원 후 복용할 약과 복용 방법을 병원에 확인하기" },
-  { rel: -3, kind: "question", title: "퇴원 요약지(퇴원 안내문)를 받을 수 있는지 확인하기" },
-  { rel: -2, kind: "question", title: "퇴원 후 첫 외래 예약 일정 확인하기" },
-  { rel: -2, kind: "prep", title: "집에서 미끄러지거나 걸려 넘어질 만한 곳 살펴보기" },
-  { rel: -1, kind: "prep", title: "퇴원 당일 이동 방법(차량 등) 정하기" },
-  { rel: -1, kind: "admin", title: "병원비 수납 방법·시기 확인하기" },
-  { rel: 0, kind: "admin", title: "입퇴원확인서 등 필요한 서류 챙기기" },
+  // 1단계: 퇴원 전 준비
+  { rel: -3, kind: "question", title: "퇴원 후 먹을 약과 먹는 방법을 의료진에게 물어보기" },
+  { rel: -3, kind: "prep", title: "집에서 미끄러지거나 걸려 넘어질 만한 곳 살펴보기" },
+  { rel: -2, kind: "question", title: "기존에 먹던 약과 같이 먹어도 되는지 물어보기" },
+  { rel: -2, kind: "prep", title: "퇴원 당일 이동 방법(차량 등)과 같이 갈 사람 정하기", preOnly: true },
+  { rel: -1, kind: "question", title: "첫 외래 예약일과 진료과를 확인하기" },
+  { rel: -1, kind: "question", title: "병원에 바로 연락해야 하는 증상이 무엇인지 물어보기" },
+  { rel: -1, kind: "admin", title: "입원한 병원이 실손24 전산 청구가 되는지 확인하기" },
+  { rel: -1, kind: "admin", title: "연말정산용 장애인증명서 발급 대상인지 주치의에게 물어보기" },
+  // 2단계: 퇴원 당일
+  { rel: 0, kind: "admin", title: "원무과에서 보험 청구 서류 4종 받기" },
+  { rel: 0, kind: "question", title: "약국에서 약 설명을 들을 때 궁금한 점 물어보기", preOnly: true },
+  { rel: 0, kind: "prep", title: "퇴원 안내문과 약봉투를 사진으로 남기기" },
+  // 3단계: 집에서 회복, 첫 외래
   { rel: 1, kind: "prep", title: "식사와 약을 챙길 사람 정하기" },
-  { rel: 7, kind: "prep", title: "퇴원 일주일, 불편한 점을 부모님께 물어보기" },
-  { rel: 14, kind: "schedule", title: "다음 외래 일정을 가족에게 공유하기" },
+  { rel: 1, kind: "prep", title: "저녁 안부 체크 시작하기 (하루 10초)" },
+  { rel: 7, kind: "prep", title: "퇴원 일주일, 불편한 점을 환자에게 물어보고 외래 때 물어볼 것 적어두기" },
+  { rel: 13, kind: "prep", title: "첫 외래 전날: 외래 리포트와 물어볼 것 확인하기" },
+  // 4단계: 정기 외래, 마무리
   { rel: 30, kind: "admin", title: "퇴원 30일 점검: 아직 신청하지 않은 지원 확인하기" },
-].map((t) => ({ ...t, source: "template" as const, kind: t.kind as TaskKind }));
+  { rel: 30, kind: "prep", title: "다음 외래 예약증을 촬영해서 일정 갱신하기" },
+  { rel: 90, kind: "admin", title: "보험 청구가 빠진 진료비가 없는지 확인하기" },
+  { rel: 150, kind: "admin", title: "병원비가 컸다면 재난적의료비 신청 기한이 남았는지 확인하기" },
+].map((t): TaskSeed => ({ ...t, source: "template", kind: t.kind as TaskKind }));
 
 const BY_REASON: Partial<Record<Reason, Omit<TaskSeed, "source">[]>> = {
   ortho: [
-    { rel: -3, kind: "question", title: "외래 때 계단 이용 가능 시기를 물어보기" },
+    { rel: -3, kind: "question", title: "계단 이용과 샤워가 언제부터 가능한지 물어보기" },
     { rel: -3, kind: "question", title: "보행기·지팡이 같은 보조기구가 필요한지 물어보기" },
     { rel: -2, kind: "question", title: "재활치료 일정과 장소 확인하기" },
+    { rel: 7, kind: "question", title: "수술 부위 소독 주기와 실밥 제거 일정을 병원에 문의하기" },
   ],
   cancer: [
     { rel: -3, kind: "question", title: "다음 치료 일정과 병원 방문 주기 확인하기" },
     { rel: -3, kind: "question", title: "식사에서 주의할 점이 있는지 물어보기" },
+    { rel: -2, kind: "question", title: "산정특례 등록이 되어 있는지 원무과에 확인하기" },
   ],
   brain: [
     { rel: -3, kind: "question", title: "재활치료 일정과 장소 확인하기" },
     { rel: -3, kind: "question", title: "말하기·삼킴이 불편할 때 어디에 연락하면 되는지 물어보기" },
+    { rel: -2, kind: "question", title: "산정특례 등록이 되어 있는지 원무과에 확인하기" },
   ],
   heart: [
     { rel: -3, kind: "question", title: "집에서 혈압·맥박을 확인해야 하는지, 방법은 무엇인지 물어보기" },
-    { rel: -3, kind: "question", title: "병원에 바로 연락해야 하는 증상이 무엇인지 물어보기" },
+    { rel: -2, kind: "question", title: "산정특례 등록이 되어 있는지 원무과에 확인하기" },
   ],
   surgery: [
     { rel: -3, kind: "question", title: "수술 부위 관리와 소독이 필요한지 물어보기" },
@@ -50,12 +67,10 @@ const BY_REASON: Partial<Record<Reason, Omit<TaskSeed, "source">[]>> = {
 
 export function seedTasks(input: CaseInput, results: Result[]): TaskSeed[] {
   const byReason = (BY_REASON[input.reason] ?? []).map((t) => ({ ...t, source: "template" as const }));
-  const benefit: TaskSeed[] = [];
-  for (const r of results) {
-    if (r.verdict === "no") continue;
-    if (r.benefit.deadline) benefit.push({ rel: -1, kind: "admin", source: "benefit", title: `${r.benefit.name} 신청 알아보기` });
-    else if (r.benefit.id === "ltc_grade") benefit.push({ rel: 0, kind: "admin", source: "benefit", title: "장기요양 등급 신청 여부 가족과 정하기" });
-  }
+  // 가능성 높은 지원만 할 일로 만든다(확인 필요까지 넣으면 타임라인이 지원 목록으로 덮인다). 마감 있는 건 퇴원 전날, 없는 건 퇴원 다음 날.
+  const benefit: TaskSeed[] = results
+    .filter((r) => r.verdict === "high")
+    .map((r) => ({ rel: r.benefit.deadline ? -1 : 1, kind: "admin" as const, source: "benefit" as const, title: `${r.benefit.name} 신청 알아보기` }));
   return [...COMMON, ...byReason, ...benefit].sort((a, b) => a.rel - b.rel);
 }
 
@@ -64,8 +79,16 @@ export const addDays = (date: string, n: number) =>
 
 export const KIND_LABEL: Record<TaskKind, string> = {
   prep: "준비",
-  question: "병원에 확인",
-  schedule: "일정",
+  question: "의료진에게 확인",
+  schedule: "병원 일정",
   admin: "행정",
   custom: "직접 추가",
 };
+
+// 타임라인 4단계. 퇴원일 기준 며칠째인지로 나눈다.
+export const PHASES = ["퇴원 전 준비", "퇴원 당일", "집에서 회복 · 첫 외래", "정기 외래 · 마무리"] as const;
+export function phaseOf(rel: number | null, due: string | null, discharge: string | null): number | null {
+  const off = rel ?? (due && discharge ? Math.round((Date.parse(due) - Date.parse(discharge)) / 86_400_000) : null);
+  if (off === null) return null;
+  return off < 0 ? 0 : off === 0 ? 1 : off <= 14 ? 2 : 3;
+}

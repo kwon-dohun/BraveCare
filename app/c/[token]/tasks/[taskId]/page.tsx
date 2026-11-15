@@ -4,7 +4,7 @@ import { adminPage } from "@/lib/page-auth";
 import { KIND_LABEL } from "@/lib/timeline";
 import TaskForm from "./TaskForm";
 
-export const metadata = { title: "할 일 수정 · 퇴원노트" };
+export const metadata = { title: "할 일 수정 · 씩씩케어" };
 
 export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[taskId]">) {
   const { token, taskId } = await props.params;

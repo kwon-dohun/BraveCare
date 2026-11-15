@@ -5,8 +5,8 @@ import "./globals.css";
 const noto = Noto_Sans_KR({ variable: "--font-noto", subsets: ["latin"], weight: ["400", "500", "700"] });
 
 export const metadata: Metadata = {
-  title: "퇴원노트",
-  description: "퇴원 전후 30일, 받을 수 있는 지원과 해야 할 일을 가족과 함께 정리해요",
+  title: "씩씩케어",
+  description: "퇴원 전부터 정기 외래까지, 공공 지원과 서류, 가족 분담을 한곳에서 정리해요",
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };

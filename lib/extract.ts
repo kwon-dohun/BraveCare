@@ -9,26 +9,44 @@ export interface DocItem extends RawItem {
 
 export const norm = (s: string) => s.replace(/\s+/g, " ").trim();
 
-export const EXTRACT_PROMPT = `너는 병원 퇴원 안내문 사진을 글자 그대로 옮겨 적는 도구야. 의료 판단·해석·요약·보충 설명은 절대 하지 마.
+export type DocType = "receipt" | "medication" | "guide" | "message" | "other";
+export const DOC_TYPES: DocType[] = ["receipt", "medication", "guide", "message", "other"];
+export const DOC_TYPE_LABEL: Record<DocType, string> = { receipt: "영수증", medication: "약봉투·처방전", guide: "퇴원 안내문", message: "병원 문자", other: "기타 서류" };
+
+// 주민등록번호 뒷자리는 저장하지 않는다
+export const maskIds = (s: string) => s.replace(/(\d{6})\s*-\s*[1-8]\d{6}/g, "$1-*******");
+
+export const EXTRACT_PROMPT = `너는 병원에서 받은 서류(퇴원 안내문, 약봉투·처방전, 영수증) 사진을 글자 그대로 옮겨 적는 도구야. 의료 판단·해석·요약·보충 설명은 절대 하지 마.
 1) transcript: 사진에 보이는 글자를 있는 그대로 옮겨 적어. 읽기 어려운 부분은 지어내지 말고 건너뛰어.
 2) items: transcript 안의 문장 중 할 일이 될 만한 것을 골라. 각 항목은
    - kind: "schedule"(외래·검사 등 일정) | "medication"(복약) | "caution"(주의사항) | "contact"(문의처·전화번호)
    - text: transcript에 있는 문장을 한 글자도 바꾸지 않고 그대로 복사한 것. 숫자(복용량, 날짜, 전화번호)도 원문 그대로.
-JSON만 출력해: {"transcript": "...", "items": [{"kind": "...", "text": "..."}]}
-퇴원 안내문이 아니거나 글자를 읽을 수 없으면 {"transcript": "", "items": []}.`;
+3) docType: "receipt"(진료비 영수증·세부내역서) | "medication"(약봉투·처방전·복약안내) | "guide"(퇴원 안내문·예약증) | "other"
+JSON만 출력해: {"docType": "...", "transcript": "...", "items": [{"kind": "...", "text": "..."}]}
+병원 서류가 아니거나 글자를 읽을 수 없으면 {"docType": "other", "transcript": "", "items": []}.`;
 
-export function parseModelJson(raw: string): { transcript: string; items: RawItem[] } {
+export function parseModelJson(raw: string): { docType: DocType; transcript: string; items: RawItem[] } {
   const body = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
   try {
     const j = JSON.parse(body);
     const items = Array.isArray(j.items) ? j.items : [];
     return {
+      docType: DOC_TYPES.includes(j.docType) ? j.docType : "other",
       transcript: typeof j.transcript === "string" ? j.transcript : "",
       items: items.filter((i: RawItem) => i && typeof i.text === "string" && ["schedule", "medication", "caution", "contact"].includes(i.kind)),
     };
   } catch {
-    return { transcript: "", items: [] };
+    return { docType: "other", transcript: "", items: [] };
   }
+}
+
+// 병원 문자·알림톡을 붙여넣은 글에서 날짜가 있는 줄을 일정 후보로 뽑는다. AI를 쓰지 않는다.
+export function itemsFromText(text: string, today: string): DocItem[] {
+  const lines = text.split(/\r?\n/).map(norm).filter((l) => l.length >= 2);
+  const dated = lines.filter((l) => parseDate(l, today));
+  // 날짜가 줄마다 나뉘어 있지 않으면 글 전체를 한 항목으로 보고 사용자가 날짜를 넣게 한다
+  const picked = dated.length ? dated : lines.length ? [norm(text).slice(0, 200)] : [];
+  return toDocItems(picked.map((t) => ({ kind: "schedule" as const, text: t })), today);
 }
 
 // 원문에 없는 항목은 버린다. 중복도 제거.
