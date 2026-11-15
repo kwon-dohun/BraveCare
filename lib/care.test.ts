@@ -47,9 +47,16 @@ test("챗봇: 응급 표현 감지, 일상 질문은 통과", () => {
   for (const q of ["샤워는 언제부터 돼?", "이 약 언제 먹어?"]) assert.equal(isEmergency(q), false, q);
 });
 
-test("챗봇: 추천 질문은 보관한 서류 종류에서 최대 3개", () => {
-  assert.equal(chips(["medication", "guide"]).length, 3);
-  assert.deepEqual(chips([]), []);
+test("챗봇: 서류가 없어도 우리 집 정보 질문 3개 + 용어 질문, 최대 6개", () => {
+  assert.deepEqual(chips([]).slice(0, 3), ["오늘 뭐부터 하면 돼?", "다음 병원 일정은 언제야?", "우리가 받을 수 있는 지원 알려줘"]);
+  assert.equal(chips(["medication", "guide", "receipt"]).length, 6);
+  assert.ok(chips(["medication"]).includes("이 약은 언제, 어떻게 먹으라고 적혀 있어?"));
+});
+
+test("챗봇: 근거 문장이 어느 자료에서 왔는지 붙인다", () => {
+  const src = [{ label: "서류", text: "식후 30분 복용" }, { label: "씩씩케어 정보", text: "퇴원일: 11월 18일" }];
+  assert.equal(verifyAnswer({ summary: "", sourceQuote: "퇴원일: 11월 18일", advice: "" }, src).source, "씩씩케어 정보");
+  assert.equal(verifyAnswer({ summary: "", sourceQuote: "없는 문장", advice: "" }, src).source, undefined);
 });
 
 test("병원 문자 붙여넣기: 날짜 있는 줄만 일정, 없으면 전체를 날짜 입력 대기로", () => {
@@ -82,4 +89,41 @@ test("홈 히어로: 퇴원 전·당일·후·미정을 큰 숫자 하나와 설
   assert.deepEqual(heroLabel("2026-11-16", "2026-11-16"), { big: "D-Day", sub: "오늘 퇴원해요" });
   assert.equal(heroLabel("2026-11-10", "2026-11-16").big, "6일째");
   assert.equal(heroLabel(null, "2026-11-16").big, "D-?");
+});
+
+test("챗봇 자료: 우리 집 정보는 한 줄에 사실 하나, 오늘 할 일·병원 일정·담당자가 들어간다", async () => {
+  const { caseBrief } = await import("./brief.ts");
+  const { evaluate } = await import("./benefits.ts");
+  const input = { dischargeDate: "2026-11-18", birthYear: 1958, sido: "서울", sigungu: "마포구", reason: "ortho", living: "away", income: "mid" } as const;
+  const text = caseBrief({
+    input, today: "2026-11-16", members: [{ id: "a", name: "지은", role: "admin" }, { id: "b", name: "민수", role: "member" }],
+    tasks: [
+      { title: "서류 받기", kind: "admin", due_date: "2026-11-16", assignee_id: "b", done: false },
+      { title: "정형외과 외래", kind: "schedule", due_date: "2026-11-27", assignee_id: null, done: false },
+    ],
+    results: evaluate(input, "2026-11-16"), status: {}, hospital: "", silson24: null, packet: [],
+  });
+  assert.match(text, /^퇴원일: 11월 18일 \(2일 남음\)$/m);
+  assert.match(text, /^- 11월 16일 서류 받기 \(행정, 민수\)$/m);
+  assert.match(text, /^- 11월 27일 정형외과 외래 \(병원 일정, 담당자 없음\)$/m);
+  assert.match(text, /^받을 가능성이 높은 지원 \d+개:$/m);
+});
+
+test("달력: 일요일 시작 격자, 퇴원일·할 일·미신청 지원 마감만 찍힌다", async () => {
+  const { monthGrid, buildEvents, shiftMonth } = await import("./calendar.ts");
+  const { evaluate } = await import("./benefits.ts");
+  const g = monthGrid("2026-11");
+  assert.equal(g[0][0], "2026-11-01"); // 2026-11-01은 일요일
+  assert.equal(g.flat().filter(Boolean).length, 30);
+  assert.equal(shiftMonth("2026-12", 1), "2027-01");
+  assert.equal(shiftMonth("2026-01", -1), "2025-12");
+  const input = { dischargeDate: "2026-11-18", birthYear: 1958, sido: "서울", sigungu: "마포구", reason: "ortho", living: "away", income: "mid" } as const;
+  const results = evaluate(input, "2026-11-16");
+  const ev = buildEvents({ input, results, status: {}, tasks: [{ id: "t", title: "외래", kind: "schedule", due_date: "2026-11-27", done: false, assignee_id: null }] });
+  assert.equal(ev.get("2026-11-18")?.[0].kind, "discharge");
+  assert.equal(ev.get("2026-11-27")?.[0].kind, "visit");
+  const deadlines = [...ev.values()].flat().filter((e) => e.kind === "deadline");
+  assert.ok(deadlines.length > 0);
+  const applied = Object.fromEntries(deadlines.map((e) => [e.benefitId!, "applied"]));
+  assert.equal([...buildEvents({ input, results, status: applied, tasks: [] }).values()].flat().filter((e) => e.kind === "deadline").length, 0);
 });

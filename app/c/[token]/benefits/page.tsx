@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
 import BenefitCard from "@/components/BenefitCard";
 
@@ -21,7 +22,8 @@ export default async function Benefits(props: PageProps<"/c/[token]/benefits">) 
 
   return (
     <>
-      <h1 className="text-title font-display leading-snug">우리 가족이 받을 수 있는<br />지원 <span className="text-accent tabular-nums">{high.length}개</span></h1>
+      <BackLink href={`${base}/more`}>전체</BackLink>
+      <h1 className="mt-2 text-title font-display leading-snug">우리 가족이 받을 수 있는<br />지원 <span className="text-accent tabular-nums">{high.length}개</span></h1>
       <p className="mt-1 text-sm text-muted">공공 지원 {results.length}가지를 입력한 조건으로 가려냈어요. 특정 업체로 연결하지 않아요.</p>
 
       <nav aria-label="지원 필터" className="-mx-5 mt-4 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">

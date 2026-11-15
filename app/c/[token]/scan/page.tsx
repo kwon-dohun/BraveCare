@@ -17,7 +17,7 @@ export default async function Scan(props: PageProps<"/c/[token]/scan">) {
   }));
   return (
     <>
-      <BackLink href={base}>홈</BackLink>
+      <BackLink href={`${base}/more`}>전체</BackLink>
       <h1 className="mt-2 text-title font-display">서류로 할 일 만들기</h1>
       <p className="mb-5 mt-1 text-muted">서류에 적힌 내용만 그대로 옮겨요. 요약하거나 설명을 덧붙이지 않아요.</p>
       <ScanFlow auth={auth} base={base} />

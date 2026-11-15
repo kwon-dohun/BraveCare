@@ -7,6 +7,7 @@ import { dateLabel } from "@/lib/format";
 import { useAct } from "./useAct";
 import Icon from "@/components/Icon";
 import Mascot from "@/components/Mascot";
+import { taskHelp } from "@/lib/task-help";
 
 export interface T { id: string; title: string; kind: keyof typeof KIND_LABEL; due_date: string | null; rel_day: number | null; assignee_id: string | null; done: boolean; done_by: string | null; source: string; source_quote: string | null; memo: string | null }
 interface M { id: string; name: string }
@@ -54,6 +55,12 @@ export default function TaskList({ tasks, members, auth, meId, canAssign, today,
                   <p className={`text-callout font-medium ${t.done ? "text-muted line-through" : ""}`}>{t.title}</p>
                 )}
                 <p className={`mt-0.5 text-xs ${overdue ? "text-warn" : "text-muted"}`}>{meta}</p>
+                {!t.done && taskHelp(t.title) && (
+                  <details className="mt-1 text-xs">
+                    <summary className="min-h-8 w-fit cursor-pointer justify-start gap-1 font-medium text-accent">왜 해요?</summary>
+                    <p className="rounded-lg bg-background px-3 py-2 leading-relaxed text-muted">{taskHelp(t.title)}</p>
+                  </details>
+                )}
                 {t.source === "doc" && t.source_quote && <p className="mt-1 text-sm text-muted">안내문 원문: “{t.source_quote}”</p>}
                 {t.memo && <p className="mt-1 rounded-lg bg-background px-2 py-1 text-sm">메모: {t.memo}</p>}
                 {canAssign ? (

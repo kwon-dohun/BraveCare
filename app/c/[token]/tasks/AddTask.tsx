@@ -4,15 +4,15 @@ import { addTask } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import { useAct } from "@/components/useAct";
 
-export default function AddTask({ auth }: { auth: Auth }) {
+export default function AddTask({ auth, defaultDate = "", plain = false }: { auth: Auth; defaultDate?: string; plain?: boolean }) {
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(defaultDate);
   const [visit, setVisit] = useState(false);
   const { run, pending, err } = useAct();
   return (
     <form
-      className="mt-6 rounded-xl bg-card shadow-card p-4"
-      onSubmit={(e) => { e.preventDefault(); run(() => addTask(auth, title, date || null, visit ? "schedule" : "custom"), () => { setTitle(""); setDate(""); setVisit(false); }); }}
+      className={plain ? "" : "mt-6 rounded-xl bg-card p-4 shadow-card"}
+      onSubmit={(e) => { e.preventDefault(); run(() => addTask(auth, title, date || null, visit ? "schedule" : "custom"), () => { setTitle(""); setDate(defaultDate); setVisit(false); }); }}
     >
       <label htmlFor="nt" className="font-semibold">할 일 직접 추가</label>
       <input id="nt" value={title} maxLength={100} onChange={(e) => setTitle(e.target.value)} placeholder="예: 첫 외래 동행" className="mt-2 w-full rounded-xl border border-line px-4 py-2" />

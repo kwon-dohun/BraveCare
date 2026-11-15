@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
 import { TEMP_LABEL, PAIN_WORD } from "@/lib/report";
@@ -16,7 +17,8 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
 
   return (
     <>
-      <div className="flex items-center gap-3">
+      <BackLink href={`${base}/more`}>전체</BackLink>
+      <div className="mt-2 flex items-center gap-3">
         <Mascot size={60} mood={today ? "cheer" : "idle"} />
         <div>
           <h1 className="text-title font-display">저녁 안부 체크</h1>

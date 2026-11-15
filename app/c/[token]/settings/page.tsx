@@ -9,7 +9,7 @@ export default async function Settings(props: PageProps<"/c/[token]/settings">) 
   const { data, auth, base } = await adminPage(token);
   return (
     <>
-      <BackLink href={base}>홈</BackLink>
+      <BackLink href={`${base}/more`}>전체</BackLink>
       <h1 className="mt-2 text-title font-display">설정</h1>
 
       <section className="mt-6" aria-labelledby="s1">

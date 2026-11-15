@@ -4,7 +4,11 @@ import { db, resolve, logEvent, type Auth, type Actor } from "@/lib/db";
 import { todaySeoul } from "@/lib/load";
 import { askJson, hasModel } from "@/lib/openai";
 import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, type DocItem, type DocType } from "@/lib/extract";
-import { CHAT_PROMPT, parseChatJson, verifyAnswer, type ChatAnswer } from "@/lib/chat";
+import { CHAT_PROMPT, parseChatJson, verifyAnswer, type ChatAnswer, type Source } from "@/lib/chat";
+import { DOC_TYPE_LABEL } from "@/lib/extract";
+import { loadCase } from "@/lib/load";
+import { caseBrief } from "@/lib/brief";
+import { glossaryText } from "@/lib/glossary";
 
 async function admin(a: Auth): Promise<Actor> {
   const actor = await resolve(a);
@@ -91,12 +95,19 @@ export async function askChat(a: Auth, question: string): Promise<ChatAnswer> {
   const q = question.trim().slice(0, 300);
   if (!q) throw new Error("질문을 입력해주세요");
   if (!hasModel()) throw new Error("챗봇 설정이 아직 안 됐어요");
-  const { data: docs } = await db.from("documents").select("doc_type,transcript").eq("case_id", actor.caseId).order("created_at", { ascending: false }).limit(5);
-  if (!docs?.length) throw new Error("먼저 약봉투나 안내문을 촬영해주세요. 보관한 서류에 적힌 내용만 답해드려요");
   await limit(actor.caseId, "chat_asked", 30, "오늘은 질문 횟수를 다 썼어요. 급한 내용은 병원에 직접 문의해주세요");
 
-  const transcripts = docs.map((d) => d.transcript as string);
-  const raw = await askJson(CHAT_PROMPT, [{ type: "text", text: `[서류]\n${transcripts.map((t, i) => `--- 서류 ${i + 1} ---\n${t}`).join("\n")}\n\n[질문]\n${q}` }]);
-  if (raw === null) throw new Error("지금은 답을 만들지 못했어요. 보관한 서류 글자를 아래에서 직접 확인해 보세요");
-  return verifyAnswer(parseChatJson(raw), transcripts);
+  // 자료: 보관한 서류 + 우리 집 씩씩케어 정보 + 쉬운 용어 사전. 답의 근거 문장은 이 글자 안에서만 인정한다.
+  const [{ data: docs }, data] = await Promise.all([
+    db.from("documents").select("doc_type,transcript").eq("case_id", actor.caseId).order("created_at", { ascending: false }).limit(5),
+    loadCase(actor.caseId),
+  ]);
+  const sources: Source[] = [
+    ...(docs ?? []).map((d) => ({ label: `서류(${DOC_TYPE_LABEL[d.doc_type as DocType] ?? "기타"})`, text: d.transcript as string })),
+    { label: "씩씩케어 정보", text: caseBrief(data) },
+    { label: "쉬운 용어 사전", text: glossaryText() },
+  ];
+  const raw = await askJson(CHAT_PROMPT, [{ type: "text", text: `[자료]\n${sources.map((s) => `--- ${s.label} ---\n${s.text}`).join("\n")}\n\n[질문]\n${q}` }]);
+  if (raw === null) throw new Error("지금은 답을 만들지 못했어요. 잠시 뒤에 다시 물어봐 주세요");
+  return verifyAnswer(parseChatJson(raw), sources);
 }

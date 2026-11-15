@@ -2,8 +2,9 @@ import Link from "next/link";
 import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
 import { PACKET } from "@/lib/packet";
-import { dischargeLabel, dateLabel, dday, heroLabel } from "@/lib/format";
-import BenefitCard from "@/components/BenefitCard";
+import { dischargeLabel, dateLabel, dday, heroLabel, krDate } from "@/lib/format";
+import { buildEvents, weekday, EVENT_STYLE } from "@/lib/calendar";
+import { addDays } from "@/lib/timeline";
 import TaskList from "@/components/TaskList";
 import Remember from "@/components/Remember";
 import Icon from "@/components/Icon";
@@ -20,16 +21,14 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const visit = tasks.find((t) => t.kind === "schedule" && t.due_date === today);
   const stage = visit ? "visit" : !input.dischargeDate || today <= input.dischargeDate ? "pre" : "recovery";
 
-  // 마감이 가장 임박한 미신청 지원 1개. 신청함으로 바꾸면 여기서 빠진다. 마감 있는 지원이 없으면 가능성 높은 미신청 지원 1개.
+  // 아직 신청하지 않은 지원. 신청함으로 바꾸면 홈에서 빠진다.
   const open = results.filter((r) => r.verdict !== "no" && r.deadline.state !== "closed" && (status[r.benefit.id] ?? "none") === "none");
-  const urgent = open.filter((r) => r.deadline.state === "open").sort((a, b) => a.deadline.daysLeft! - b.deadline.daysLeft!)[0] ?? open.find((r) => r.verdict === "high");
 
   // 늦게 시작했거나 놓친 일은 사라지지 않고 '지금이라도 챙길 일'로 넘어온다
   const carried = tasks.filter((t) => !t.done && t.due_date && t.due_date < today);
   const todo = tasks.filter((t) => !t.done && (t.due_date ? t.due_date === today : !input.dischargeDate));
   const next = tasks.find((t) => !t.done && t.due_date && t.due_date > today);
   const noOwnerVisits = tasks.filter((t) => !t.done && t.kind === "schedule" && !t.assignee_id && (!t.due_date || t.due_date >= today)).length;
-  const unassigned = tasks.filter((t) => !t.done && !t.assignee_id).length;
   const doneCount = tasks.filter((t) => t.done).length;
   const highCount = results.filter((r) => r.verdict === "high").length;
   // 히어로는 큰 숫자 하나 + 설명 한 줄로 나눈다
@@ -38,6 +37,12 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const cheer = stage === "visit" ? "오늘 병원 가는 날!" : stage === "pre" ? "퇴원 준비, 같이 해요" : checkedToday ? "오늘 기록 완료!" : "오늘도 씩씩하게";
   const mood = stage === "recovery" && checkedToday ? "cheer" : "idle";
   const list = { members, auth, meId: actor.memberId, canAssign: true, today, detailBase: `${base}/tasks` };
+  // 이번 주 띠와 다가오는 일정(할 일 중 병원 일정 + 퇴원일 + 지원 마감)
+  const events = buildEvents(data);
+  const week = Array.from({ length: 7 }, (_, i) => addDays(today, i));
+  const upcoming = [...events].filter(([d]) => d >= today).sort(([a], [b]) => a.localeCompare(b))
+    .flatMap(([d, es]) => es.filter((e) => !e.done && (e.kind === "visit" || e.kind === "discharge" || e.kind === "deadline")).map((e) => [d, e] as const)).slice(0, 3);
+  const topBenefits = [...open].sort((a, b) => (a.deadline.state === "open" ? a.deadline.daysLeft! : 9999) - (b.deadline.state === "open" ? b.deadline.daysLeft! : 9999)).filter((r) => r.verdict === "high").slice(0, 3);
   const cta = "mt-3 flex items-center justify-center rounded-xl bg-primary px-4 py-3 font-semibold text-ink";
   const card = "mt-4 rounded-xl bg-card shadow-card p-4";
 
@@ -73,21 +78,20 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         )}
       </section>
 
-      {/* 벤토: 지원·오늘 할 일·담당자 없음을 숫자로 한눈에 */}
-      <nav className="mt-3 grid grid-cols-3 gap-2" aria-label="요약">
-        {([
-          [`${base}/benefits`, "받을 지원", highCount, urgent?.deadline.state === "open" ? dday(urgent.deadline.daysLeft!) : "가능성 높음", false],
-          [`${base}/tasks`, input.dischargeDate ? "오늘 할 일" : "먼저 할 일", todo.length, carried.length ? `밀린 일 ${carried.length}` : "오늘 몫", carried.length > 0],
-          [`${base}/tasks?f=none`, "담당자 없음", unassigned, members.length < 2 ? "가족 초대하기" : "나눠 맡기", unassigned > 0],
-        ] as const).map(([href, label, n, sub, alert]) => (
-          <Link key={label} href={href} className="flex flex-col rounded-xl bg-card px-3.5 py-3 shadow-card">
-            <span className="text-xs text-muted">{label}</span>
-            <span className="mt-1 font-display text-2xl leading-tight tabular-nums">{n}</span>
-            <span className={`text-xs ${alert ? "font-medium text-warn" : "text-accent"}`}>{sub}</span>
-          </Link>
-        ))}
-      </nav>
-
+      {/* 씩씩이 질문창: 자바스크립트 없이도 동작하는 GET 폼 */}
+      <section className="mt-3 rounded-xl bg-card p-3 shadow-card" aria-label="씩씩이에게 물어보기">
+        <form action={`${base}/chat`} className="flex items-center gap-2">
+          <Mascot size={36} />
+          <label htmlFor="ask" className="sr-only">씩씩이에게 질문</label>
+          <input id="ask" name="q" maxLength={300} placeholder="씩씩이에게 무엇이든 물어보세요" className="min-h-0 min-w-0 flex-1 bg-transparent py-2 text-callout outline-none" />
+          <button aria-label="묻기" className="flex h-10 w-10 min-h-0 items-center justify-center rounded-full bg-primary text-ink"><Icon name="send" size={18} /></button>
+        </form>
+        <div className="mt-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none]">
+          {["오늘 뭐부터 하면 돼?", "다음 병원 일정은 언제야?", "실손24가 뭐야?"].map((c) => (
+            <Link key={c} href={`${base}/chat?q=${encodeURIComponent(c)}`} className="flex h-8 min-h-0 shrink-0 items-center rounded-full bg-accent-soft px-3 text-xs font-medium text-accent">{c}</Link>
+          ))}
+        </div>
+      </section>
       {isNew && (
         <section className="mt-4 rounded-xl bg-accent-soft p-4">
           <p className="font-semibold">씩씩케어가 준비됐어요</p>
@@ -126,48 +130,87 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         <Link href={`${base}/tasks?f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={18} /></Link>
       )}
 
-      {carried.length > 0 && (
-        <section className="mt-6" aria-labelledby="h-carry">
-          <h2 id="h-carry" className="mb-2 font-semibold text-warn">지금이라도 챙길 일 ({carried.length})</h2>
-          <TaskList tasks={carried.slice(0, 3)} {...list} />
-          {carried.length > 3 && <Link href={`${base}/tasks`} className="mt-2 flex items-center text-sm text-muted underline">나머지 {carried.length - 3}개 보기</Link>}
-        </section>
-      )}
-
+      {/* 오늘 할 일: 놓친 일 먼저, 최대 4개 */}
       <section className="mt-6" aria-labelledby="h-today">
-        <div className="mb-2 flex items-baseline justify-between">
-          <h2 id="h-today" className="font-semibold">{input.dischargeDate ? "오늘 할 일" : "먼저 할 일"}{todo.length > 3 ? ` (${todo.length}개 중 3개)` : ""}</h2>
-          <Link href={`${base}/tasks`} className="flex items-center text-sm text-muted underline">전체 보기<span className="sr-only"> 할 일</span></Link>
+        <div className="mb-2 flex items-end justify-between">
+          <div>
+            <h2 id="h-today" className="font-display text-headline">{input.dischargeDate ? "오늘 할 일" : "먼저 할 일"}</h2>
+            <p className="text-xs text-muted tabular-nums">오늘 {todo.length}개{carried.length ? ` · 놓친 일 ${carried.length}개` : ""}</p>
+          </div>
+          <Link href={`${base}/tasks`} className="flex items-center text-sm font-medium text-accent">전체 보기<span className="sr-only"> 할 일</span></Link>
         </div>
         <TaskList
-          tasks={todo.slice(0, 3)} {...list}
+          tasks={[...carried, ...todo].slice(0, 4)} {...list}
           emptyText={next ? `오늘은 할 일이 없어요. 다음 할 일은 ${dateLabel(next.due_date, next.rel_day, today)}이에요` : "오늘은 할 일이 없어요"}
         />
       </section>
 
-      <section className="mt-6" aria-labelledby="h-urgent">
-        <div className="mb-2 flex items-baseline justify-between">
-          <h2 id="h-urgent" className="font-semibold">{urgent?.deadline.state === "open" ? "마감이 가장 가까운 지원" : "먼저 확인해볼 지원"}</h2>
-          <Link href={`${base}/benefits`} className="flex items-center text-sm text-muted underline">전체 보기<span className="sr-only"> 지원</span></Link>
+      {/* 이번 주: 오늘부터 7일 달력 띠 + 다가오는 일정 */}
+      <section className="mt-6" aria-labelledby="h-week">
+        <div className="mb-2 flex items-end justify-between">
+          <h2 id="h-week" className="font-display text-headline">이번 주 일정</h2>
+          <Link href={`${base}/calendar`} className="flex items-center text-sm font-medium text-accent">달력 보기</Link>
         </div>
-        {urgent ? (
-          <BenefitCard r={urgent} href={`${base}/benefits/${urgent.benefit.id}`} status={status[urgent.benefit.id]} />
-        ) : (
-          <p className="rounded-xl bg-card shadow-card p-4 text-muted">확인이 필요한 지원을 모두 살펴봤어요</p>
-        )}
+        <div className="rounded-xl bg-card p-3 shadow-card">
+          <ol className="grid grid-cols-7 gap-1">
+            {week.map((d) => {
+              const ev = events.get(d) ?? [];
+              const kinds = [...new Set(ev.map((e) => e.kind))].slice(0, 3);
+              return (
+                <li key={d}>
+                  <Link href={`${base}/calendar?d=${d}`}
+                    className={`flex min-h-0 flex-col items-center gap-1 rounded-2xl py-2 ${d === today ? "bg-accent-soft" : ""} ${d === input.dischargeDate ? "ring-[1.5px] ring-[#ef7a4a]" : ""}`}>
+                    <span className={`text-caption ${d === today ? "font-semibold text-accent" : "text-muted"}`}>{d === today ? "오늘" : weekday(d)}</span>
+                    <span className="font-display text-headline tabular-nums">{Number(d.slice(8))}<span className="sr-only">일, 일정 {ev.length}개</span></span>
+                    <span className="flex h-1.5 gap-0.5">{kinds.map((k) => <span key={k} className="h-1.5 w-1.5 rounded-full" style={{ background: EVENT_STYLE[k].dot }} />)}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
+          {upcoming.length > 0 && (
+            <ul className="mt-2 space-y-1.5 border-t border-line pt-3">
+              {upcoming.map(([d, e]) => (
+                <li key={d + e.title} className="flex items-center gap-2 text-sm">
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-caption font-semibold ${EVENT_STYLE[e.kind].chip}`}>{EVENT_STYLE[e.kind].label}</span>
+                  <span className="min-w-0 flex-1 truncate">{e.title}</span>
+                  <span className="shrink-0 text-xs text-muted tabular-nums">{d === today ? "오늘" : krDate(d)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </section>
 
-      <nav className="mt-6" aria-label="바로 가기">
+      {noOwnerVisits > 0 && (
+        <Link href={`${base}/tasks?f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={16} /></Link>
+      )}
+
+      {/* 받을 수 있는 지원: 이름과 마감만 짧게 */}
+      <section className="mt-6" aria-labelledby="h-benefit">
+        <div className="mb-2 flex items-end justify-between">
+          <div>
+            <h2 id="h-benefit" className="font-display text-headline">받을 수 있는 지원 <span className="text-accent">{highCount}개</span></h2>
+            <p className="text-xs text-muted">우리 가족 조건으로 골랐어요. 마감이 가까운 순서예요</p>
+          </div>
+          <Link href={`${base}/benefits`} className="flex items-center text-sm font-medium text-accent">전체 보기<span className="sr-only"> 지원</span></Link>
+        </div>
         <ul className="divide-y divide-line rounded-xl bg-card shadow-card">
-          {[
-            [`${base}/scan`, "안내문·약봉투 촬영해서 할 일 만들기"],
-            [`${base}/chat`, "내 서류에 적힌 내용 물어보기"],
-            ...(stage === "pre" ? [] : [[`${base}/docs`, "보험 청구 서류 챙기기"]]),
-          ].map(([href, label]) => (
-            <li key={href}><Link href={href} className="flex items-center justify-between px-4 py-3"><span>{label}</span><Icon name="right" size={18} className="text-muted" /></Link></li>
+          {topBenefits.map((r) => (
+            <li key={r.benefit.id}>
+              <Link href={`${base}/benefits/${r.benefit.id}`} className="flex items-center gap-3 px-4 py-3">
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium">{r.benefit.name}</span>
+                  <span className="block truncate text-xs text-muted">{r.benefit.summary}</span>
+                </span>
+                {r.deadline.state === "open" && <span className="shrink-0 rounded-full bg-warn-soft px-2 py-0.5 text-caption font-semibold text-warn">{dday(r.deadline.daysLeft!)}</span>}
+                <Icon name="right" size={16} className="text-muted" />
+              </Link>
+            </li>
           ))}
+          {topBenefits.length === 0 && <li className="px-4 py-3 text-sm text-muted">확인이 필요한 지원을 모두 살펴봤어요</li>}
         </ul>
-      </nav>
+      </section>
 
       <section className="mt-6" aria-labelledby="h-act">
         <h2 id="h-act" className="mb-2 font-semibold">가족 최근 활동</h2>

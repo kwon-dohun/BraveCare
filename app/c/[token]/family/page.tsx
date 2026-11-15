@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
 import { Invite, RemoveMember } from "@/components/InviteButton";
 import { addDays } from "@/lib/timeline";
@@ -24,7 +25,8 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
 
   return (
     <>
-      <h1 className="text-title font-display">가족</h1>
+      <BackLink href={`${base}/more`}>전체</BackLink>
+      <h1 className="mt-2 text-title font-display">가족</h1>
       <nav aria-label="가족 보기" className="mt-4 flex rounded-full bg-card p-1 shadow-card">
         <Link href={`${base}/family`} aria-current={tab === "members" ? "page" : undefined} className={tabCls(tab === "members")}>구성원</Link>
         <Link href={`${base}/family?tab=schedule`} aria-current={tab === "schedule" ? "page" : undefined} className={tabCls(tab === "schedule")}>돌봄 일정표</Link>
