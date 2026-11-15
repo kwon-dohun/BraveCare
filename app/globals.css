@@ -1,13 +1,14 @@
 @import "tailwindcss";
 
+/* 클라우드 민트: 오프화이트 바탕 + 더스티 민트 면 + 딥 틸 버튼 하나 */
 :root {
-  --background: #faf8f5;
-  --foreground: #1f2933;
-  --muted: #5b6770;
-  --line: #e7e2da;
+  --background: #f4f1ea;
+  --foreground: #16302b;
+  --muted: #5e6b66;
+  --line: #e3ded3;
   --card: #ffffff;
-  --accent: #0f766e;
-  --accent-soft: #d9efec;
+  --accent: #0e5c4f;
+  --accent-soft: #ddf1e7;
   --warn: #92400e;
   --warn-soft: #fdf0d5;
 }
@@ -22,7 +23,8 @@
   --color-accent-soft: var(--accent-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
-  --font-sans: var(--font-noto), system-ui, sans-serif;
+  --font-sans: "Pretendard Variable", Pretendard, system-ui, sans-serif;
+  --radius-xl: 1.125rem; /* 카드·입력칸 모서리를 18px로 */
 }
 
 html {
@@ -33,10 +35,27 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-noto), system-ui, sans-serif;
+  font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif;
   line-height: 1.6;
+  letter-spacing: -0.01em;
+}
+
+h1, h2 {
+  letter-spacing: -0.025em;
 }
 
 button, a, select, input {
   min-height: 44px; /* 터치 타겟 */
+}
+
+/* 주요 버튼은 화면마다 하나, 알약 모양. 유틸리티 레이어보다 우선한다 */
+a.bg-accent, button.bg-accent, label.bg-accent {
+  border-radius: 9999px;
+  transition: transform 120ms ease-out;
+}
+a.bg-accent:active, button.bg-accent:active, label.bg-accent:active {
+  transform: scale(0.98);
+}
+@media (prefers-reduced-motion: reduce) {
+  a.bg-accent, button.bg-accent, label.bg-accent { transition: none; }
 }

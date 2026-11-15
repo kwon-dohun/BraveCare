@@ -11,7 +11,7 @@ const BADGE = {
 
 export function Badge({ verdict, needsIncome }: { verdict: Result["verdict"]; needsIncome?: boolean }) {
   const [label, cls] = BADGE[verdict];
-  return <span className={`rounded-full px-2.5 py-0.5 text-sm font-medium ${cls}`}>{needsIncome ? "소득 확인 필요" : label}</span>;
+  return <span className={`rounded-md px-2 py-0.5 text-sm font-medium ${cls}`}>{needsIncome ? "소득 확인 필요" : label}</span>;
 }
 
 export default function BenefitCard({ r, href, status }: { r: Result; href: string; status?: string }) {
@@ -23,10 +23,10 @@ export default function BenefitCard({ r, href, status }: { r: Result; href: stri
         {d.state === "open" && <span className="text-sm font-medium text-warn">{dday(d.daysLeft!)}</span>}
         {d.state === "closed" && <span className="text-sm text-muted">신청 기간 종료</span>}
         {status && status !== "none" && <span className="text-sm text-accent">· {STATUS_LABEL[status]}</span>}
+        <span className="ml-auto text-sm text-muted">{r.benefit.operator}</span>
       </div>
-      <p className="mt-2 text-lg font-bold">{r.benefit.name}</p>
-      <p className="text-sm text-muted">{r.benefit.operator}</p>
-      <p className="mt-2">{r.benefit.summary}</p>
+      <p className="mt-2 text-lg font-bold tracking-tight">{r.benefit.name}</p>
+      <p className="mt-1 text-muted">{r.benefit.summary}</p>
       <p className="mt-2 text-sm text-muted">판정 근거: {r.reason}</p>
       <p className="mt-1 text-xs text-muted">{r.benefit.lastVerified ? `정보 확인일 ${r.benefit.lastVerified}` : "공식 확인 전 초안"} · 출처 {r.benefit.source.label}</p>
     </Link>

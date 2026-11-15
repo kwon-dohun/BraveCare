@@ -14,7 +14,7 @@ export default async function Benefits(props: PageProps<"/c/[token]/benefits">) 
 
   return (
     <>
-      <h1 className="text-2xl font-bold">우리 가족 조건에 맞는 지원</h1>
+      <h1 className="text-2xl font-extrabold leading-snug">우리 가족이 받을 수 있는<br />지원 <span className="text-accent tabular-nums">{high.length}개</span></h1>
       <p className="mt-1 text-sm text-muted">공공 지원 {results.length}가지를 입력한 조건으로 가려냈어요. 특정 업체로 연결하지 않아요.</p>
       <section className="mt-5">
         <h2 className="mb-2 font-bold">대상 가능성 높음 ({high.length})</h2>

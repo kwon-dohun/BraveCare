@@ -2,7 +2,7 @@ import Link from "next/link";
 import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
 import { PACKET } from "@/lib/packet";
-import { dischargeLabel, dateLabel } from "@/lib/format";
+import { dischargeLabel, dateLabel, dday } from "@/lib/format";
 import BenefitCard from "@/components/BenefitCard";
 import TaskList from "@/components/TaskList";
 import Remember from "@/components/Remember";
@@ -29,6 +29,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const noOwnerVisits = tasks.filter((t) => !t.done && t.kind === "schedule" && !t.assignee_id && (!t.due_date || t.due_date >= today)).length;
   const unassigned = tasks.filter((t) => !t.done && !t.assignee_id).length;
   const doneCount = tasks.filter((t) => t.done).length;
+  const highCount = results.filter((r) => r.verdict === "high").length;
   const list = { members, auth, meId: actor.memberId, canAssign: true, today, detailBase: `${base}/tasks` };
   const cta = "mt-3 flex items-center justify-center rounded-xl bg-accent px-4 py-3 font-bold text-white";
   const card = "mt-4 rounded-xl border border-line bg-card p-4";
@@ -36,21 +37,42 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   return (
     <>
       <Remember path={base} label={`${actor.name}님의 씩씩케어`} />
-      <header className="flex items-start justify-between">
-        <p className="text-sm text-muted">{actor.name}님 가족의 씩씩케어</p>
-        <Link href={`${base}/settings`} className="-mr-2 -mt-2 flex items-center px-2 text-sm text-muted underline">설정</Link>
+      <header className="flex items-center justify-between">
+        <p className="font-extrabold text-accent">씩씩케어</p>
+        <Link href={`${base}/settings`} className="-mr-2 flex items-center gap-1 px-2 text-sm text-muted">
+          <span className="rounded-full border border-line px-3 py-1">{actor.name}님 가족</span>
+          <span className="underline">설정</span>
+        </Link>
       </header>
 
-      <section className="mt-2 rounded-2xl bg-foreground p-5 text-white" aria-label="퇴원 일정">
-        <h1 className="text-3xl font-bold">{dischargeLabel(input.dischargeDate, today)}</h1>
-        <p className="mt-1 text-sm opacity-80">
-          {input.dischargeDate ? `퇴원일 ${input.dischargeDate}` : "일정을 퇴원일 기준으로 보여드리고 있어요"}
-          {" · "}할 일 {doneCount}/{tasks.length} 완료
-        </p>
+      <section className="mt-5" aria-label="퇴원 일정">
+        <p className="text-sm text-muted">{input.dischargeDate ? `퇴원일 ${input.dischargeDate}` : "일정을 퇴원일 기준으로 보여드리고 있어요"}</p>
+        <h1 className="mt-1 text-5xl font-extrabold leading-tight tabular-nums">{dischargeLabel(input.dischargeDate, today)}</h1>
+        <div className="mt-4 h-1.5 rounded-full bg-line" role="progressbar" aria-label="할 일 진행률" aria-valuemin={0} aria-valuenow={doneCount} aria-valuemax={tasks.length}>
+          <div className="h-full rounded-full bg-accent" style={{ width: `${tasks.length ? (doneCount / tasks.length) * 100 : 0}%` }} />
+        </div>
+        <p className="mt-1.5 text-sm text-muted tabular-nums">할 일 {tasks.length}개 중 {doneCount}개 완료</p>
         {!input.dischargeDate && (
-          <Link href={`${base}/settings`} className="mt-3 flex items-center justify-center rounded-xl bg-white px-4 py-2 font-bold text-foreground">퇴원일 확정하기</Link>
+          <Link href={`${base}/settings`} className="mt-3 flex items-center justify-center rounded-full border border-line bg-card px-4 py-2 font-bold">퇴원일 확정하기</Link>
         )}
       </section>
+
+      {/* 벤토: 지원·오늘 할 일·담당자 없음을 숫자로 한눈에 */}
+      <nav className="mt-5 grid grid-cols-2 gap-2" aria-label="요약">
+        <Link href={`${base}/benefits`} className="row-span-2 flex flex-col rounded-xl bg-accent-soft p-4 text-accent">
+          <span className="text-sm font-medium">받을 수 있는 지원</span>
+          <span className="mt-auto pt-6 text-4xl font-extrabold tabular-nums">{highCount}<span className="text-base font-bold">개</span></span>
+          <span className="text-sm">{urgent?.deadline.state === "open" ? dday(urgent.deadline.daysLeft!) : "대상 가능성 높음"}</span>
+        </Link>
+        <Link href={`${base}/tasks`} className="rounded-xl border border-line bg-card px-4 py-3">
+          <span className="block text-sm text-muted">{input.dischargeDate ? "오늘 할 일" : "먼저 할 일"}</span>
+          <span className="block text-2xl font-extrabold tabular-nums">{todo.length}</span>
+        </Link>
+        <Link href={`${base}/tasks?f=none`} className="rounded-xl border border-line bg-card px-4 py-3">
+          <span className={`block text-sm ${unassigned ? "font-medium text-warn" : "text-muted"}`}>담당자 없음</span>
+          <span className="block text-2xl font-extrabold tabular-nums">{unassigned}</span>
+        </Link>
+      </nav>
 
       {isNew && (
         <section className="mt-4 rounded-xl border border-accent bg-accent-soft p-4">
@@ -107,9 +129,6 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           tasks={todo.slice(0, 3)} {...list}
           emptyText={next ? `오늘은 할 일이 없어요. 다음 할 일은 ${dateLabel(next.due_date, next.rel_day, today)}이에요` : "오늘은 할 일이 없어요"}
         />
-        {unassigned > 0 && noOwnerVisits === 0 && (
-          <Link href={`${base}/tasks?f=none`} className="mt-2 flex items-center rounded-xl bg-warn-soft px-4 py-2 text-warn">담당자 없는 할 일 {unassigned}개 · 가족과 나누기 ›</Link>
-        )}
       </section>
 
       <section className="mt-6" aria-labelledby="h-urgent">
