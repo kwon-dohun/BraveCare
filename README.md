@@ -3,16 +3,18 @@
 > 수술·입원 후 퇴원 골든타임부터 정기 외래까지, 맞벌이 가족을 위한 회복 관리 및 역할 분담 플랫폼
 
 <p align="left">
+  <img src="https://img.shields.io/github/v/release/kwon-dohun/bravecare?style=flat-square&color=blue" alt="Release" />
   <img src="https://img.shields.io/badge/Next.js-16.0-black?style=flat-square&logo=next.js" alt="Next.js" />
   <img src="https://img.shields.io/badge/React-19.0-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
-  <img src="https://img.shields.io/badge/React%20Native-Expo%2052-000020?style=flat-square&logo=expo" alt="React Native Expo" />
+  <img src="https://img.shields.io/badge/React%20Native-Expo%2058-000020?style=flat-square&logo=expo" alt="React Native Expo" />
   <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/TailwindCSS-v4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white" alt="TailwindCSS" />
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/Vercel-Deployed-000000?style=flat-square&logo=vercel" alt="Vercel" />
 </p>
 
-- 서비스 링크: [https://bravecare-kr.vercel.app](https://bravecare-kr.vercel.app)
+- 웹 서비스 링크: [https://bravecare-kr.vercel.app](https://bravecare-kr.vercel.app)
+- 안드로이드 앱 다운로드: [GitHub Releases (v1.0.0 APK)](https://github.com/kwon-dohun/bravecare/releases/tag/v1.0.0)
 - 기획 문서 (PRD v3.4): [BraveCare PRD Notion](https://app.notion.com/p/BraveCare-419575b2d5528070b2dcd256a85e373c)
 - 모바일 앱 프로젝트: `mobile/` (React Native Expo Android Shell)
 
