@@ -98,16 +98,21 @@ bravecare/
 ├── app/                      # Next.js 16 App Router (페이지 및 서버 액션)
 │   ├── actions.ts            # 케이스 관리 및 가족 분담 서버 액션
 │   ├── scan-actions.ts       # 서류 비전 OCR 및 검증 서버 액션
-│   ├── c/[token]/            # 관리자 메인 화면 (타임라인, 안부, 리포트)
-│   ├── j/[token]/            # 가족 초대 진입 경로
-│   └── m/[memberId]/         # 가족 전용 역할 분담 화면
+│   ├── start/                # 5문항 온보딩 위저드
+│   ├── c/[token]/            # 관리자 화면 (홈, 지원, 할 일, 안부, 리포트, 챗봇, 스캔, 서류, 가족, 설정)
+│   ├── j/[share]/            # 가족 초대 진입 경로
+│   ├── m/[id]/               # 가족 전용 역할 분담·안부 화면
+│   ├── ics/                  # 할 일 .ics 캘린더 파일
+│   └── api/quick-check/      # 앱 알림 원터치 안부 기록
 ├── components/               # 재사용 UI 컴포넌트
-│   ├── daily-check.tsx       # 저녁 안부 체크 모달
-│   ├── clinic-report.tsx     # 진료실 가로 모드 리포트
-│   └── timeline.tsx          # 4단계 퇴원 타임라인
+│   ├── DailyForm.tsx         # 저녁 안부 체크 폼
+│   ├── TaskList.tsx          # 할 일 목록 (담당자·지남 표시)
+│   └── BenefitCard.tsx       # 지원 제도 카드
 ├── lib/                      # 핵심 비즈니스 로직 및 유틸리티
-│   ├── benefits.ts           # 2026 복지 26종 결정론적 룰 엔진
-│   ├── benefit-list.ts       # 26종 복지 제도 마스터 데이터
+│   ├── benefits.ts           # 복지 룰 엔진 + 제도 5종
+│   ├── benefit-list.ts       # 나머지 제도 21종 (합계 26종)
+│   ├── timeline.ts           # 4단계 퇴원 타임라인 템플릿
+│   ├── report.ts             # 외래 리포트 집계
 │   ├── ics.ts                # 캘린더 .ics 이중 알람 생성기
 │   ├── extract.ts            # 서류 Vision OCR 및 환각 방지 검증기
 │   └── chat.ts               # 서류 기반 안전 챗봇 로직

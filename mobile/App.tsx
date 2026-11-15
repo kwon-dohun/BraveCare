@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 
 // 개발 중에는 mobile/.env의 EXPO_PUBLIC_WEB_URL로 바꾼다 (에뮬레이터에서 내 PC는 http://10.0.2.2:3100)
-const BASE = (process.env.EXPO_PUBLIC_WEB_URL ?? 'https://toewon-note.vercel.app').replace(/\/$/, '');
+const BASE = (process.env.EXPO_PUBLIC_WEB_URL ?? 'https://bravecare-kr.vercel.app').replace(/\/$/, '');
 const KEY = 'bravecare:path'; // 관리자 화면 주소(/c/<토큰>). 로그인이 없어서 이 주소가 열쇠다
 const OK = 'allgood';
 
