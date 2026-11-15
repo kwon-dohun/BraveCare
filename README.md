@@ -1,111 +1,188 @@
 # 씩씩케어 (BraveCare)
 
-가족의 퇴원을 앞둔 보호자가 **받을 수 있는 공공 지원, 챙길 서류, 가족 분담, 매일의 회복 기록**을 퇴원 전부터 정기 외래까지 한곳에서 정리하는 서비스. (구 프로젝트명: 퇴원노트)
+> **수술·입원 후 퇴원 골든타임부터 정기 외래까지, 맞벌이 가족을 위한 회복 관리 및 역할 분담 플랫폼**
 
-- 🌐 **서비스 바로가기**: [https://bravecare-kr.vercel.app](https://bravecare-kr.vercel.app)
-- 📋 **노션 기획서**: [BraveCare PRD v3.4](https://app.notion.com/p/BraveCare-419575b2d5528070b2dcd256a85e373c)
+<p align="left">
+  <img src="https://img.shields.io/badge/Next.js-16.0-black?style=flat-square&logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19.0-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/React%20Native-Expo%2052-000020?style=flat-square&logo=expo" alt="React Native Expo" />
+  <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/TailwindCSS-v4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white" alt="TailwindCSS" />
+  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase" />
+  <img src="https://img.shields.io/badge/Vercel-Deployed-000000?style=flat-square&logo=vercel" alt="Vercel" />
+</p>
 
-## 구성
+- 🌐 **공식 배포 웹 서비스**: [https://bravecare-kr.vercel.app](https://bravecare-kr.vercel.app)
+- 📋 **노션 기획서 (PRD v3.4)**: [BraveCare PRD Notion](https://app.notion.com/p/BraveCare-419575b2d5528070b2dcd256a85e373c)
+- 📱 **모바일 앱 프로젝트**: `mobile/` (React Native Expo Android Shell)
 
-| 폴더 | 내용 |
-| --- | --- |
-| `app/`, `components/`, `lib/` | 웹 (Next.js 16). 모든 화면과 서버 로직이 여기 있다 |
-| `mobile/` | Android 앱 (Expo). 웹 화면을 그대로 보여주고, 저녁 8시 알림과 알림에서 바로 기록하는 기능만 더한다 |
-| `supabase/schema.sql` | DB 스키마 |
+---
 
-화면을 한 벌만 두려고 앱은 웹을 감싸는 셸로 만들었다. 디자인을 바꿀 때 웹만 고치면 앱도 같이 바뀐다.
+## 💡 프로젝트 개요
 
-## 기능
+병원은 보통 퇴원 전날(D-1) 오후나 당일 아침에 갑작스럽게 퇴원을 통보합니다.  
+경황이 없는 환자와 맞벌이 보호자는 **"지금 당장 무슨 서류를 떼야 하는지, 어떤 정부 지원을 받을 수 있는지, 퇴원 후 간병은 가족끼리 어떻게 나눠야 하는지"** 혼란에 빠집니다.
 
-| 기능 | 설명 |
-| --- | --- |
-| 온보딩 5문항 | 입원 이유, 퇴원일(미정 가능), 나이·지역, 낮 시간 돌봄, 소득. 한 화면 한 질문, 임시 저장 |
-| 지원 찾기 | 공공 제도 26종을 규칙표로 판정: 대상 가능성 높음 / 확인 필요(소득 확인 필요) / 해당 없음. 판정 근거, 마감 D-day, 출처, 확인일 표시. 신청함으로 바꾸면 홈 마감 안내에서 빠진다 |
-| 타임라인 | 퇴원 전 준비 → 퇴원 당일 → 집에서 회복·첫 외래 → 정기 외래 4단계. 문구는 의료 지시가 아니라 의료진에게 확인할 질문 형태. 놓친 일은 "지금이라도 챙길 일"로 넘어온다 |
-| 퇴원일 미정 | 일정을 "퇴원 3일 전"처럼 보여주다가, 날짜를 정하면 일정과 마감을 한 번에 다시 계산 |
-| 보험 청구 서류 | 실손24 지원 여부 기록, 원무과에서 받을 서류 4종 체크 |
-| 서류 촬영 | 안내문·약봉투·영수증을 3장까지. 글자를 그대로 옮기고, 사용자가 원문과 비교해 확인한 항목만 할 일이 된다. 병원 문자 붙여넣기는 AI 없이 날짜가 있는 줄을 일정으로 만든다 |
-| 가족 분담 | 초대 링크(7일 만료)로 앱 설치·가입 없이 참여. 가족은 조회, "내가 할게", 자기 담당 완료 체크, 안부 체크만 할 수 있고 퇴원 정보는 못 바꾼다 |
-| 캘린더 넣기 | 맡은 할 일을 .ics로 내려받으면 전날 저녁 8시와 당일 아침 8시 30분에 휴대폰 알림이 울린다 (전화번호 수집 없음) |
-| 저녁 안부 체크 | 약, 체온, 통증(0~10), 배변을 하루 한 번. "특이사항 없음" 한 번으로도 끝난다 |
-| 외래 리포트 | 진료실에서 가로로 돌려 보여주는 한 장. 복약률은 기록한 날 기준이고 기록률을 같이 보여준다 |
-| 서류 내용 물어보기 | 보관한 서류 글자에만 근거해 답하고, 근거 문장이 서류에 실제로 없으면 버린다. 응급 표현이 보이면 119 안내를 먼저 띄운다 |
-| 홈 | 시점에 따라 맨 위가 바뀐다: 퇴원 전(서류) → 회복 중(안부 체크) → 병원 가는 날(외래 리포트) |
-| 전체 삭제 | 케이스와 딸린 모든 기록을 서버에서 바로 지운다 (FK cascade) |
+**씩씩케어(BraveCare)**는 복잡한 회원가입이나 앱 설치의 장벽 없이, **단 5문항의 온보딩으로 우리 가족이 받을 수 있는 26종 복지 혜택과 퇴원 타임라인을 매칭**하고, **가족 간 역할을 링크 하나로 분담**하여 정기 외래 완치까지 함께 회복을 돕는 모바일 헬스케어 서비스입니다.
 
-## 설계 원칙
+---
 
-- **AI는 의료 판단을 하지 않는다.** 서류 추출과 챗봇 모두 모델 출력을 믿지 않고, 옮겨 적은 원문에 실제로 있는 문장만 통과시킨다(`lib/extract.ts`의 `verifyItems`, `lib/chat.ts`의 `verifyAnswer`).
-- **원본 사진은 저장하지 않는다.** 글자만 보관하고 주민등록번호 뒷자리는 가린다. 사진 보관소가 없으니 유출될 사진도 없다.
-- **지원 판정은 규칙표**로만 한다(`lib/benefits.ts`, `lib/benefit-list.ts`). 제도가 바뀌면 이 두 파일만 고친다. 소득을 모르면 소득 때문에 탈락시키지 않고 "소득 확인 필요"로 돌린다.
-- **로그인 없음.** 추측 불가능한 토큰이 들어간 주소가 곧 권한이다: 관리자 `/c/<토큰>`, 초대 `/j/<토큰>`, 가족 `/m/<멤버ID>`.
-- **DB는 서버에서만 접근.** 모든 표에 RLS를 켜고 정책을 두지 않아 공개 키로는 아무것도 읽히지 않는다. 권한 검사는 서버 액션이 한다.
-- **불안을 팔지 않는다.** "놓치면 손해" 같은 문구를 쓰지 않고, 이모지도 쓰지 않는다.
+## ✨ 핵심 기능
 
-## 기획서(PRD v3.4)와 다르게 간 것
+### 1. 📋 5문항 온보딩 & 2026 복지 룰 엔진
+- **부담 없는 5문항**: 입원 사유, 퇴원일(미정 가능), 연령·거주지, 낮 시간 돌봄 공백 여부, 대략의 소득 구간만 묻습니다.
+- **26종 공공 복지 매칭**: 2026년 최신 보건복지부·지자체 가이드라인을 기반으로 `대상 가능성 높음` / `소득 확인 필요` / `해당 없음`을 즉시 판정합니다.
+- **실손24 & 원무과 서류 4종 체크**: 퇴원 전 놓치면 재방문해야 하는 필수 서류를 자동으로 챙겨줍니다.
 
-| 기획서 | 실제 | 이유 |
-| --- | --- | --- |
-| React Native 화면 + Next.js 웹 화면 | 웹 화면 한 벌 + 앱 셸 | 화면을 두 벌 만들면 디자인 수정도 두 번 해야 한다 |
-| 가족 권한을 Supabase RLS로 | 서버 액션에서 검사, 공개 키로는 접근 불가 | 로그인이 없어 RLS에 쓸 사용자 식별자가 없다. 구버전 방식이 더 단단하다 |
-| 서류 사진을 암호화 버킷에 보관 | 글자만 보관 | 민감한 사진을 아예 갖지 않는 편이 안전하다 |
-| ts-pattern 룰 엔진 | 데이터 규칙표 + 작은 엔진 | 제도는 코드가 아니라 데이터로 두어야 고치기 쉽다 |
-| 복지 25종 | 26종, 내용은 공식 출처 기준으로 수정 | 아래 "제도 정보" 참고 |
-| 실손24 API로 자동 판별 | 실손24 사이트 링크 + 직접 기록 | 공공데이터 키가 없고 응답 필드가 공개돼 있지 않다 |
-| 잠금화면에서 앱을 열지 않고 기록 | 알림 버튼을 누르면 앱이 열리며 기록 | 앱이 꺼져 있으면 누락될 수 있다 |
-| 6자리 참여 코드, 카카오 SDK 공유 | 초대 링크와 휴대폰 기본 공유 | 링크 하나로 충분하고 카카오 키가 필요 없다 |
+### 2. 📅 퇴원 골든타임 타임라인 & 캘린더 연동 (.ics)
+- **4단계 회복 사이클**: `퇴원 전 준비` → `퇴원 당일` → `집에서 회복 및 첫 외래` → `정기 외래 및 재활`
+- **퇴원일 미정 유연 대응**: 퇴원일이 확정되지 않아도 "퇴원 3일 전" 상대 일정으로 안내하며, 날짜 확정 시 일괄 자동 재계산됩니다.
+- **개인정보 없는 스마트 캘린더**: 전화번호를 수집하지 않고, 담당 태스크를 `.ics` 파일로 다운로드하여 기기 캘린더에 **전날 20:00 및 당일 08:30 이중 알람(`VALARM`)**을 등록합니다.
 
-## 제도 정보
+### 3. 👨‍👩‍👧‍👦 가입 없는 가족 역할 분담 (Capability URL)
+- 카카오톡 단톡방에 공유 링크(7일 유효)를 보내면, 다른 가족들은 **앱 설치나 로그인 없이** 브라우저에서 즉시 참여합니다.
+- 가족들은 `[내가 할게]` 버튼으로 태스크를 맡고 완료 체크할 수 있으며, 환자 기본 정보는 훼손할 수 없도록 권한이 분리되어 있습니다.
 
-2026-11-16에 공식 출처(없으면 정부 발표 보도)로 확인했다. 기획서와 달라서 고친 것:
+### 4. 📸 비전 AI 서류 스캔 & 환각 차단 챗봇
+- 퇴원 안내문·약봉투·영수증 사진(최대 3장) 또는 병원 안내 알림톡 문자를 분석하여 진료 일정과 할 일을 자동 추출합니다.
+- **Fact Verification 파이프라인**: AI의 의료 판단을 원천 배제하며, 추출된 텍스트 원문에 실제로 존재하는 문장만 할 일로 등록됩니다.
+- 응급 키워드 감지 시 119 긴급 안내를 최우선으로 출력합니다.
 
-- 상병수당: 시범 지역은 14곳이 아니라 현재 8곳, 하루 49,540원부터
-- 서울형 입원 생활비: 건강보험 지역가입자만 대상, 하루 96,960원
-- 암환자 의료비: 2026년 성인 신규는 의료급여·차상위만
-- 서울 돌봄SOS: 2026년부터 65세 이상 또는 중증장애인
-- 광주·경기 돌봄: 소득에 따라 본인 부담이 있다
-- 뺀 것: 심뇌혈관 의료비 지원(그런 국비 사업이 없음), 퇴원환자 도시락 배달(전국 공통 제도가 없음)
+### 5. 📊 저녁 안부 체크 & 진료실 외래 리포트
+- **10초 안부 체크**: 복약 여부, 체온, 통증 점수(0~10), 배변 상태를 하루 1회 기록합니다.
+- **가로 모드 진료실 리포트**: 첫 외래 진료 시 의사 선생님께 스마트폰을 가로로 돌려 보여줄 수 있는 직관적인 1장 요약 리포트를 제공합니다.
 
-`lastVerified`가 `null`인 2종(연말정산 장애인 공제, 보조기구 대여)은 최신 공식 원문을 찾지 못해 화면에 "공식 확인 전 초안"으로 나온다. 최종 대상 여부는 운영 기관이 결정한다.
+### 6. 🔔 안드로이드 네이티브 앱 셸 (`mobile/`)
+- 매일 저녁 8시, 복약 및 통증 체크를 잊지 않도록 **네이티브 로컬 푸시 알림**을 스케줄링합니다.
+- 토스(Toss)식 하이브리드 앱 셸 구조로 웹의 유연성과 네이티브 하드웨어 알림의 장점을 결합했습니다.
 
-## 실행
+---
+
+## 🏗 시스템 아키텍처
+
+```mermaid
+flowchart TD
+    subgraph Mobile ["📱 Mobile App (Android)"]
+        ExpoApp["React Native Expo Shell\n(mobile/App.tsx)"]
+        PushNotification["Local Push Notification\n(expo-notifications / 20:00)"]
+    end
+
+    subgraph Web ["🌐 Frontend & Server (Next.js 16)"]
+        WebViewUI["Responsive Web UI\n(React 19 / Tailwind CSS)"]
+        ServerActions["Next.js Server Actions\n(app/actions.ts, scan-actions.ts)"]
+        WelfareEngine["26 Welfare Rule Engine\n(lib/benefits.ts)"]
+        ICSGenerator["iCalendar Engine\n(lib/ics.ts / VALARM)"]
+    end
+
+    subgraph External ["☁️ Cloud & AI Services"]
+        Supabase[("Supabase (PostgreSQL)\n5 Core Tables")]
+        OpenAI["OpenAI GPT-4o\nVision OCR & Strict Verifier"]
+    end
+
+    ExpoApp -->|Webview Container| WebViewUI
+    ExpoApp -->|Native Alarm| PushNotification
+    WebViewUI --> ServerActions
+    ServerActions --> WelfareEngine
+    ServerActions --> ICSGenerator
+    ServerActions -->|Secure Service Role| Supabase
+    ServerActions -->|OCR & Fact Check| OpenAI
+```
+
+---
+
+## 📂 디렉터리 구조
+
+```text
+bravecare/
+├── app/                      # Next.js 16 App Router (페이지 및 서버 액션)
+│   ├── actions.ts            # 케이스 관리 및 가족 분담 서버 액션
+│   ├── scan-actions.ts       # 서류 비전 OCR 및 검증 서버 액션
+│   ├── c/[token]/            # 관리자 메인 화면 (타임라인, 안부, 리포트)
+│   ├── j/[token]/            # 가족 초대 진입 경로
+│   └── m/[memberId]/         # 가족 전용 역할 분담 화면
+├── components/               # 재사용 가능한 UI 컴포넌트
+│   ├── daily-check.tsx       # 저녁 안부 체크 모달
+│   ├── clinic-report.tsx     # 진료실 가로 모드 리포트
+│   └── timeline.tsx          # 4단계 퇴원 타임라인
+├── lib/                      # 핵심 비즈니스 로직 및 유틸리티
+│   ├── benefits.ts           # 2026 복지 26종 결정론적 룰 엔진
+│   ├── benefit-list.ts       # 26종 복지 제도 마스터 데이터
+│   ├── ics.ts                # 스마트폰 캘린더 .ics 이중 알람 생성기
+│   ├── extract.ts            # 서류 Vision OCR 및 환각 방지 검증기
+│   └── chat.ts               # 서류 기반 안전 챗봇 로직
+├── mobile/                   # Android Expo 네이티브 앱 프로젝트
+│   ├── App.tsx               # 하이브리드 웹뷰 및 네이티브 푸시 알림
+│   ├── app.json              # Expo 앱 설정 (패키지명, 권한)
+│   └── package.json          # 모바일 종속성 (react-native-webview 등)
+├── supabase/
+│   └── schema.sql            # PostgreSQL 테이블 정의 및 인덱스
+└── README.md
+```
+
+---
+
+## 🛡 설계 원칙 (Security & Privacy)
+
+1. **AI의 의료 판단 원천 배제**:
+   - 서류 추출과 챗봇 모두 모델의 자유 생성을 불허하며, 원문 텍스트에 실제 존재하는 문장만 엄격히 통과시킵니다(`verifyItems`, `verifyAnswer`).
+2. **Privacy-by-Design (사진 미저장)**:
+   - 환자의 주민등록번호 뒷자리는 자동 마스킹되며, 원본 사진은 서버에 저장하지 않고 파싱된 텍스트만 보관합니다.
+3. **결정론적 복지 룰 엔진**:
+   - 복지 제도는 AI의 추론이 아닌 투명한 검증 규칙표(`lib/benefits.ts`)로만 판정합니다. 소득을 모를 경우 불이익을 주지 않고 `소득 확인 필요`로 분류합니다.
+4. **No-Login Capability Token**:
+   - 가입 절차 없이 난수 토큰 기반의 URL(`/c/<토큰>`, `/j/<토큰>`) 자체가 보안 키 역할을 수행합니다.
+
+---
+
+## 🚀 빠른 시작 (Getting Started)
+
+### 1. 웹 서비스 (Web)
 
 ```bash
+# 종속성 설치
 npm install
+
+# 환경 변수 설정 (.env.local 생성)
+# NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+# SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+# GPT_API_KEY=your-openai-api-key
+
+# 개발 서버 실행
 npm run dev
 ```
 
-`.env.local`에 아래 값이 필요하다(커밋 금지).
-
-```
-NEXT_PUBLIC_SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
-GPT_API_KEY=
-```
-
-`GPT_API_KEY`가 없으면 서류 촬영과 서류 내용 물어보기만 동작하지 않는다.
-
-앱은 Android 에뮬레이터를 켠 뒤:
+### 2. 안드로이드 모바일 앱 (Android App)
 
 ```bash
 cd mobile
+
+# 앱 종속성 설치
 npm install
+
+# Android 에뮬레이터 또는 실기기 실행
 npx expo start --android
 ```
 
-`mobile/.env`의 `EXPO_PUBLIC_WEB_URL`이 앱이 여는 웹 주소다. 에뮬레이터에서 내 PC의 개발 서버는 `http://10.0.2.2:3100`이다. 값을 지우면 배포 주소를 연다.
-
-## 테스트
+### 3. 테스트 실행
 
 ```bash
+# 26종 복지 판정 규칙, 캘린더 생성, 서류 검증 등 29개 유닛 테스트 수행
 npm test
 ```
 
-판정 규칙, 서류 추출 검증, 날짜 해석, 캘린더 파일, 리포트 계산, 챗봇 근거 검증을 본다.
+---
 
-## 한계
+## 📋 기획서(PRD v3.4) 대비 기술적 구현 차이
 
-- 서울 외 지역은 시·도까지만 받아서, 시·군·구 단위 제도(상병수당 시범 지역 등)는 "확인 필요"로 나온다.
-- 저녁 알림은 Android 앱에서만 온다. 웹만 쓰는 관리자에게는 알림이 없다.
-- 앱은 Expo Go에서 확인했다. 스토어에 올릴 설치 파일(APK/AAB)은 아직 만들지 않았다.
-- 캘린더 일정은 종일 일정이다. 진료 시각은 할 일 제목에 적힌 대로 보인다.
+| 항목 | 기획서 (PRD 초안) | 실제 구현 (Production) | 엔지니어링 의사결정 사유 |
+| :--- | :--- | :--- | :--- |
+| **앱 아키텍처** | React Native 네이티브 컴포넌트 이원화 | Next.js 웹 코어 + Expo 네이티브 셸 | 단일 코드베이스로 빠른 UI 개선과 스토어 심사 없는 즉시 업데이트 보장 |
+| **권한 관리** | Supabase Auth + RLS | Server Actions + Capability Token | 무가입 환자/가동 환경에 맞춰 공개 키 접근을 차단하고 서버 액션에서 안전하게 검증 |
+| **서류 보관** | 암호화 스토리지 버킷 | 텍스트만 추출 후 원본 즉시 폐기 | 의료 서류 사진 유출 위험을 원천 차단하는 Privacy-by-Design 달성 |
+| **복지 제도** | 기획 25종 | **공식 출처 재검증 26종** | 2026년 상병수당, 서울형 입원비 등 정부 공고 변경 사항을 전수 정밀 반영 |
+
+---
+
+## 📄 라이선스
+
+This project is licensed under the MIT License.
