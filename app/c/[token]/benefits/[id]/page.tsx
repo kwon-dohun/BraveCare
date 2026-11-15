@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
 import { Badge } from "@/components/BenefitCard";
 import { StatusPicker, DocsChecklist } from "@/components/StatusPicker";
@@ -20,7 +20,7 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
 
   return (
     <>
-      <Link href={`${base}/benefits`} className="flex items-center text-muted">‹ 지원 목록</Link>
+      <BackLink href={`${base}/benefits`}>지원 목록</BackLink>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <Badge verdict={r.verdict} needsIncome={r.needsIncome} />
         {d.state === "open" && <span className="font-medium text-warn">{dday(d.daysLeft!)} ({d.endDate}까지)</span>}

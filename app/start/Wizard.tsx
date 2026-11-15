@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createCase, logStart } from "../actions";
 import { useAct } from "@/components/useAct";
+import Icon from "@/components/Icon";
 import type { CaseInput, Income, Living, Reason } from "@/lib/benefits";
 import { SIDO, SEOUL_GU, REASON_LABEL, LIVING_LABEL, INCOME_OPTIONS } from "@/lib/options";
 
@@ -78,7 +79,7 @@ export default function Wizard() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 py-6">
       <div className="flex items-center gap-3">
-        <button onClick={step === 0 ? () => router.push("/") : back} aria-label="이전" className="-ml-2 px-2 text-2xl">‹</button>
+        <button onClick={step === 0 ? () => router.push("/") : back} aria-label="이전" className="-ml-2 flex w-11 items-center justify-center"><Icon name="left" size={24} /></button>
         <div className="h-1.5 flex-1 rounded bg-line" role="progressbar" aria-label="입력 진행률" aria-valuemin={1} aria-valuenow={step + 1} aria-valuemax={SUMMARY + 1}>
           <div className="h-full rounded bg-accent transition-all" style={{ width: `${((step + 1) / (SUMMARY + 1)) * 100}%` }} />
         </div>

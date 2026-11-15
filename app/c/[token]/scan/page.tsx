@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
 import { db } from "@/lib/db";
 import { DOC_TYPE_LABEL, type DocType } from "@/lib/extract";
@@ -17,7 +17,7 @@ export default async function Scan(props: PageProps<"/c/[token]/scan">) {
   }));
   return (
     <>
-      <Link href={base} className="flex items-center text-muted">‹ 홈</Link>
+      <BackLink href={base}>홈</BackLink>
       <h1 className="mt-2 text-2xl font-bold">서류로 할 일 만들기</h1>
       <p className="mb-5 mt-1 text-muted">서류에 적힌 내용만 그대로 옮겨요. 요약하거나 설명을 덧붙이지 않아요.</p>
       <ScanFlow auth={auth} base={base} />

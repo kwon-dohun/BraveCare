@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
 import { CaseForm, KeyLink, DeleteCase } from "./SettingsForms";
 
@@ -9,7 +9,7 @@ export default async function Settings(props: PageProps<"/c/[token]/settings">) 
   const { data, auth, base } = await adminPage(token);
   return (
     <>
-      <Link href={base} className="flex items-center text-muted">‹ 홈</Link>
+      <BackLink href={base}>홈</BackLink>
       <h1 className="mt-2 text-2xl font-bold">설정</h1>
 
       <section className="mt-6" aria-labelledby="s1">

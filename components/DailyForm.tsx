@@ -34,7 +34,7 @@ export default function DailyForm({ auth, today }: { auth: Auth; today: Daily | 
         <legend className="font-bold">약</legend>
         <div className="mt-2 grid grid-cols-3 gap-2">
           {([["med_morning", "아침"], ["med_lunch", "점심"], ["med_dinner", "저녁"]] as const).map(([k, l]) => (
-            <button key={k} aria-pressed={v[k]} onClick={() => set({ [k]: !v[k] })} className={pill(v[k])}>{l} {v[k] ? "먹음" : "안 먹음"}</button>
+            <button key={k} aria-pressed={v[k]} onClick={() => set({ [k]: !v[k] })} className={`${pill(v[k])} flex flex-col items-center leading-tight`}><span>{l}</span><span className={`text-sm ${v[k] ? "text-accent" : "font-normal text-muted"}`}>{v[k] ? "먹음" : "안 먹음"}</span></button>
           ))}
         </div>
         {check("속쓰림·어지러움 같은 불편함이 있었어요", v.side_effect, (b) => set({ side_effect: b }))}

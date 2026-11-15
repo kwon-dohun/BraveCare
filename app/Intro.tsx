@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Icon from "@/components/Icon";
 
 const CONSENTS = [
   "건강 관련 정보(입원 이유 큰 분류, 태어난 해, 소득 구간)를 지원 안내 목적으로 수집·이용하는 데 동의해요",
@@ -31,8 +32,8 @@ export default function Intro({ deleted }: { deleted: boolean }) {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-10">
       {deleted && <p role="status" className="mb-6 rounded-xl bg-accent-soft p-4 text-accent">씩씩케어와 모든 기록을 삭제했어요.</p>}
-      <p className="text-sm font-medium text-accent">씩씩케어</p>
-      <h1 className="mt-3 text-[1.7rem] font-bold leading-snug">
+      <p className="font-extrabold text-accent">씩씩케어</p>
+      <h1 className="mt-6 text-[2rem] leading-tight">
         퇴원 소식을 들었다면,
         <br />
         3분이면 정리돼요
@@ -43,7 +44,7 @@ export default function Intro({ deleted }: { deleted: boolean }) {
 
       {last && (
         <Link href={last.path} className="mt-6 flex items-center justify-between rounded-xl border border-accent bg-card px-4 py-3 font-medium text-accent">
-          <span>{last.label} 이어서 보기</span><span aria-hidden>›</span>
+          <span>{last.label} 이어서 보기</span><Icon name="right" size={18} className="text-muted" />
         </Link>
       )}
 

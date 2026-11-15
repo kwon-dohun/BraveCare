@@ -5,6 +5,7 @@ import type { Auth } from "@/lib/db";
 import { KIND_LABEL } from "@/lib/timeline";
 import { dateLabel } from "@/lib/format";
 import { useAct } from "./useAct";
+import Icon from "@/components/Icon";
 
 export interface T { id: string; title: string; kind: keyof typeof KIND_LABEL; due_date: string | null; rel_day: number | null; assignee_id: string | null; done: boolean; done_by: string | null; source: string; source_quote: string | null; memo: string | null }
 interface M { id: string; name: string }
@@ -14,6 +15,7 @@ export default function TaskList({ tasks, members, auth, meId, canAssign, today,
 }) {
   const { run, pending, err } = useAct();
   const nameOf = (id: string | null) => members.find((m) => m.id === id)?.name;
+  // 담당자 없음은 홈 요약 칸이 알려준다. 목록에서는 점선으로만 비어 있음을 표시한다.
 
   if (!tasks.length) return <p className="rounded-xl border border-line bg-card p-4 text-muted">{emptyText ?? "할 일이 없어요"}</p>;
 
@@ -33,12 +35,12 @@ export default function TaskList({ tasks, members, auth, meId, canAssign, today,
                 onClick={() => run(() => toggleTask(auth, t.id, !t.done))}
                 className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 ${t.done ? "border-accent bg-accent text-white" : "border-muted bg-white"} ${canCheck ? "" : "opacity-30"}`}
               >
-                {t.done ? "✓" : ""}
+                {t.done && <Icon name="check" size={20} />}
               </button>
               <div className="min-w-0 flex-1">
                 {detailBase ? (
                   <Link href={`${detailBase}/${t.id}`} className={`flex min-h-0 items-start justify-between gap-2 ${t.done ? "text-muted line-through" : ""}`}>
-                    <span>{t.title}</span><span aria-hidden className="text-muted">›</span>
+                    <span>{t.title}</span><Icon name="right" size={18} className="text-muted" />
                   </Link>
                 ) : (
                   <p className={t.done ? "text-muted line-through" : ""}>{t.title}</p>
@@ -51,7 +53,7 @@ export default function TaskList({ tasks, members, auth, meId, canAssign, today,
                     aria-label={`${t.title} 담당자`}
                     value={t.assignee_id ?? ""}
                     onChange={(e) => run(() => assignTask(auth, t.id, e.target.value || null))}
-                    className={`mt-1 rounded-lg border px-2 text-sm ${t.assignee_id ? "border-line bg-white" : "border-warn bg-warn-soft text-warn"}`}
+                    className={`mt-1.5 rounded-full border px-3 text-sm ${t.assignee_id ? "border-accent-soft bg-accent-soft font-medium text-accent" : "border-dashed border-muted bg-card text-muted"}`}
                   >
                     <option value="">담당자 없음</option>
                     {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}

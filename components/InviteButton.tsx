@@ -4,6 +4,7 @@ import { renewShareLink, removeMember } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import Sheet from "./Sheet";
 import { useAct } from "./useAct";
+import Icon from "@/components/Icon";
 
 const TEXT = "가족 퇴원 준비를 같이 나눠서 해요. 링크로 들어와 이름만 입력하면 돼요. 앱 설치는 필요 없어요.";
 
@@ -31,9 +32,9 @@ export function Invite({ auth, path, expiresAt, expired }: { auth: Auth; path: s
           <p className="rounded-xl bg-warn-soft p-3 text-warn">초대 링크가 만료됐어요. 새 링크를 만들어 보내주세요.</p>
         ) : (
           <div className="space-y-2">
-            {canShare && <button onClick={share} className={row}><span>카카오톡·다른 앱으로 보내기</span><span aria-hidden>›</span></button>}
-            <button onClick={() => { location.href = `sms:?&body=${encodeURIComponent(`${TEXT} ${url()}`)}`; }} className={row}><span>문자로 보내기</span><span aria-hidden>›</span></button>
-            <button onClick={copy} className={row}><span>링크 복사</span><span aria-hidden>›</span></button>
+            {canShare && <button onClick={share} className={row}><span>카카오톡·다른 앱으로 보내기</span><Icon name="right" size={18} className="text-muted" /></button>}
+            <button onClick={() => { location.href = `sms:?&body=${encodeURIComponent(`${TEXT} ${url()}`)}`; }} className={row}><span>문자로 보내기</span><Icon name="right" size={18} className="text-muted" /></button>
+            <button onClick={copy} className={row}><span>링크 복사</span><Icon name="right" size={18} className="text-muted" /></button>
           </div>
         )}
         {msg && <p role="status" className="mt-3 break-all text-sm text-accent">{msg}</p>}

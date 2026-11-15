@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
 import PacketForm from "./PacketForm";
 
@@ -9,7 +9,7 @@ export default async function Docs(props: PageProps<"/c/[token]/docs">) {
   const { data, auth, base } = await adminPage(token);
   return (
     <>
-      <Link href={base} className="flex items-center text-muted">‹ 홈</Link>
+      <BackLink href={base}>홈</BackLink>
       <h1 className="mt-2 text-2xl font-bold">퇴원할 때 받아둘 서류</h1>
       <p className="mt-1 text-muted">퇴원 당일 원무과에서 한 번에 받아두면, 보험 청구 때문에 병원에 다시 갈 일이 줄어요.</p>
       <PacketForm auth={auth} hospital={data.hospital} silson24={data.silson24} checked={data.packet} />

@@ -6,6 +6,7 @@ import { dischargeLabel, dateLabel, dday } from "@/lib/format";
 import BenefitCard from "@/components/BenefitCard";
 import TaskList from "@/components/TaskList";
 import Remember from "@/components/Remember";
+import Icon from "@/components/Icon";
 
 export default async function Home(props: PageProps<"/c/[token]">) {
   const { token } = await props.params;
@@ -39,16 +40,18 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       <Remember path={base} label={`${actor.name}님의 씩씩케어`} />
       <header className="flex items-center justify-between">
         <p className="font-extrabold text-accent">씩씩케어</p>
-        <Link href={`${base}/settings`} className="-mr-2 flex items-center gap-1 px-2 text-sm text-muted">
-          <span className="rounded-full border border-line px-3 py-1">{actor.name}님 가족</span>
-          <span className="underline">설정</span>
-        </Link>
+        <div className="-mr-2 flex items-center gap-1">
+          <span className="rounded-full border border-line px-3 py-1 text-sm text-muted">{actor.name}님 가족</span>
+          <Link href={`${base}/settings`} aria-label="설정" className="flex w-11 items-center justify-center text-muted"><Icon name="settings" size={22} /></Link>
+        </div>
       </header>
 
-      <section className="mt-5" aria-label="퇴원 일정">
-        <p className="text-sm text-muted">{input.dischargeDate ? `퇴원일 ${input.dischargeDate}` : "일정을 퇴원일 기준으로 보여드리고 있어요"}</p>
-        <h1 className="mt-1 text-5xl font-extrabold leading-tight tabular-nums">{dischargeLabel(input.dischargeDate, today)}</h1>
-        <div className="mt-4 h-1.5 rounded-full bg-line" role="progressbar" aria-label="할 일 진행률" aria-valuemin={0} aria-valuenow={doneCount} aria-valuemax={tasks.length}>
+      <section className="mt-6" aria-label="퇴원 일정">
+        <h1 className="text-5xl font-extrabold leading-tight tabular-nums">{dischargeLabel(input.dischargeDate, today)}</h1>
+        <p className="mt-1 text-muted">
+          {input.dischargeDate ? `${Number(input.dischargeDate.slice(5, 7))}월 ${Number(input.dischargeDate.slice(8))}일 퇴원` : "날짜가 정해지면 일정을 다시 계산해요"}
+        </p>
+        <div className="mt-5 h-1.5 rounded-full bg-line" role="progressbar" aria-label="할 일 진행률" aria-valuemin={0} aria-valuenow={doneCount} aria-valuemax={tasks.length}>
           <div className="h-full rounded-full bg-accent" style={{ width: `${tasks.length ? (doneCount / tasks.length) * 100 : 0}%` }} />
         </div>
         <p className="mt-1.5 text-sm text-muted tabular-nums">할 일 {tasks.length}개 중 {doneCount}개 완료</p>
@@ -62,7 +65,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         <Link href={`${base}/benefits`} className="row-span-2 flex flex-col rounded-xl bg-accent-soft p-4 text-accent">
           <span className="text-sm font-medium">받을 수 있는 지원</span>
           <span className="mt-auto pt-6 text-4xl font-extrabold tabular-nums">{highCount}<span className="text-base font-bold">개</span></span>
-          <span className="text-sm">{urgent?.deadline.state === "open" ? dday(urgent.deadline.daysLeft!) : "대상 가능성 높음"}</span>
+          <span className="text-sm">{urgent?.deadline.state === "open" ? `가까운 ${dday(urgent.deadline.daysLeft!)}` : "대상 가능성 높음"}</span>
         </Link>
         <Link href={`${base}/tasks`} className="rounded-xl border border-line bg-card px-4 py-3">
           <span className="block text-sm text-muted">{input.dischargeDate ? "오늘 할 일" : "먼저 할 일"}</span>
@@ -109,7 +112,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       )}
 
       {noOwnerVisits > 0 && (
-        <Link href={`${base}/tasks?f=none`} className="mt-3 flex items-center rounded-xl bg-warn-soft px-4 py-3 font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요 ›</Link>
+        <Link href={`${base}/tasks?f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={18} /></Link>
       )}
 
       {carried.length > 0 && (
@@ -123,7 +126,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       <section className="mt-6" aria-labelledby="h-today">
         <div className="mb-2 flex items-baseline justify-between">
           <h2 id="h-today" className="font-bold">{input.dischargeDate ? "오늘 할 일" : "먼저 할 일"}{todo.length > 3 ? ` (${todo.length}개 중 3개)` : ""}</h2>
-          <Link href={`${base}/tasks`} className="flex items-center text-sm text-muted underline">전체 보기</Link>
+          <Link href={`${base}/tasks`} className="flex items-center text-sm text-muted underline">전체 보기<span className="sr-only"> 할 일</span></Link>
         </div>
         <TaskList
           tasks={todo.slice(0, 3)} {...list}
@@ -134,7 +137,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       <section className="mt-6" aria-labelledby="h-urgent">
         <div className="mb-2 flex items-baseline justify-between">
           <h2 id="h-urgent" className="font-bold">{urgent?.deadline.state === "open" ? "마감이 가장 가까운 지원" : "먼저 확인해볼 지원"}</h2>
-          <Link href={`${base}/benefits`} className="flex items-center text-sm text-muted underline">전체 보기</Link>
+          <Link href={`${base}/benefits`} className="flex items-center text-sm text-muted underline">전체 보기<span className="sr-only"> 지원</span></Link>
         </div>
         {urgent ? (
           <BenefitCard r={urgent} href={`${base}/benefits/${urgent.benefit.id}`} status={status[urgent.benefit.id]} />
@@ -150,7 +153,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
             [`${base}/chat`, "내 서류에 적힌 내용 물어보기"],
             ...(stage === "pre" ? [] : [[`${base}/docs`, "보험 청구 서류 챙기기"]]),
           ].map(([href, label]) => (
-            <li key={href}><Link href={href} className="flex items-center justify-between px-4 py-3"><span>{label}</span><span aria-hidden className="text-muted">›</span></Link></li>
+            <li key={href}><Link href={href} className="flex items-center justify-between px-4 py-3"><span>{label}</span><Icon name="right" size={18} className="text-muted" /></Link></li>
           ))}
         </ul>
       </nav>

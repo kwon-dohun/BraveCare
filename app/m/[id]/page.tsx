@@ -4,8 +4,9 @@ import TaskList from "@/components/TaskList";
 import Remember from "@/components/Remember";
 import MyTask from "./MyTask";
 import { dischargeLabel, dateLabel } from "@/lib/format";
+import Icon from "@/components/Icon";
 
-export const metadata = { title: "내 할 일 · 씩씩케어" };
+export const metadata = { title: "내 할 일 · 씩씩케어", robots: { index: false } }; // 주소가 곧 열쇠라 검색에 남기지 않는다
 
 export default async function MemberHome(props: PageProps<"/m/[id]">) {
   const { id } = await props.params;
@@ -22,11 +23,15 @@ export default async function MemberHome(props: PageProps<"/m/[id]">) {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-5 pb-16 pt-6">
       <Remember path={`/m/${id}`} label={`${actor.name}님의 할 일`} />
-      <p className="text-muted">{actor.name}님, 안녕하세요</p>
-      <h1 className="mt-1 text-3xl font-bold">{dischargeLabel(data.input.dischargeDate, today)}</h1>
+      <header className="flex items-center justify-between">
+        <p className="font-extrabold text-accent">씩씩케어</p>
+        <span className="rounded-full border border-line px-3 py-1 text-sm text-muted">{actor.name}님</span>
+      </header>
+      <h1 className="mt-6 text-5xl font-extrabold leading-tight tabular-nums">{dischargeLabel(data.input.dischargeDate, today)}</h1>
+      <p className="mt-1 text-muted">{actor.name}님, 안녕하세요. 맡은 일을 여기서 챙겨요.</p>
 
       {data.input.dischargeDate && today > data.input.dischargeDate && (
-        <Link href={`/m/${id}/daily`} className="mt-4 flex items-center justify-between rounded-xl border border-line bg-card px-4 py-3"><span>저녁 안부 체크 남기기</span><span aria-hidden className="text-muted">›</span></Link>
+        <Link href={`/m/${id}/daily`} className="mt-4 flex items-center justify-between rounded-xl border border-line bg-card px-4 py-3"><span>저녁 안부 체크 남기기</span><Icon name="right" size={18} className="text-muted" /></Link>
       )}
 
       <nav aria-label="보기" className="mt-5 flex">

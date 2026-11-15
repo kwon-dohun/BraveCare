@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BackLink } from "@/components/Icon";
 import { notFound } from "next/navigation";
 import { adminPage } from "@/lib/page-auth";
 import { KIND_LABEL } from "@/lib/timeline";
@@ -15,7 +15,7 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
 
   return (
     <>
-      <Link href={`${base}/tasks`} className="flex items-center text-muted">‹ 타임라인</Link>
+      <BackLink href={`${base}/tasks`}>타임라인</BackLink>
       <h1 className="mt-2 text-2xl font-bold">할 일 수정</h1>
       <p className="mt-1 text-sm text-muted">
         {KIND_LABEL[t.kind]} · 출처: {SOURCE[t.source] ?? t.source}

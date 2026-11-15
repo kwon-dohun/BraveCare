@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
 import { summarize, TEMP_LABEL, BOWEL_LABEL } from "@/lib/report";
@@ -29,7 +30,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
     <div className="fixed inset-0 z-20 overflow-auto bg-white p-5 text-lg text-black landscape:text-xl">
       <div className="mx-auto max-w-5xl">
         <div className="flex items-center justify-between print:hidden">
-          <Link href={`${base}/daily`} className="flex items-center text-base text-muted">‹ 닫기</Link>
+          <BackLink href={`${base}/daily`}>닫기</BackLink>
           <p className="text-base text-muted portrait:block landscape:hidden">휴대폰을 가로로 돌리면 크게 보여요</p>
         </div>
         <h1 className="mt-2 text-2xl font-bold landscape:text-3xl">퇴원 후 경과 요약</h1>
