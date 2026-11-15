@@ -39,20 +39,20 @@ export default async function Benefits(props: PageProps<"/c/[token]/benefits">) 
       {v === "high" || v === "check" ? (
         <ul className="mt-5 space-y-3">{(v === "high" ? high : check).map(card)}</ul>
       ) : v === "no" ? (
-        <ul className="mt-5 divide-y divide-line rounded-xl border border-line bg-card">{no.map(noRow)}</ul>
+        <ul className="mt-5 divide-y divide-line rounded-xl bg-card shadow-card">{no.map(noRow)}</ul>
       ) : (
         <>
           <section className="mt-5">
-            <h2 className="mb-2 font-bold">대상 가능성 높음 ({high.length})</h2>
+            <h2 className="mb-2 font-semibold">대상 가능성 높음 ({high.length})</h2>
             <ul className="space-y-3">{high.length ? high.map(card) : <li className="text-muted">아직 없어요</li>}</ul>
           </section>
           <section className="mt-6">
-            <h2 className="mb-2 font-bold">확인 필요 ({check.length})</h2>
+            <h2 className="mb-2 font-semibold">확인 필요 ({check.length})</h2>
             <ul className="space-y-3">{check.length ? check.map(card) : <li className="text-muted">없어요</li>}</ul>
           </section>
           {no.length > 0 && (
-            <details className="mt-6 rounded-xl border border-line bg-card">
-              <summary className="cursor-pointer p-4 font-bold">해당 없음 ({no.length})</summary>
+            <details className="mt-6 rounded-xl bg-card shadow-card">
+              <summary className="cursor-pointer p-4 font-semibold">해당 없음 ({no.length})</summary>
               <ul className="divide-y divide-line border-t border-line">{no.map(noRow)}</ul>
             </details>
           )}

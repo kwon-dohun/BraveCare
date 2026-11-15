@@ -27,13 +27,13 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
   const box = "rounded-xl border-2 border-foreground p-4";
 
   return (
-    <div className="fixed inset-0 z-20 overflow-auto bg-white p-5 text-lg text-black landscape:text-xl">
+    <div className="fixed inset-0 z-20 overflow-auto bg-white p-5 text-[1.0625rem] text-black landscape:text-xl">
       <div className="mx-auto max-w-5xl">
         <div className="flex items-center justify-between print:hidden">
           <BackLink href={`${base}/daily`}>닫기</BackLink>
           <p className="text-base text-muted portrait:block landscape:hidden">휴대폰을 가로로 돌리면 크게 보여요</p>
         </div>
-        <h1 className="mt-2 text-2xl font-bold landscape:text-3xl">퇴원 후 경과 요약</h1>
+        <h1 className="mt-2 text-2xl font-semibold landscape:text-3xl">퇴원 후 경과 요약</h1>
         <p className="text-base text-muted">
           {REASON_LABEL.find(([k]) => k === data.input.reason)?.[1]} · {data.input.birthYear}년생
           {data.input.dischargeDate ? ` · 퇴원 ${data.input.dischargeDate}` : ""} · 보호자가 기록한 내용이에요
@@ -42,19 +42,19 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
         {s.days === 0 ? (
           <div className="mt-6 rounded-xl border border-line p-5">
             <p>아직 기록이 없어요. 저녁 안부 체크를 하루만 남겨도 이 리포트가 만들어져요.</p>
-            <Link href={`${base}/daily`} className="mt-4 flex items-center justify-center rounded-xl bg-accent px-5 py-3 font-bold text-white">오늘 기록 남기기</Link>
+            <Link href={`${base}/daily`} className="mt-4 flex items-center justify-center rounded-xl bg-primary px-5 py-3 font-semibold text-ink">오늘 기록 남기기</Link>
           </div>
         ) : (
           <div className="mt-4 grid gap-4 landscape:grid-cols-2">
             <section className={box} aria-labelledby="r1">
-              <h2 id="r1" className="font-bold">약 복용</h2>
-              <p className="mt-1 text-4xl font-bold landscape:text-5xl">{s.adherence}%</p>
+              <h2 id="r1" className="font-semibold">약 복용</h2>
+              <p className="mt-1 text-4xl font-semibold landscape:text-5xl">{s.adherence}%</p>
               <p className="text-base">기록한 {s.days}일 기준 (전체 {s.span}일 중 {s.days}일 기록)</p>
-              {s.sideEffects.length > 0 && <p className="mt-2 font-bold">약 먹고 불편했던 날: {s.sideEffects.map(md).join(", ")}</p>}
+              {s.sideEffects.length > 0 && <p className="mt-2 font-semibold">약 먹고 불편했던 날: {s.sideEffects.map(md).join(", ")}</p>}
             </section>
 
             <section className={box} aria-labelledby="r2">
-              <h2 id="r2" className="font-bold">통증 (0~10점)</h2>
+              <h2 id="r2" className="font-semibold">통증 (0~10점)</h2>
               {s.avgPain === null
                 ? <p className="mt-1 text-base">기록이 3일 미만이라 평균 대신 날짜별 점수를 보여드려요: {s.pain.map((p) => `${md(p.date)} ${p.pain}점`).join(", ")}</p>
                 : <p className="mt-1">평균 <b className="text-3xl">{s.avgPain}</b>점 · 가장 아팠던 날 {s.maxPain}점</p>}
@@ -73,7 +73,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
             </section>
 
             <section className={box} aria-labelledby="r3">
-              <h2 id="r3" className="font-bold">열·수술 부위·배변</h2>
+              <h2 id="r3" className="font-semibold">열·수술 부위·배변</h2>
               <ul className="mt-1 space-y-1">
                 <li>열: {s.fevers.length ? s.fevers.map((f) => `${md(f.date)} ${TEMP_LABEL[f.temp]}`).join(", ") : "기록한 날은 모두 정상"}</li>
                 <li>수술 부위 진물·벌어짐: {s.wounds.length ? s.wounds.map(md).join(", ") : "없음"}</li>
@@ -82,7 +82,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
             </section>
 
             <section className={box} aria-labelledby="r4">
-              <h2 id="r4" className="font-bold">여쭤보고 싶은 것</h2>
+              <h2 id="r4" className="font-semibold">여쭤보고 싶은 것</h2>
               {questions.length
                 ? <ol className="mt-1 list-decimal space-y-1 pl-6">{questions.map((q) => <li key={q.id}>{q.title}</li>)}</ol>
                 : <p className="mt-1 text-base text-muted">아직 적어둔 질문이 없어요.</p>}

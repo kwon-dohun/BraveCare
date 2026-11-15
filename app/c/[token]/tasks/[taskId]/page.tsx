@@ -16,7 +16,7 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
   return (
     <>
       <BackLink href={`${base}/tasks`}>타임라인</BackLink>
-      <h1 className="mt-2 text-2xl font-bold">할 일 수정</h1>
+      <h1 className="mt-2 text-2xl font-semibold">할 일 수정</h1>
       <p className="mt-1 text-sm text-muted">
         {KIND_LABEL[t.kind]} · 출처: {SOURCE[t.source] ?? t.source}
         {t.done && t.done_by ? ` · ${t.done_by} 완료` : ""}

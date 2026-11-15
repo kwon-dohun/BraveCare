@@ -55,7 +55,7 @@ export function CaseForm({ auth, input }: { auth: Auth; input: CaseInput }) {
       </div>
       {err && <p role="alert" className="text-warn">{err}</p>}
       {saved && <p role="status" className="text-accent">저장했어요. 지원 판정과 날짜를 다시 계산했어요.</p>}
-      <button disabled={pending || !ok} className="w-full rounded-xl bg-accent px-5 py-4 text-lg font-bold text-white disabled:opacity-40">{pending ? "저장하는 중…" : "저장"}</button>
+      <button disabled={pending || !ok} className="w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">{pending ? "저장하는 중…" : "저장"}</button>
     </form>
   );
 }
@@ -68,7 +68,7 @@ export function KeyLink({ path }: { path: string }) {
   };
   return (
     <>
-      <button onClick={copy} className="mt-3 w-full rounded-xl border border-accent px-5 py-3 font-bold text-accent">내 주소 복사</button>
+      <button onClick={copy} className="mt-3 w-full rounded-full bg-accent-soft px-5 py-3 font-semibold text-accent">내 주소 복사</button>
       {msg && <p role="status" className="mt-2 break-all text-sm text-accent">{msg}</p>}
     </>
   );
@@ -82,7 +82,7 @@ export function DeleteCase({ auth }: { auth: Auth }) {
       <label htmlFor="del" className="text-sm">확인을 위해 <b>삭제</b>라고 입력해주세요</label>
       <input id="del" value={text} onChange={(e) => setText(e.target.value)} className={field} autoComplete="off" />
       {err && <p role="alert" className="mt-1 text-warn">{err}</p>}
-      <button disabled={pending || text.trim() !== "삭제"} onClick={() => run(() => deleteCase(auth))} className="mt-3 w-full rounded-xl bg-warn px-5 py-3 font-bold text-white disabled:opacity-40">
+      <button disabled={pending || text.trim() !== "삭제"} onClick={() => run(() => deleteCase(auth))} className="mt-3 w-full rounded-xl bg-warn px-5 py-3 font-semibold text-white disabled:opacity-40">
         {pending ? "삭제하는 중…" : "기록 전체 삭제"}
       </button>
     </div>

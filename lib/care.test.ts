@@ -75,3 +75,11 @@ test("템플릿은 의료 지시가 아니라 확인·질문 형태", () => {
   assert.ok(seeds.length > 15);
   for (const s of seeds) assert.doesNotMatch(s.title, /하세요|마세요|금지/, s.title);
 });
+
+test("홈 히어로: 퇴원 전·당일·후·미정을 큰 숫자 하나와 설명 한 줄로", async () => {
+  const { heroLabel } = await import("./format.ts");
+  assert.deepEqual(heroLabel("2026-11-18", "2026-11-16"), { big: "D-2", sub: "11월 18일 퇴원까지" });
+  assert.deepEqual(heroLabel("2026-11-16", "2026-11-16"), { big: "D-Day", sub: "오늘 퇴원해요" });
+  assert.equal(heroLabel("2026-11-10", "2026-11-16").big, "6일째");
+  assert.equal(heroLabel(null, "2026-11-16").big, "D-?");
+});

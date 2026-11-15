@@ -2,11 +2,12 @@ import Link from "next/link";
 import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
 import { PACKET } from "@/lib/packet";
-import { dischargeLabel, dateLabel, dday } from "@/lib/format";
+import { dischargeLabel, dateLabel, dday, heroLabel } from "@/lib/format";
 import BenefitCard from "@/components/BenefitCard";
 import TaskList from "@/components/TaskList";
 import Remember from "@/components/Remember";
 import Icon from "@/components/Icon";
+import Mascot, { Logo } from "@/components/Mascot";
 
 export default async function Home(props: PageProps<"/c/[token]">) {
   const { token } = await props.params;
@@ -31,62 +32,72 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const unassigned = tasks.filter((t) => !t.done && !t.assignee_id).length;
   const doneCount = tasks.filter((t) => t.done).length;
   const highCount = results.filter((r) => r.verdict === "high").length;
+  // 히어로는 큰 숫자 하나 + 설명 한 줄로 나눈다
+  const hero = heroLabel(input.dischargeDate, today);
+  // 씩씩이 한마디: 지금 시점에 맞춰 짧게
+  const cheer = stage === "visit" ? "오늘 병원 가는 날!" : stage === "pre" ? "퇴원 준비, 같이 해요" : checkedToday ? "오늘 기록 완료!" : "오늘도 씩씩하게";
+  const mood = stage === "recovery" && checkedToday ? "cheer" : "idle";
   const list = { members, auth, meId: actor.memberId, canAssign: true, today, detailBase: `${base}/tasks` };
-  const cta = "mt-3 flex items-center justify-center rounded-xl bg-accent px-4 py-3 font-bold text-white";
-  const card = "mt-4 rounded-xl border border-line bg-card p-4";
+  const cta = "mt-3 flex items-center justify-center rounded-xl bg-primary px-4 py-3 font-semibold text-ink";
+  const card = "mt-4 rounded-xl bg-card shadow-card p-4";
 
   return (
     <>
       <Remember path={base} label={`${actor.name}님의 씩씩케어`} />
       <header className="flex items-center justify-between">
-        <p className="font-extrabold text-accent">씩씩케어</p>
-        <div className="-mr-2 flex items-center gap-1">
-          <span className="rounded-full border border-line px-3 py-1 text-sm text-muted">{actor.name}님 가족</span>
-          <Link href={`${base}/settings`} aria-label="설정" className="flex w-11 items-center justify-center text-muted"><Icon name="settings" size={22} /></Link>
+        <Logo />
+        <div className="-mr-2 flex items-center">
+          <span className="rounded-full bg-card px-3 py-1 text-xs font-medium text-muted shadow-card">{actor.name}님 가족</span>
+          <Link href={`${base}/settings`} aria-label="설정" className="flex w-11 items-center justify-center text-muted"><Icon name="settings" size={20} /></Link>
         </div>
       </header>
 
-      <section className="mt-6" aria-label="퇴원 일정">
-        <h1 className="text-5xl font-extrabold leading-tight tabular-nums">{dischargeLabel(input.dischargeDate, today)}</h1>
-        <p className="mt-1 text-muted">
-          {input.dischargeDate ? `${Number(input.dischargeDate.slice(5, 7))}월 ${Number(input.dischargeDate.slice(8))}일 퇴원` : "날짜가 정해지면 일정을 다시 계산해요"}
-        </p>
-        <div className="mt-5 h-1.5 rounded-full bg-line" role="progressbar" aria-label="할 일 진행률" aria-valuemin={0} aria-valuenow={doneCount} aria-valuemax={tasks.length}>
-          <div className="h-full rounded-full bg-accent" style={{ width: `${tasks.length ? (doneCount / tasks.length) * 100 : 0}%` }} />
+      {/* 히어로: 큰 D-day 숫자 + 씩씩이 한마디 */}
+      <section className="relative mt-4 overflow-hidden rounded-[1.75rem] bg-accent-soft p-5" aria-label="퇴원 일정">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 aria-label={dischargeLabel(input.dischargeDate, today)} className="text-[3.25rem] leading-none tracking-tight text-ink tabular-nums">{hero.big}</h1>
+            <p className="mt-2.5 text-sm font-medium text-accent">{hero.sub}</p>
+          </div>
+          <div className="flex shrink-0 flex-col items-end">
+            <span className="rounded-2xl rounded-br-sm bg-card px-3 py-1.5 text-xs font-medium text-ink shadow-card">{cheer}</span>
+            <Mascot size={76} mood={mood} className="mascot-bob -mb-2 mt-1" />
+          </div>
         </div>
-        <p className="mt-1.5 text-sm text-muted tabular-nums">할 일 {tasks.length}개 중 {doneCount}개 완료</p>
+        <div className="mt-4 h-2 rounded-full bg-card/80" role="progressbar" aria-label="할 일 진행률" aria-valuemin={0} aria-valuenow={doneCount} aria-valuemax={tasks.length}>
+          <div className="h-full rounded-full bg-primary" style={{ width: `${tasks.length ? Math.max(4, (doneCount / tasks.length) * 100) : 0}%` }} />
+        </div>
+        <p className="mt-1.5 text-xs text-accent tabular-nums">할 일 {tasks.length}개 중 {doneCount}개 완료</p>
         {!input.dischargeDate && (
-          <Link href={`${base}/settings`} className="mt-3 flex items-center justify-center rounded-full border border-line bg-card px-4 py-2 font-bold">퇴원일 확정하기</Link>
+          <Link href={`${base}/settings`} className="mt-3 flex items-center justify-center rounded-full bg-card px-4 py-2.5 text-sm font-semibold text-ink shadow-card">퇴원일 확정하기</Link>
         )}
       </section>
 
       {/* 벤토: 지원·오늘 할 일·담당자 없음을 숫자로 한눈에 */}
-      <nav className="mt-5 grid grid-cols-2 gap-2" aria-label="요약">
-        <Link href={`${base}/benefits`} className="row-span-2 flex flex-col rounded-xl bg-accent-soft p-4 text-accent">
-          <span className="text-sm font-medium">받을 수 있는 지원</span>
-          <span className="mt-auto pt-6 text-4xl font-extrabold tabular-nums">{highCount}<span className="text-base font-bold">개</span></span>
-          <span className="text-sm">{urgent?.deadline.state === "open" ? `가까운 ${dday(urgent.deadline.daysLeft!)}` : "대상 가능성 높음"}</span>
-        </Link>
-        <Link href={`${base}/tasks`} className="rounded-xl border border-line bg-card px-4 py-3">
-          <span className="block text-sm text-muted">{input.dischargeDate ? "오늘 할 일" : "먼저 할 일"}</span>
-          <span className="block text-2xl font-extrabold tabular-nums">{todo.length}</span>
-        </Link>
-        <Link href={`${base}/tasks?f=none`} className="rounded-xl border border-line bg-card px-4 py-3">
-          <span className={`block text-sm ${unassigned ? "font-medium text-warn" : "text-muted"}`}>담당자 없음</span>
-          <span className="block text-2xl font-extrabold tabular-nums">{unassigned}</span>
-        </Link>
+      <nav className="mt-3 grid grid-cols-3 gap-2" aria-label="요약">
+        {([
+          [`${base}/benefits`, "받을 지원", highCount, urgent?.deadline.state === "open" ? dday(urgent.deadline.daysLeft!) : "가능성 높음", false],
+          [`${base}/tasks`, input.dischargeDate ? "오늘 할 일" : "먼저 할 일", todo.length, carried.length ? `밀린 일 ${carried.length}` : "오늘 몫", carried.length > 0],
+          [`${base}/tasks?f=none`, "담당자 없음", unassigned, members.length < 2 ? "가족 초대하기" : "나눠 맡기", unassigned > 0],
+        ] as const).map(([href, label, n, sub, alert]) => (
+          <Link key={label} href={href} className="flex flex-col rounded-xl bg-card px-3.5 py-3 shadow-card">
+            <span className="text-xs text-muted">{label}</span>
+            <span className="mt-1 text-2xl font-bold leading-tight tabular-nums">{n}</span>
+            <span className={`text-xs ${alert ? "font-medium text-warn" : "text-accent"}`}>{sub}</span>
+          </Link>
+        ))}
       </nav>
 
       {isNew && (
-        <section className="mt-4 rounded-xl border border-accent bg-accent-soft p-4">
-          <p className="font-bold">씩씩케어가 준비됐어요</p>
+        <section className="mt-4 rounded-xl bg-accent-soft p-4">
+          <p className="font-semibold">씩씩케어가 준비됐어요</p>
           <p className="mt-1 text-sm">로그인이 없어서 <b>이 주소가 곧 열쇠</b>예요. 이 기기에서는 첫 화면에서 다시 열 수 있고, 다른 기기에서 쓰려면 설정에서 주소를 복사해두세요.</p>
         </section>
       )}
 
       {stage === "visit" && (
         <section className={card} aria-labelledby="h-stage">
-          <h2 id="h-stage" className="font-bold">오늘은 병원 가는 날이에요</h2>
+          <h2 id="h-stage" className="font-semibold">오늘은 병원 가는 날이에요</h2>
           <p className="mt-1 text-sm text-muted">{visit!.title}</p>
           <Link href={`${base}/report`} className={cta}>외래 리포트 열기</Link>
           <p className="mt-2 text-sm text-muted">진료실에서 휴대폰을 가로로 돌려 의료진에게 보여주세요.</p>
@@ -94,7 +105,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       )}
       {stage === "pre" && (
         <section className={card} aria-labelledby="h-stage">
-          <h2 id="h-stage" className="font-bold">퇴원할 때 받아둘 서류</h2>
+          <h2 id="h-stage" className="font-semibold">퇴원할 때 받아둘 서류</h2>
           <p className="mt-1 text-sm text-muted">
             보험 청구 서류 {data.packet.length}/{PACKET.length} 준비 · 실손24 {data.silson24 === "yes" ? "전산 청구 가능" : data.silson24 === "no" ? "미지원 병원 (종이 서류 필요)" : "아직 확인 전"}
           </p>
@@ -103,10 +114,10 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       )}
       {stage === "recovery" && (
         <section className={card} aria-labelledby="h-stage">
-          <h2 id="h-stage" className="font-bold">저녁 안부 체크</h2>
+          <h2 id="h-stage" className="font-semibold">저녁 안부 체크</h2>
           <p className="mt-1 text-sm text-muted">{checkedToday ? "오늘 기록을 남겼어요. 외래 리포트에 쌓이고 있어요." : "약, 체온, 통증, 배변을 10초 만에 남겨요. 외래 때 의료진에게 보여줄 기록이 돼요."}</p>
           {checkedToday
-            ? <Link href={`${base}/report`} className="mt-3 flex items-center justify-center rounded-xl border border-accent px-4 py-3 font-bold text-accent">외래 리포트 보기</Link>
+            ? <Link href={`${base}/report`} className="mt-3 flex items-center justify-center rounded-full bg-accent-soft px-4 py-3 font-semibold text-accent">외래 리포트 보기</Link>
             : <Link href={`${base}/daily`} className={cta}>오늘 기록 남기기</Link>}
         </section>
       )}
@@ -117,7 +128,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
 
       {carried.length > 0 && (
         <section className="mt-6" aria-labelledby="h-carry">
-          <h2 id="h-carry" className="mb-2 font-bold text-warn">지금이라도 챙길 일 ({carried.length})</h2>
+          <h2 id="h-carry" className="mb-2 font-semibold text-warn">지금이라도 챙길 일 ({carried.length})</h2>
           <TaskList tasks={carried.slice(0, 3)} {...list} />
           {carried.length > 3 && <Link href={`${base}/tasks`} className="mt-2 flex items-center text-sm text-muted underline">나머지 {carried.length - 3}개 보기</Link>}
         </section>
@@ -125,7 +136,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
 
       <section className="mt-6" aria-labelledby="h-today">
         <div className="mb-2 flex items-baseline justify-between">
-          <h2 id="h-today" className="font-bold">{input.dischargeDate ? "오늘 할 일" : "먼저 할 일"}{todo.length > 3 ? ` (${todo.length}개 중 3개)` : ""}</h2>
+          <h2 id="h-today" className="font-semibold">{input.dischargeDate ? "오늘 할 일" : "먼저 할 일"}{todo.length > 3 ? ` (${todo.length}개 중 3개)` : ""}</h2>
           <Link href={`${base}/tasks`} className="flex items-center text-sm text-muted underline">전체 보기<span className="sr-only"> 할 일</span></Link>
         </div>
         <TaskList
@@ -136,18 +147,18 @@ export default async function Home(props: PageProps<"/c/[token]">) {
 
       <section className="mt-6" aria-labelledby="h-urgent">
         <div className="mb-2 flex items-baseline justify-between">
-          <h2 id="h-urgent" className="font-bold">{urgent?.deadline.state === "open" ? "마감이 가장 가까운 지원" : "먼저 확인해볼 지원"}</h2>
+          <h2 id="h-urgent" className="font-semibold">{urgent?.deadline.state === "open" ? "마감이 가장 가까운 지원" : "먼저 확인해볼 지원"}</h2>
           <Link href={`${base}/benefits`} className="flex items-center text-sm text-muted underline">전체 보기<span className="sr-only"> 지원</span></Link>
         </div>
         {urgent ? (
           <BenefitCard r={urgent} href={`${base}/benefits/${urgent.benefit.id}`} status={status[urgent.benefit.id]} />
         ) : (
-          <p className="rounded-xl border border-line bg-card p-4 text-muted">확인이 필요한 지원을 모두 살펴봤어요</p>
+          <p className="rounded-xl bg-card shadow-card p-4 text-muted">확인이 필요한 지원을 모두 살펴봤어요</p>
         )}
       </section>
 
       <nav className="mt-6" aria-label="바로 가기">
-        <ul className="divide-y divide-line rounded-xl border border-line bg-card">
+        <ul className="divide-y divide-line rounded-xl bg-card shadow-card">
           {[
             [`${base}/scan`, "안내문·약봉투 촬영해서 할 일 만들기"],
             [`${base}/chat`, "내 서류에 적힌 내용 물어보기"],
@@ -159,12 +170,12 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       </nav>
 
       <section className="mt-6" aria-labelledby="h-act">
-        <h2 id="h-act" className="mb-2 font-bold">가족 최근 활동</h2>
-        <ul className="divide-y divide-line rounded-xl border border-line bg-card">
+        <h2 id="h-act" className="mb-2 font-semibold">가족 최근 활동</h2>
+        <ul className="divide-y divide-line rounded-xl bg-card shadow-card">
           {activity.slice(0, 3).map((a) => <li key={a.id} className="px-4 py-3 text-sm">{a.text}</li>)}
         </ul>
         {members.length < 2 && (
-          <Link href={`${base}/family`} className="mt-3 flex items-center justify-center rounded-xl border border-accent px-5 py-3 font-bold text-accent">가족 초대해서 나누기</Link>
+          <Link href={`${base}/family`} className="mt-3 flex items-center justify-center rounded-full bg-accent-soft px-5 py-3 font-semibold text-accent">가족 초대해서 나누기</Link>
         )}
       </section>
     </>

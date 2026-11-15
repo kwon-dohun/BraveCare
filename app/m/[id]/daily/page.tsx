@@ -12,7 +12,7 @@ export default async function MemberDaily(props: PageProps<"/m/[id]/daily">) {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-5 pb-16 pt-6">
       <BackLink href={`/m/${id}`}>내 할 일</BackLink>
-      <h1 className="mt-2 text-2xl font-bold">저녁 안부 체크</h1>
+      <h1 className="mt-2 text-2xl font-semibold">저녁 안부 체크</h1>
       <p className="mt-1 text-muted">오늘 하루를 10초 만에 남겨요. 가족 모두가 같은 기록을 봐요.</p>
       <DailyForm key={today ? "saved" : "new"} auth={auth} today={today} />
     </main>

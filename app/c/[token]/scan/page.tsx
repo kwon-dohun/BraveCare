@@ -18,12 +18,12 @@ export default async function Scan(props: PageProps<"/c/[token]/scan">) {
   return (
     <>
       <BackLink href={base}>홈</BackLink>
-      <h1 className="mt-2 text-2xl font-bold">서류로 할 일 만들기</h1>
+      <h1 className="mt-2 text-2xl font-semibold">서류로 할 일 만들기</h1>
       <p className="mb-5 mt-1 text-muted">서류에 적힌 내용만 그대로 옮겨요. 요약하거나 설명을 덧붙이지 않아요.</p>
       <ScanFlow auth={auth} base={base} />
       {docs.length > 0 && (
         <section className="mt-8" aria-labelledby="kp">
-          <h2 id="kp" className="font-bold">보관한 서류 글자 ({docs.length})</h2>
+          <h2 id="kp" className="font-semibold">보관한 서류 글자 ({docs.length})</h2>
           <p className="text-sm text-muted">&lsquo;서류 내용 물어보기&rsquo;가 이 글자만 근거로 답해요. 지우면 바로 사라져요.</p>
           <Kept auth={auth} docs={docs} />
         </section>

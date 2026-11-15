@@ -1,16 +1,19 @@
 @import "tailwindcss";
 
-/* 클라우드 민트: 오프화이트 바탕 + 더스티 민트 면 + 딥 틸 버튼 하나 */
+/* 민트코어: 민트 기운이 도는 흰 바탕, 테두리 대신 그림자로 띄운 흰 카드, 젤리 민트 버튼 하나 */
 :root {
-  --background: #f4f1ea;
-  --foreground: #16302b;
-  --muted: #5e6b66;
-  --line: #e3ded3;
+  --background: #f4faf7;
+  --foreground: #15302a;
+  --muted: #5f716a;
+  --line: #e3efe9;
   --card: #ffffff;
-  --accent: #0e5c4f;
-  --accent-soft: #ddf1e7;
+  --primary: #62deae; /* 주요 버튼 바탕. 글자는 --ink */
+  --ink: #0b3d2e;
+  --accent: #0b7a57; /* 링크·활성 탭·강조 글자 (흰 바탕 대비 5.3:1) */
+  --accent-soft: #dff7ec;
   --warn: #92400e;
-  --warn-soft: #fdf0d5;
+  --warn-soft: #fff1e6;
+  --peach: #ffcdb8; /* 씩씩이 볼터치 전용 */
 }
 
 @theme inline {
@@ -19,16 +22,20 @@
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-ink: var(--ink);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
+  --color-peach: var(--peach);
   --font-sans: "Pretendard Variable", Pretendard, system-ui, sans-serif;
-  --radius-xl: 1.125rem; /* 카드·입력칸 모서리를 18px로 */
+  --radius-xl: 1.25rem; /* 카드 모서리 20px */
+  --shadow-card: 0 1px 2px rgb(21 48 42 / 0.04), 0 8px 20px -6px rgb(21 48 42 / 0.08);
 }
 
 html {
-  font-size: 17px; /* 고령 가족 참여자를 고려해 기본 글자를 키운다 */
+  font-size: 16px;
   color-scheme: light;
 }
 
@@ -36,20 +43,21 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif;
-  line-height: 1.6;
-  letter-spacing: -0.01em;
+  line-height: 1.55;
+  letter-spacing: -0.015em;
   word-break: keep-all; /* 한글을 단어 중간에서 자르지 않는다 */
   overflow-wrap: anywhere;
   accent-color: var(--accent); /* 체크박스·라디오·슬라이더 */
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1, h2 {
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
   text-wrap: balance;
 }
 
 h1 {
-  font-weight: 800; /* 화면 제목은 모두 한 단계 더 굵게. 유틸리티 레이어보다 우선 */
+  font-weight: 700; /* 화면 제목 굵기를 하나로. 유틸리티 레이어보다 우선 */
 }
 
 ::selection {
@@ -77,14 +85,34 @@ h1 {
     min-height: 44px;
     list-style: none;
   }
+  /* 체크박스: 둥근 네모 + 젤리 민트 체크 */
+  input[type="checkbox"] {
+    appearance: none;
+    width: 1.375rem;
+    height: 1.375rem;
+    min-height: 0;
+    flex-shrink: 0;
+    border: 1.5px solid #c5d9cf;
+    border-radius: 0.5rem;
+    background: var(--card) center / 75% no-repeat;
+    transition: background-color 120ms ease-out, border-color 120ms ease-out;
+    cursor: pointer;
+  }
+  input[type="checkbox"]:checked {
+    border-color: var(--primary);
+    background-color: var(--primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230b3d2e' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  }
+  input[type="checkbox"]:disabled { opacity: 0.4; cursor: default; }
+
   summary::-webkit-details-marker { display: none; }
   summary::after {
     content: "";
-    width: 0.5em;
-    height: 0.5em;
+    width: 0.45em;
+    height: 0.45em;
     margin-right: 0.25em;
-    border-right: 2px solid var(--muted);
-    border-bottom: 2px solid var(--muted);
+    border-right: 1.75px solid var(--muted);
+    border-bottom: 1.75px solid var(--muted);
     transform: translateY(-25%) rotate(45deg);
     transition: transform 160ms ease-out;
   }
@@ -94,14 +122,16 @@ h1 {
 }
 
 /* 주요 버튼은 화면마다 하나, 알약 모양. 유틸리티 레이어보다 우선한다 */
-a.bg-accent, button.bg-accent, label.bg-accent {
+a.bg-primary, button.bg-primary, label.bg-primary {
   border-radius: 9999px;
-  transition: transform 120ms ease-out;
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1), filter 140ms ease-out;
 }
-a.bg-accent:active, button.bg-accent:active, label.bg-accent:active {
-  transform: scale(0.98);
+a.bg-primary:active, button.bg-primary:active, label.bg-primary:active {
+  transform: scale(0.97);
+  filter: brightness(0.96);
 }
-/* 바텀시트가 아래에서 올라온다. 이 앱의 유일한 등장 모션 */
+
+/* 바텀시트가 아래에서 올라온다 */
 dialog.sheet[open] {
   animation: sheet-up 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -111,7 +141,18 @@ dialog.sheet[open]::backdrop {
 @keyframes sheet-up { from { transform: translateY(100%); } }
 @keyframes fade-in { from { opacity: 0; } }
 
+/* 씩씩이가 가끔 고개를 까딱인다. 홈 인사말에서만 쓴다 */
+.mascot-bob {
+  animation: bob 3.2s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+@keyframes bob {
+  0%, 70%, 100% { transform: rotate(0deg); }
+  78% { transform: rotate(-6deg); }
+  86% { transform: rotate(4deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  a.bg-accent, button.bg-accent, label.bg-accent { transition: none; }
-  dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
+  a.bg-primary, button.bg-primary, label.bg-primary { transition: none; }
+  dialog.sheet[open], dialog.sheet[open]::backdrop, .mascot-bob { animation: none; }
 }

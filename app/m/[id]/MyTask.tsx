@@ -12,8 +12,8 @@ export default function MyTask({ auth, task, when, overdue }: { auth: Auth; task
   const { run, pending, err } = useAct();
 
   return (
-    <li className="rounded-xl border border-line bg-card p-4">
-      <p className={`text-lg ${task.done ? "text-muted line-through" : "font-medium"}`}>{task.title}</p>
+    <li className="rounded-xl bg-card shadow-card p-4">
+      <p className={`text-[1.0625rem] ${task.done ? "text-muted line-through" : "font-medium"}`}>{task.title}</p>
       <p className={`text-sm ${overdue ? "text-warn" : "text-muted"}`}>{when || "날짜 미정"}{overdue ? " · 지남" : ""}</p>
       {task.source === "doc" && task.source_quote && <p className="mt-1 text-sm text-muted">안내문 원문: “{task.source_quote}”</p>}
       {task.memo && !editing && <p className="mt-2 rounded-lg bg-background px-3 py-2 text-sm">메모: {task.memo}</p>}
@@ -24,7 +24,7 @@ export default function MyTask({ auth, task, when, overdue }: { auth: Auth; task
           <textarea id={`m-${task.id}`} rows={2} maxLength={500} value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="가족에게 남길 말" className="w-full rounded-xl border border-line px-3 py-2" />
           <div className="mt-2 flex gap-2">
             <button type="button" onClick={() => { setMemo(task.memo ?? ""); setEditing(false); }} className="flex-1 rounded-xl border border-line px-4">취소</button>
-            <button disabled={pending} className="flex-1 rounded-xl border border-accent px-4 font-bold text-accent">메모 저장</button>
+            <button disabled={pending} className="flex-1 rounded-full bg-accent-soft px-4 font-semibold text-accent">메모 저장</button>
           </div>
         </form>
       )}
@@ -36,7 +36,7 @@ export default function MyTask({ auth, task, when, overdue }: { auth: Auth; task
       {!editing && (
         <div className="mt-3 flex gap-2">
           <button disabled={pending} onClick={() => run(() => toggleTask(auth, task.id, !task.done))}
-            className={`flex-1 rounded-xl px-4 py-3 text-lg font-bold disabled:opacity-40 ${task.done ? "border border-line text-muted" : "bg-accent text-white"}`}>
+            className={`flex-1 rounded-xl px-4 py-3 font-semibold disabled:opacity-40 ${task.done ? "border border-line text-muted" : "bg-primary text-ink"}`}>
             {pending ? "저장하는 중…" : task.done ? "완료 취소" : "완료했어요"}
           </button>
           <button onClick={() => setEditing(true)} className="rounded-xl border border-line px-4">{task.memo ? "메모 수정" : "메모"}</button>

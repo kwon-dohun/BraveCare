@@ -83,28 +83,28 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
 
   return (
     <>
-      <label className="flex cursor-pointer items-center justify-center rounded-xl bg-accent px-5 py-4 text-lg font-bold text-white">
+      <label className="flex cursor-pointer items-center justify-center rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink">
         {busy ? "읽는 중…" : rows ? "다시 촬영하기" : "촬영하거나 사진 고르기"}
         <input type="file" accept="image/*" multiple className="sr-only" disabled={!!busy} onChange={(e) => { onFiles(e.target.files); e.target.value = ""; }} />
       </label>
       <p className="mt-2 text-sm text-muted">퇴원 안내문, 약봉투, 영수증을 한 번에 {MAX}장까지 고를 수 있어요. 종이 전체가 보이게 밝은 곳에서 찍어주세요. 사진은 글자를 읽은 뒤 저장하지 않고, 읽은 글자만 보관해요.</p>
 
-      <details className="mt-4 rounded-xl border border-line bg-card p-4">
-        <summary className="cursor-pointer font-bold">병원 문자·알림톡 붙여넣기</summary>
+      <details className="mt-4 rounded-xl bg-card shadow-card p-4">
+        <summary className="cursor-pointer font-semibold">병원 문자·알림톡 붙여넣기</summary>
         <p className="mt-2 text-sm text-muted">예약 안내 문자를 복사해서 붙여넣으면 날짜가 적힌 줄을 일정으로 만들어요.</p>
         <button type="button" onClick={fromClipboard} className="mt-2 w-full rounded-xl border border-line px-4 py-2">복사한 글 붙여넣기</button>
         <label htmlFor="pt" className="sr-only">병원 문자 내용</label>
         <textarea id="pt" rows={4} maxLength={2000} value={paste} onChange={(e) => setPaste(e.target.value)} placeholder="예: [OO병원] 11월 27일(금) 14:00 정형외과 외래 예약" className="mt-2 w-full rounded-xl border border-line px-3 py-2" />
-        <button type="button" disabled={!!busy || paste.trim().length < 5} onClick={onPaste} className="mt-2 w-full rounded-xl border border-accent px-4 py-3 font-bold text-accent disabled:opacity-40">일정 찾기</button>
+        <button type="button" disabled={!!busy || paste.trim().length < 5} onClick={onPaste} className="mt-2 w-full rounded-full bg-accent-soft px-4 py-3 font-semibold text-accent disabled:opacity-40">일정 찾기</button>
       </details>
 
-      {busy && <p role="status" className="mt-4 rounded-xl border border-line bg-card p-4 text-muted">{busy}</p>}
+      {busy && <p role="status" className="mt-4 rounded-xl bg-card shadow-card p-4 text-muted">{busy}</p>}
       {err && <p role="alert" className="mt-3 text-warn">{err}</p>}
       {found.length > 0 && <p role="status" className="mt-3 text-sm text-accent">읽은 서류: {found.join(", ")}</p>}
 
       {rows && rows.length > 0 && (
         <section className="mt-5" aria-labelledby="rv">
-          <h2 id="rv" className="font-bold">찾은 항목을 원문과 비교해 주세요</h2>
+          <h2 id="rv" className="font-semibold">찾은 항목을 원문과 비교해 주세요</h2>
           <p className="text-sm text-muted">서류와 비교해 맞는 것만 체크하세요. 체크한 항목만 타임라인에 들어가요.</p>
           <ul className="mt-3 space-y-3">
             {rows.map((r, i) => (
@@ -128,7 +128,7 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
               </li>
             ))}
           </ul>
-          <button onClick={confirm} disabled={pending || chosen.length === 0} className="mt-5 w-full rounded-xl bg-accent px-5 py-4 text-lg font-bold text-white disabled:opacity-40">
+          <button onClick={confirm} disabled={pending || chosen.length === 0} className="mt-5 w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">
             {pending ? "추가하는 중…" : `확인한 ${chosen.length}개를 할 일에 추가`}
           </button>
         </section>

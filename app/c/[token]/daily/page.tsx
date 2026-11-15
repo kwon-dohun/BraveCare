@@ -3,6 +3,7 @@ import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
 import { TEMP_LABEL, PAIN_WORD } from "@/lib/report";
 import DailyForm from "@/components/DailyForm";
+import Mascot from "@/components/Mascot";
 
 export const metadata = { title: "기록 · 씩씩케어" };
 
@@ -11,12 +12,17 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
   const { actor, data, auth, base } = await adminPage(token);
   const checks = await loadDaily(actor.caseId);
   const today = checks.find((c) => c.check_date === data.today) ?? null;
-  const link = "flex flex-1 items-center justify-center rounded-xl border border-line bg-card px-3 py-3 text-center";
+  const link = "flex flex-1 items-center justify-center rounded-full bg-card px-3 py-2.5 text-center text-sm font-medium shadow-card";
 
   return (
     <>
-      <h1 className="text-2xl font-bold">저녁 안부 체크</h1>
-      <p className="mt-1 text-muted">저녁에 환자와 통화하거나 마주 앉아 오늘 하루를 남겨요. 하루 한 번, 10초면 돼요.</p>
+      <div className="flex items-center gap-3">
+        <Mascot size={60} mood={today ? "cheer" : "idle"} />
+        <div>
+          <h1 className="text-2xl">저녁 안부 체크</h1>
+          <p className="text-sm text-muted">{today ? "오늘 기록을 남겼어요. 고마워요!" : "환자와 오늘 하루를 10초 만에 남겨요"}</p>
+        </div>
+      </div>
       <div className="mt-4 flex gap-2">
         <Link href={`${base}/report`} className={link}>외래 리포트</Link>
         <Link href={`${base}/chat`} className={link}>서류 내용 물어보기</Link>
@@ -24,11 +30,11 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
       <DailyForm key={today ? "saved" : "new"} auth={auth} today={today} />
 
       <section className="mt-8" aria-labelledby="dh">
-        <h2 id="dh" className="font-bold">지난 기록 ({checks.length}일)</h2>
+        <h2 id="dh" className="font-semibold">지난 기록 ({checks.length}일)</h2>
         {checks.length === 0 ? (
-          <p className="mt-2 rounded-xl border border-line bg-card p-4 text-muted">아직 기록이 없어요. 하루만 남겨도 외래 리포트가 만들어져요.</p>
+          <p className="mt-2 rounded-xl bg-card shadow-card p-4 text-muted">아직 기록이 없어요. 하루만 남겨도 외래 리포트가 만들어져요.</p>
         ) : (
-          <ul className="mt-2 divide-y divide-line rounded-xl border border-line bg-card">
+          <ul className="mt-2 divide-y divide-line rounded-xl bg-card shadow-card">
             {checks.slice(0, 14).map((c) => (
               <li key={c.check_date} className="px-4 py-3 text-sm">
                 <span className="font-medium">{Number(c.check_date.slice(5, 7))}/{Number(c.check_date.slice(8))}</span>

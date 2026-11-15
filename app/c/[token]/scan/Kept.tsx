@@ -8,7 +8,7 @@ export default function Kept({ auth, docs }: { auth: Auth; docs: { id: string; l
   return (
     <>
       {err && <p role="alert" className="text-warn">{err}</p>}
-      <ul className={`mt-2 divide-y divide-line rounded-xl border border-line bg-card ${pending ? "opacity-60" : ""}`}>
+      <ul className={`mt-2 divide-y divide-line rounded-xl bg-card shadow-card ${pending ? "opacity-60" : ""}`}>
         {docs.map((d) => (
           <li key={d.id} className="flex items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-1">

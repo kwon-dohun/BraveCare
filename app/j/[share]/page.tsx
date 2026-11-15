@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import JoinForm from "./JoinForm";
+import { Logo } from "@/components/Mascot";
 
 export const metadata = { title: "가족으로 참여하기 · 씩씩케어", robots: { index: false } }; // 주소가 곧 열쇠라 검색에 남기지 않는다
 
@@ -13,7 +14,7 @@ export default async function Join(props: PageProps<"/j/[share]">) {
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-10">
-      <p className="font-extrabold text-accent">씩씩케어</p>
+      <Logo />
       {expired ? (
         <>
           <h1 className="mt-6 text-[1.75rem] leading-tight">초대 링크가 만료됐어요</h1>

@@ -22,11 +22,11 @@ export function Invite({ auth, path, expiresAt, expired }: { auth: Auth; path: s
   const share = async () => {
     try { await navigator.share({ title: "씩씩케어", text: TEXT, url: url() }); } catch {}
   };
-  const row = "flex w-full items-center justify-between rounded-xl border border-line bg-card px-4 py-3 text-left";
+  const row = "flex w-full items-center justify-between rounded-xl bg-card shadow-card px-4 py-3 text-left";
 
   return (
     <>
-      <button onClick={() => { setMsg(""); setOpen(true); }} className="flex w-full items-center justify-center rounded-xl bg-accent px-5 py-4 text-lg font-bold text-white">가족 초대하기</button>
+      <button onClick={() => { setMsg(""); setOpen(true); }} className="flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink">가족 초대하기</button>
       <Sheet open={open} onClose={() => setOpen(false)} title="초대 링크 보내기">
         {expired ? (
           <p className="rounded-xl bg-warn-soft p-3 text-warn">초대 링크가 만료됐어요. 새 링크를 만들어 보내주세요.</p>
@@ -59,7 +59,7 @@ export function RemoveMember({ auth, memberId, name }: { auth: Auth; memberId: s
     <span className="flex items-center gap-2 text-sm">
       {err && <span role="alert" className="text-warn">{err}</span>}
       <button onClick={() => setAsk(false)} className="rounded-lg border border-line px-3">취소</button>
-      <button disabled={pending} onClick={() => run(() => removeMember(auth, memberId))} className="rounded-lg bg-warn px-3 font-bold text-white">내보내기</button>
+      <button disabled={pending} onClick={() => run(() => removeMember(auth, memberId))} className="rounded-lg bg-warn px-3 font-semibold text-white">내보내기</button>
     </span>
   );
 }

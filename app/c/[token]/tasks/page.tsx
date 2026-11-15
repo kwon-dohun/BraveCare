@@ -27,10 +27,10 @@ export default async function Tasks(props: PageProps<"/c/[token]/tasks">) {
 
   return (
     <>
-      <h1 className="text-2xl font-bold">퇴원 타임라인</h1>
+      <h1 className="text-2xl font-semibold">퇴원 타임라인</h1>
       <p className="mt-1 text-sm text-muted">퇴원 준비부터 정기 외래까지 챙길 일이에요. 의료 판단은 담당 의료진에게 확인하세요.</p>
 
-      <Link href={`${base}/scan`} className="mt-4 flex items-center justify-center rounded-xl border border-accent px-5 py-3 font-bold text-accent">안내문·약봉투 촬영해서 할 일 추가</Link>
+      <Link href={`${base}/scan`} className="mt-4 flex items-center justify-center rounded-full bg-accent-soft px-5 py-3 font-semibold text-accent">안내문·약봉투 촬영해서 할 일 추가</Link>
 
       <nav aria-label="할 일 필터" className="mt-4 flex gap-2">
         {FILTERS.map(([v, label]) => {
@@ -45,13 +45,13 @@ export default async function Tasks(props: PageProps<"/c/[token]/tasks">) {
       </nav>
 
       {open.length === 0 && (
-        <p className="mt-4 rounded-xl border border-line bg-card p-4 text-muted">
+        <p className="mt-4 rounded-xl bg-card shadow-card p-4 text-muted">
           {f === "none" ? "담당자 없는 할 일이 없어요. 잘 나눠졌어요" : f === "mine" ? "내가 맡은 남은 일이 없어요" : "남은 할 일이 없어요"}
         </p>
       )}
       {[...groups].filter(([, list]) => list.length).map(([label, list]) => (
         <section key={label} className="mt-5" aria-label={label}>
-          <h2 className={`mb-2 text-sm font-bold ${label === LATE ? "text-warn" : "text-muted"}`}>{label} ({list.length})</h2>
+          <h2 className={`mb-2 text-sm font-semibold ${label === LATE ? "text-warn" : "text-muted"}`}>{label} ({list.length})</h2>
           <TaskList tasks={list} {...common} />
         </section>
       ))}
@@ -60,7 +60,7 @@ export default async function Tasks(props: PageProps<"/c/[token]/tasks">) {
 
       {done.length > 0 && (
         <details className="mt-6">
-          <summary className="flex cursor-pointer items-center font-bold">완료한 일 ({done.length})</summary>
+          <summary className="flex cursor-pointer items-center font-semibold">완료한 일 ({done.length})</summary>
           <div className="mt-3"><TaskList tasks={done} {...common} /></div>
         </details>
       )}

@@ -3,6 +3,7 @@ import { adminPage } from "@/lib/page-auth";
 import { Invite, RemoveMember } from "@/components/InviteButton";
 import { addDays } from "@/lib/timeline";
 import { dateLabel } from "@/lib/format";
+import Avatar from "@/components/Avatar";
 
 export const metadata = { title: "가족 · 씩씩케어" };
 
@@ -19,26 +20,29 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
 
   // 돌봄 일정표: 오늘부터 14일. 별도 입력 없이 날짜 있는 할 일과 담당자로 만든다.
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i)).map((d) => ({ d, list: tasks.filter((t) => t.due_date === d && !t.done) }));
-  const tabCls = (on: boolean) => `flex flex-1 items-center justify-center border-b-2 ${on ? "border-accent font-bold text-accent" : "border-line text-muted"}`;
+  const tabCls = (on: boolean) => `flex flex-1 items-center justify-center rounded-full text-sm transition-colors ${on ? "bg-accent-soft font-semibold text-accent" : "text-muted"}`;
 
   return (
     <>
-      <h1 className="text-2xl font-bold">가족</h1>
-      <nav aria-label="가족 보기" className="mt-3 flex">
+      <h1 className="text-2xl font-semibold">가족</h1>
+      <nav aria-label="가족 보기" className="mt-4 flex rounded-full bg-card p-1 shadow-card">
         <Link href={`${base}/family`} aria-current={tab === "members" ? "page" : undefined} className={tabCls(tab === "members")}>구성원</Link>
         <Link href={`${base}/family?tab=schedule`} aria-current={tab === "schedule" ? "page" : undefined} className={tabCls(tab === "schedule")}>돌봄 일정표</Link>
       </nav>
 
       {tab === "members" ? (
         <>
-          <ul className="mt-5 divide-y divide-line rounded-xl border border-line bg-card">
+          <ul className="mt-5 divide-y divide-line rounded-xl bg-card shadow-card">
             {members.map((m) => {
               const all = mine(m.id);
               return (
                 <li key={m.id} className="flex items-center justify-between gap-2 px-4 py-3">
-                  <div>
-                    <p className="font-medium">{m.name}{m.role === "admin" ? " (나 · 관리자)" : ""}</p>
-                    <p className="text-sm text-muted">맡은 일 {all.length}개 · 완료 {all.filter((t) => t.done).length}개</p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar name={m.name} />
+                    <div className="min-w-0">
+                      <p className="font-medium">{m.name}{m.role === "admin" && <span className="ml-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-accent">나 · 관리자</span>}</p>
+                      <p className="text-xs text-muted tabular-nums">맡은 일 {all.length}개 · 완료 {all.filter((t) => t.done).length}개</p>
+                    </div>
                   </div>
                   {m.role !== "admin" && <RemoveMember auth={auth} memberId={m.id} name={m.name} />}
                 </li>
@@ -54,8 +58,8 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
           <p className="mt-4 text-sm text-muted">앞으로 2주 동안 누가 언제 무엇을 맡는지 보여줘요. 할 일에 날짜와 담당자를 정하면 여기에 나와요.</p>
           <ol className="mt-3 space-y-2">
             {days.map(({ d, list }) => (
-              <li key={d} className={`rounded-xl border p-3 ${list.length ? "border-line bg-card" : "border-transparent"}`}>
-                <p className={`text-sm font-bold ${list.length ? "" : "text-muted"}`}>
+              <li key={d} className={`rounded-xl px-4 py-3 ${list.length ? "bg-card shadow-card" : ""}`}>
+                <p className={`text-sm font-semibold ${list.length ? "" : "text-muted"}`}>
                   {dateLabel(d, null, today)} ({WEEKDAY[new Date(d).getUTCDay()]}){d === data.input.dischargeDate ? " · 퇴원일" : ""}
                   {!list.length && <span className="font-normal"> · 일정 없음</span>}
                 </p>
@@ -64,8 +68,8 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
                     {list.map((t) => (
                       <li key={t.id}>
                         <Link href={`${base}/tasks/${t.id}`} className="flex items-center justify-between gap-3">
-                          <span>{t.title}</span>
-                          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-sm ${t.assignee_id ? "bg-accent-soft text-accent" : "bg-warn-soft text-warn"}`}>{nameOf(t.assignee_id) ?? "담당자 없음"}</span>
+                          <span className="text-[0.9375rem]">{t.title}</span>
+                          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${t.assignee_id ? "bg-accent-soft text-accent" : "bg-warn-soft text-warn"}`}>{nameOf(t.assignee_id) ?? "담당자 없음"}</span>
                         </Link>
                       </li>
                     ))}

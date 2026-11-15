@@ -19,10 +19,10 @@ export default function JoinForm({ share }: { share: string }) {
         });
       }}
     >
-      <label htmlFor="jn" className="font-bold">내 이름</label>
-      <input id="jn" value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder="예: 동생" className="mt-2 w-full rounded-xl border border-line bg-card px-4 py-3 text-lg" />
+      <label htmlFor="jn" className="font-semibold">내 이름</label>
+      <input id="jn" value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder="예: 동생" className="mt-2 w-full rounded-xl border border-line bg-card px-4 py-3 text-[1.0625rem]" />
       {err && <p role="alert" className="mt-2 text-warn">{err}</p>}
-      <button disabled={pending || !name.trim()} className="mt-5 w-full rounded-xl bg-accent px-5 py-4 text-lg font-bold text-white disabled:opacity-40">참여하기</button>
+      <button disabled={pending || !name.trim()} className="mt-5 w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">참여하기</button>
     </form>
   );
 }

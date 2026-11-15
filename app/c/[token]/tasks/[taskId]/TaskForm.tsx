@@ -24,37 +24,37 @@ export default function TaskForm({ auth, back, members, task }: Props) {
   return (
     <form className="mt-5 space-y-4" onSubmit={(e) => { e.preventDefault(); run(() => updateTask(auth, task.id, { title, dueDate: date || null, assigneeId: assignee || null, memo }), done); }}>
       <div>
-        <label htmlFor="tt" className="font-bold">할 일</label>
+        <label htmlFor="tt" className="font-semibold">할 일</label>
         <textarea id="tt" rows={2} maxLength={100} value={title} onChange={(e) => setTitle(e.target.value)} className={field} />
       </div>
       <div>
-        <label htmlFor="td" className="font-bold">날짜</label>
+        <label htmlFor="td" className="font-semibold">날짜</label>
         <input id="td" type="date" value={date} onChange={(e) => setDate(e.target.value)} className={field} />
         {task.rel_day !== null && (
           <p className="mt-1 text-sm text-muted">지금은 퇴원일 기준으로 자동 계산돼요. 날짜를 직접 바꾸면 퇴원일이 바뀌어도 이 날짜는 그대로 유지돼요.</p>
         )}
       </div>
       <div>
-        <label htmlFor="ta" className="font-bold">담당자</label>
+        <label htmlFor="ta" className="font-semibold">담당자</label>
         <select id="ta" value={assignee} onChange={(e) => setAssignee(e.target.value)} className={field}>
           <option value="">담당자 없음</option>
           {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
       </div>
       <div>
-        <label htmlFor="tm" className="font-bold">메모</label>
+        <label htmlFor="tm" className="font-semibold">메모</label>
         <textarea id="tm" rows={3} maxLength={500} value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="가족에게 남길 말 (예: 진료 예약증은 냉장고 옆에 있어요)" className={field} />
       </div>
       {err && <p role="alert" className="text-warn">{err}</p>}
-      <button disabled={pending || !title.trim()} className="w-full rounded-xl bg-accent px-5 py-4 text-lg font-bold text-white disabled:opacity-40">{pending ? "저장하는 중…" : "저장"}</button>
+      <button disabled={pending || !title.trim()} className="w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">{pending ? "저장하는 중…" : "저장"}</button>
 
       <div className="pt-6">
         {confirmDel ? (
           <div className="rounded-xl border border-warn bg-warn-soft p-4">
             <p className="text-warn">이 할 일을 삭제할까요? 되돌릴 수 없어요.</p>
             <div className="mt-3 flex gap-2">
-              <button type="button" onClick={() => setConfirmDel(false)} className="flex-1 rounded-xl border border-line bg-card px-4">취소</button>
-              <button type="button" disabled={pending} onClick={() => run(() => deleteTask(auth, task.id), done)} className="flex-1 rounded-xl bg-warn px-4 font-bold text-white">삭제</button>
+              <button type="button" onClick={() => setConfirmDel(false)} className="flex-1 rounded-xl bg-card shadow-card px-4">취소</button>
+              <button type="button" disabled={pending} onClick={() => run(() => deleteTask(auth, task.id), done)} className="flex-1 rounded-xl bg-warn px-4 font-semibold text-white">삭제</button>
             </div>
           </div>
         ) : (

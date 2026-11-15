@@ -20,25 +20,25 @@ export function StatusPicker({ auth, benefitId, current }: { auth: Auth; benefit
   const [pick, setPick] = useState(current);
   const { run, pending, err } = useAct();
   return (
-    <div className="rounded-xl border border-line bg-card p-4">
+    <div className="rounded-xl bg-card shadow-card p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm text-muted">신청 상태</p>
-          <p className="text-lg font-bold">{STATUS_LABEL[current]}</p>
+          <p className="text-[1.0625rem] font-semibold">{STATUS_LABEL[current]}</p>
         </div>
-        <button onClick={() => { setPick(current); setOpen(true); }} className="rounded-xl border border-accent px-4 font-bold text-accent">상태 바꾸기</button>
+        <button onClick={() => { setPick(current); setOpen(true); }} className="rounded-full bg-accent-soft px-4 font-semibold text-accent">상태 바꾸기</button>
       </div>
       <Sheet open={open} onClose={() => setOpen(false)} title="신청 상태를 알려주세요">
         <div role="radiogroup" aria-label="신청 상태" className="space-y-2">
           {Object.entries(STATUS_LABEL).map(([v, l]) => (
-            <label key={v} className={`flex items-center gap-3 rounded-xl border p-3 ${pick === v ? "border-accent bg-accent-soft" : "border-line"}`}>
+            <label key={v} className={`flex items-center gap-3 rounded-xl p-3 ${pick === v ? "bg-accent-soft font-semibold text-accent ring-[1.5px] ring-primary" : "bg-card shadow-card"}`}>
               <input type="radio" name="st" value={v} checked={pick === v} onChange={() => setPick(v)} className="h-5 w-5" />
               <span><span className="font-medium">{l}</span><span className="block text-sm text-muted">{HINT[v]}</span></span>
             </label>
           ))}
         </div>
         {err && <p role="alert" className="mt-2 text-warn">{err}</p>}
-        <button disabled={pending || pick === current} onClick={() => run(() => setBenefitStatus(auth, benefitId, pick), () => setOpen(false))} className="mt-4 w-full rounded-xl bg-accent px-5 py-4 text-lg font-bold text-white disabled:opacity-40">
+        <button disabled={pending || pick === current} onClick={() => run(() => setBenefitStatus(auth, benefitId, pick), () => setOpen(false))} className="mt-4 w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">
           {pending ? "저장하는 중…" : "저장"}
         </button>
         <p className="mt-2 text-center text-sm text-muted">바꾸면 가족 활동에 공유돼요</p>
@@ -57,7 +57,7 @@ export function DocsChecklist({ auth, benefitId, docs, checked }: { auth: Auth; 
   };
   return (
     <>
-      <ul className="mt-2 divide-y divide-line rounded-xl border border-line bg-card">
+      <ul className="mt-2 divide-y divide-line rounded-xl bg-card shadow-card">
         {docs.map((d) => (
           <li key={d}>
             <label className="flex items-center gap-3 px-4 py-3">
