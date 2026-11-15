@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 퇴원노트
 
-## Getting Started
+가족의 퇴원을 앞둔 보호자가 퇴원 전후 30일 동안 **받을 수 있는 지원, 해야 할 일, 가족 분담**을 한곳에서 정리하는 모바일 웹 서비스.
 
-First, run the development server:
+## 기능
+
+| 기능 | 설명 |
+| --- | --- |
+| 퇴원 정보 입력 | 한 화면 한 질문 7문항, 임시 저장, 요약에서 항목별 수정 |
+| 지원 찾기 | 규칙표 기반 판정(대상 가능성 높음 / 확인 필요 / 해당 없음), 판정 이유·마감 D-day·출처 표시. AI 판정 없음 |
+| 지원 상세 | 전화 걸기, 필요 서류 체크리스트, 신청 상태 변경(가족 활동에 공유) |
+| 퇴원 타임라인 | 퇴원 3일 전~30일 후 템플릿 할 일(의료 지시가 아닌 "병원에 확인할 질문" 형태), 담당자·메모·직접 추가 |
+| 안내문 촬영 | 사진에서 원문 그대로 항목 추출 → 사용자가 확인한 항목만 타임라인에 반영 |
+| 가족 분담 | 초대 링크(7일 만료, 재발급)로 앱 설치·가입 없이 참여, 자기 담당만 완료 체크, 돌봄 일정표 |
+| 설정 | 퇴원일 변경 시 상대 일정 재계산, 내 주소 복사, 전체 삭제 |
+
+## 설계 원칙
+
+- **AI는 의료 판단을 하지 않는다.** 안내문 추출은 모델이 옮겨 적은 원문에 실제로 있는 문장만 통과시킨다(`lib/extract.ts`의 `verifyItems`). 날짜가 하나로 분명히 읽히지 않는 일정은 사용자가 직접 입력하기 전까지 반영하지 않는다. 원본 사진은 저장하지 않는다.
+- **지원 판정은 규칙표**(`lib/benefits.ts`)로만 한다. 제도가 바뀌면 이 파일만 고친다. 제도마다 출처와 마지막 확인일을 화면에 보여준다.
+- **로그인 없음.** 추측 불가능한 토큰이 들어간 주소가 곧 권한이다: 관리자 `/c/<토큰>`, 초대 `/j/<토큰>`, 가족 `/m/<멤버ID>`.
+- **DB는 서버에서만 접근.** 모든 표에 RLS를 켜고 정책을 두지 않아 공개 키로는 아무것도 읽히지 않는다.
+
+## 실행
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env.local`에 아래 값이 필요하다(커밋 금지).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+NEXT_PUBLIC_SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+GPT_API_KEY=
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`GPT_API_KEY`가 없으면 안내문 촬영만 동작하지 않고 나머지는 그대로 쓸 수 있다.
 
-## Learn More
+## 테스트
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+node --test lib/benefits.test.ts lib/extract.test.ts
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 구조
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `lib/benefits.ts` 지원 제도 규칙표와 판정 엔진, 입력 검증
+- `lib/timeline.ts` 타임라인 템플릿
+- `lib/extract.ts` 안내문 추출 검증·날짜 해석
+- `app/actions.ts`, `app/scan-actions.ts` 서버 액션(권한 확인 포함)
+- `app/c/[token]` 관리자 화면, `app/m/[id]` 가족 화면, `app/j/[share]` 초대 참여
+- `supabase/schema.sql` DB 스키마
 
-## Deploy on Vercel
+## 한계
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 지원 제도는 서울 기준 5개이며, 내용은 2026-11-15에 확인한 초안이다. 최종 대상 여부는 운영 기관이 결정한다.
+- 푸시·문자 알림은 없다. 마감과 오늘 할 일은 앱 안에서만 보여준다.

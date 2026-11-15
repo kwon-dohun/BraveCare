@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { evaluate, sortResults, type CaseInput } from "./benefits.ts";
+import { evaluate, sortResults, validateInput, type CaseInput } from "./benefits.ts";
 
 const persona: CaseInput = {
   dischargeDate: "2026-11-20", birthYear: 1954, sido: "서울", sigungu: "마포구",
@@ -36,6 +36,18 @@ test("신청 기간 지나면 closed", () => {
 
 test("만 65세 경계(2026-1961=65)는 확인 필요", () => {
   assert.equal(by(evaluate({ ...persona, birthYear: 1961 }, "2026-11-15"), "ltc_grade").verdict, "check");
+});
+
+test("입력 검증: 범위 밖 퇴원일·잘못된 값은 거부", () => {
+  assert.ok(validateInput(persona, "2026-11-15"));
+  assert.ok(validateInput({ ...persona, dischargeDate: null }, "2026-11-15"));
+  assert.equal(validateInput({ ...persona, dischargeDate: "2026-10-15" }, "2026-11-15"), null); // 31일 전
+  assert.equal(validateInput({ ...persona, dischargeDate: "2027-01-15" }, "2026-11-15"), null); // 61일 뒤
+  assert.equal(validateInput({ ...persona, dischargeDate: "내일" }, "2026-11-15"), null);
+  assert.equal(validateInput({ ...persona, birthYear: 2030 }, "2026-11-15"), null);
+  assert.equal(validateInput({ ...persona, reason: "x" }, "2026-11-15"), null);
+  assert.equal(validateInput(null, "2026-11-15"), null);
+  assert.equal(validateInput({ ...persona, helpers: 99 }, "2026-11-15")!.helpers, 5);
 });
 
 test("정렬: 높음이 확인 필요보다 먼저", () => {

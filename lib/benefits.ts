@@ -132,6 +132,31 @@ export const BENEFITS: Benefit[] = [
   },
 ];
 
+export const REASONS: Reason[] = ["ortho", "cancer", "brain", "heart", "surgery", "internal", "other"];
+export const LIVINGS: Living[] = ["alone", "spouse", "family"];
+
+// 신뢰 경계 검증: 클라이언트가 보낸 값을 그대로 믿지 않는다. 잘못되면 null.
+export function validateInput(raw: unknown, today: string): CaseInput | null {
+  const r = raw as Partial<CaseInput> | null;
+  if (!r || typeof r !== "object") return null;
+  const d = r.dischargeDate ?? null;
+  if (d !== null) {
+    if (typeof d !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(d) || Number.isNaN(Date.parse(d))) return null;
+    const diff = dayDiff(d, today);
+    if (diff < -30 || diff > 60) return null;
+  }
+  if (!Number.isInteger(r.birthYear) || r.birthYear! < 1900 || r.birthYear! > Number(today.slice(0, 4))) return null;
+  if (!REASONS.includes(r.reason as Reason) || !LIVINGS.includes(r.living as Living)) return null;
+  if (typeof r.sido !== "string" || !r.sido || r.sido.length > 10) return null;
+  const helpers = Number(r.helpers);
+  return {
+    dischargeDate: d, birthYear: r.birthYear!, sido: r.sido, sigungu: typeof r.sigungu === "string" ? r.sigungu.slice(0, 20) : "",
+    reason: r.reason as Reason, living: r.living as Living,
+    helpers: Number.isFinite(helpers) ? Math.min(5, Math.max(0, Math.trunc(helpers))) : 0,
+    income: (["basic", "near", "none", "unknown"] as const).includes(r.income as Income) ? (r.income as Income) : null,
+  };
+}
+
 export const STATUS_LABEL: Record<string, string> = {
   none: "미신청", applied: "신청함", approved: "승인", rejected: "거절", dropped: "포기",
 };

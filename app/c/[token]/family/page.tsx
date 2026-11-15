@@ -1,27 +1,81 @@
+import Link from "next/link";
 import { adminPage } from "@/lib/page-auth";
-import InviteButton from "@/components/InviteButton";
+import { Invite, RemoveMember } from "@/components/InviteButton";
+import { addDays } from "@/lib/timeline";
+import { dateLabel } from "@/lib/format";
 
 export const metadata = { title: "가족 · 퇴원노트" };
 
+const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
+
 export default async function Family(props: PageProps<"/c/[token]/family">) {
   const { token } = await props.params;
-  const { data } = await adminPage(token);
-  const doneBy = (id: string) => data.tasks.filter((t) => t.assignee_id === id && t.done).length;
-  const mine = (id: string) => data.tasks.filter((t) => t.assignee_id === id).length;
+  const tab = (await props.searchParams).tab === "schedule" ? "schedule" : "members";
+  const { data, auth, base } = await adminPage(token);
+  const { members, tasks, today } = data;
+  const mine = (id: string) => tasks.filter((t) => t.assignee_id === id);
+  const expired = data.shareExpired;
+  const nameOf = (id: string | null) => members.find((m) => m.id === id)?.name;
+
+  // 돌봄 일정표: 오늘부터 14일. 별도 입력 없이 날짜 있는 할 일과 담당자로 만든다.
+  const days = Array.from({ length: 14 }, (_, i) => addDays(today, i)).map((d) => ({ d, list: tasks.filter((t) => t.due_date === d && !t.done) }));
+  const tabCls = (on: boolean) => `flex flex-1 items-center justify-center border-b-2 ${on ? "border-accent font-bold text-accent" : "border-line text-muted"}`;
 
   return (
     <>
       <h1 className="text-2xl font-bold">가족</h1>
-      <p className="mt-1 text-muted">링크를 받은 가족은 앱 설치 없이 이름만 입력하고 참여해요. 자기 담당 할 일을 보고 완료 체크할 수 있어요.</p>
-      <ul className="mt-5 divide-y divide-line rounded-xl border border-line bg-card">
-        {data.members.map((m) => (
-          <li key={m.id} className="flex items-center justify-between px-4 py-3">
-            <span className="font-medium">{m.name}{m.role === "admin" ? " (나)" : ""}</span>
-            <span className="text-sm text-muted">담당 {mine(m.id)}개 · 완료 {doneBy(m.id)}개</span>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-5"><InviteButton path={`/j/${data.shareToken}`} /></div>
+      <nav aria-label="가족 보기" className="mt-3 flex">
+        <Link href={`${base}/family`} aria-current={tab === "members" ? "page" : undefined} className={tabCls(tab === "members")}>구성원</Link>
+        <Link href={`${base}/family?tab=schedule`} aria-current={tab === "schedule" ? "page" : undefined} className={tabCls(tab === "schedule")}>돌봄 일정표</Link>
+      </nav>
+
+      {tab === "members" ? (
+        <>
+          <ul className="mt-5 divide-y divide-line rounded-xl border border-line bg-card">
+            {members.map((m) => {
+              const all = mine(m.id);
+              return (
+                <li key={m.id} className="flex items-center justify-between gap-2 px-4 py-3">
+                  <div>
+                    <p className="font-medium">{m.name}{m.role === "admin" ? " (나 · 관리자)" : ""}</p>
+                    <p className="text-sm text-muted">맡은 일 {all.length}개 · 완료 {all.filter((t) => t.done).length}개</p>
+                  </div>
+                  {m.role !== "admin" && <RemoveMember auth={auth} memberId={m.id} name={m.name} />}
+                </li>
+              );
+            })}
+          </ul>
+          {members.length < 2 && <p className="mt-3 text-muted">아직 혼자예요. 가족을 초대하면 할 일을 나눠 맡길 수 있어요.</p>}
+          <div className="mt-5"><Invite auth={auth} path={`/j/${data.shareToken}`} expiresAt={data.shareExpiresAt} expired={expired} /></div>
+          <p className="mt-3 text-sm text-muted">초대받은 가족은 앱 설치 없이 이름만 입력하고 참여해요. 자기 담당 할 일을 보고 완료 체크와 메모를 할 수 있고, 퇴원 정보는 바꿀 수 없어요.</p>
+        </>
+      ) : (
+        <>
+          <p className="mt-4 text-sm text-muted">앞으로 2주 동안 누가 언제 무엇을 맡는지 보여줘요. 할 일에 날짜와 담당자를 정하면 여기에 나와요.</p>
+          <ol className="mt-3 space-y-2">
+            {days.map(({ d, list }) => (
+              <li key={d} className={`rounded-xl border p-3 ${list.length ? "border-line bg-card" : "border-transparent"}`}>
+                <p className={`text-sm font-bold ${list.length ? "" : "text-muted"}`}>
+                  {dateLabel(d, null, today)} ({WEEKDAY[new Date(d).getUTCDay()]}){d === data.input.dischargeDate ? " · 퇴원일" : ""}
+                  {!list.length && <span className="font-normal"> · 일정 없음</span>}
+                </p>
+                {list.length > 0 && (
+                  <ul className="mt-1 space-y-1">
+                    {list.map((t) => (
+                      <li key={t.id}>
+                        <Link href={`${base}/tasks/${t.id}`} className="flex items-center justify-between gap-3">
+                          <span>{t.title}</span>
+                          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-sm ${t.assignee_id ? "bg-accent-soft text-accent" : "bg-warn-soft text-warn"}`}>{nameOf(t.assignee_id) ?? "담당자 없음"}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
     </>
   );
 }

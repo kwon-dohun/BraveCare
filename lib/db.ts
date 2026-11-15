@@ -34,3 +34,8 @@ export async function resolve(a: Auth): Promise<Actor> {
   if (!actor) throw new Error("접근 권한이 없어요");
   return actor;
 }
+
+// KPI용 이벤트. 실패해도 사용자 흐름을 막지 않는다. 이름·토큰 같은 식별 정보는 넣지 않는다.
+export async function logEvent(caseId: string | null, name: string, meta: Record<string, unknown> = {}) {
+  await db.from("events").insert({ case_id: caseId, name, meta });
+}
