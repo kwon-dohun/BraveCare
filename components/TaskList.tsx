@@ -47,11 +47,11 @@ export default function TaskList({ tasks, members, auth, meId, canAssign, today,
               </button>
               <div className="min-w-0 flex-1">
                 {detailBase ? (
-                  <Link href={`${detailBase}/${t.id}`} className={`flex min-h-0 items-start justify-between gap-2 text-[0.9375rem] font-medium ${t.done ? "text-muted line-through" : ""}`}>
+                  <Link href={`${detailBase}/${t.id}`} className={`flex min-h-0 items-start justify-between gap-2 text-callout font-medium ${t.done ? "text-muted line-through" : ""}`}>
                     <span>{t.title}</span><Icon name="right" size={16} className="mt-0.5 text-muted" />
                   </Link>
                 ) : (
-                  <p className={`text-[0.9375rem] font-medium ${t.done ? "text-muted line-through" : ""}`}>{t.title}</p>
+                  <p className={`text-callout font-medium ${t.done ? "text-muted line-through" : ""}`}>{t.title}</p>
                 )}
                 <p className={`mt-0.5 text-xs ${overdue ? "text-warn" : "text-muted"}`}>{meta}</p>
                 {t.source === "doc" && t.source_quote && <p className="mt-1 text-sm text-muted">안내문 원문: “{t.source_quote}”</p>}

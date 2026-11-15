@@ -73,7 +73,7 @@ export default function Wizard() {
     </button>
   );
   const nextLabel = editing ? "수정 완료" : "다음";
-  const field = "mt-3 w-full rounded-xl border border-line bg-card px-4 py-3 text-[1.0625rem]";
+  const field = "mt-3 w-full rounded-xl border border-line bg-card px-4 py-3 text-headline";
 
   if (!ready) return null;
 
@@ -91,18 +91,18 @@ export default function Wizard() {
         <Mascot size={56} mood={step === SUMMARY ? "cheer" : "idle"} className="mb-3" />
         {step === 0 && (
           <>
-            <h1 className="text-2xl font-semibold">어떤 일로 입원하셨어요?</h1>
+            <h1 className="text-title font-display">어떤 일로 입원하셨어요?</h1>
             <p className="mt-2 text-sm text-muted">진단명은 묻지 않아요. 큰 분류만 골라주세요.</p>
             <div className="mt-5 space-y-3">{REASON_LABEL.map(([v, l]) => choice(l, d.reason === v, () => next({ reason: v })))}</div>
           </>
         )}
         {step === 1 && (
           <>
-            <h1 className="text-2xl font-semibold">퇴원은 언제쯤이에요?</h1>
+            <h1 className="text-title font-display">퇴원은 언제쯤이에요?</h1>
             <p className="mt-2 text-sm text-muted">이미 퇴원했다면 퇴원한 날짜를 넣어주세요.</p>
             <label htmlFor="dd" className="sr-only">퇴원일</label>
             <input id="dd" type="date" disabled={d.undecided} value={d.date} onChange={(e) => set({ date: e.target.value })} className={`${field} disabled:opacity-40`} />
-            <label className="mt-4 flex items-center gap-3 text-[1.0625rem]">
+            <label className="mt-4 flex items-center gap-3 text-headline">
               <input type="checkbox" checked={d.undecided} onChange={(e) => set({ undecided: e.target.checked })} className="h-5 w-5" /> 아직 정해지지 않았어요
             </label>
             {d.undecided && <p className="mt-3 text-sm text-muted">괜찮아요. 일정을 &lsquo;퇴원 3일 전&rsquo;, &lsquo;퇴원 당일&rsquo;처럼 보여드리고, 날짜가 정해지면 한 번에 다시 계산해요.</p>}
@@ -111,7 +111,7 @@ export default function Wizard() {
         )}
         {step === 2 && (
           <>
-            <h1 className="text-2xl font-semibold">환자분이 태어난 해와 사는 곳은요?</h1>
+            <h1 className="text-title font-display">환자분이 태어난 해와 사는 곳은요?</h1>
             <label htmlFor="by" className="mt-5 block text-sm font-medium">태어난 해</label>
             <input id="by" inputMode="numeric" maxLength={4} placeholder="예: 1954" value={d.birth} onChange={(e) => set({ birth: e.target.value.replace(/\D/g, "") })} className={field} />
             <label htmlFor="sd" className="mt-5 block text-sm font-medium">퇴원 후 지낼 곳</label>
@@ -130,20 +130,20 @@ export default function Wizard() {
         )}
         {step === 3 && (
           <>
-            <h1 className="text-2xl font-semibold">퇴원 후 낮 시간에는 누가 곁에 있나요?</h1>
+            <h1 className="text-title font-display">퇴원 후 낮 시간에는 누가 곁에 있나요?</h1>
             <div className="mt-5 space-y-3">{LIVING_LABEL.map(([v, l]) => choice(l, d.living === v, () => next({ living: v })))}</div>
           </>
         )}
         {step === 4 && (
           <>
-            <h1 className="text-2xl font-semibold">가구 소득은 어느 쪽에 가까워요?</h1>
+            <h1 className="text-title font-display">가구 소득은 어느 쪽에 가까워요?</h1>
             <p className="mt-2 text-sm text-muted">소득 기준이 있는 지원을 가려내는 데만 써요. 모르면 &lsquo;잘 모르겠어요&rsquo;를 골라도 돼요.</p>
             <div className="mt-5 space-y-3">{INCOME_OPTIONS.map(([v, l]) => choice(l, d.income === v, () => next({ income: v })))}</div>
           </>
         )}
         {step === SUMMARY && (
           <>
-            <h1 className="text-2xl font-semibold">이렇게 시작할까요?</h1>
+            <h1 className="text-title font-display">이렇게 시작할까요?</h1>
             <dl className="mt-5 divide-y divide-line rounded-xl bg-card shadow-card">
               {([
                 ["입원 이유", REASON_LABEL.find(([v]) => v === d.reason)?.[1], 0],

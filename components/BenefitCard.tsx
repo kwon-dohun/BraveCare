@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Result } from "@/lib/benefits";
 import { STATUS_LABEL } from "@/lib/benefits";
-import { dday } from "@/lib/format";
+import { dday, dotDate } from "@/lib/format";
 
 const BADGE = {
   high: ["대상 가능성 높음", "bg-accent-soft text-accent"],
@@ -28,7 +28,7 @@ export default function BenefitCard({ r, href, status }: { r: Result; href: stri
       <p className="mt-2.5 font-semibold tracking-tight">{r.benefit.name}</p>
       <p className="mt-1 text-sm text-muted">{r.benefit.summary}</p>
       <p className="mt-2.5 rounded-lg bg-background px-3 py-2 text-xs text-muted">판정 근거 · {r.reason}</p>
-      <p className="mt-2 text-[0.6875rem] text-muted">{r.benefit.lastVerified ? `정보 확인일 ${r.benefit.lastVerified}` : "공식 확인 전 초안"} · 출처 {r.benefit.source.label}</p>
+      <p className="mt-2 text-caption text-muted">{r.benefit.lastVerified ? `정보 확인일 ${dotDate(r.benefit.lastVerified)}` : "공식 확인 전 초안"} · 출처 {r.benefit.source.label}</p>
     </Link>
   );
 }

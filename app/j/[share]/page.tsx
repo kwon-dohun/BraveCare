@@ -17,12 +17,12 @@ export default async function Join(props: PageProps<"/j/[share]">) {
       <Logo />
       {expired ? (
         <>
-          <h1 className="mt-6 text-[1.75rem] leading-tight">초대 링크가 만료됐어요</h1>
+          <h1 className="mt-6 text-[1.75rem] font-display leading-tight">초대 링크가 만료됐어요</h1>
           <p className="mt-3 text-muted">{admin?.name}님에게 새 초대 링크를 보내달라고 부탁해주세요. 이미 참여했다면 처음 참여했을 때 열린 ‘내 할 일’ 주소로 들어가면 돼요.</p>
         </>
       ) : (
         <>
-          <h1 className="mt-6 text-[1.75rem] leading-tight">{admin?.name}님이 가족 퇴원 준비를 같이 하자고 초대했어요</h1>
+          <h1 className="mt-6 text-[1.75rem] font-display leading-tight">{admin?.name}님이 가족 퇴원 준비를 같이 하자고 초대했어요</h1>
           <p className="mt-3 text-muted">이름만 입력하면 내가 맡은 할 일을 보고 완료 체크할 수 있어요. 앱 설치도 회원가입도 필요 없어요.</p>
           <JoinForm share={share} />
         </>

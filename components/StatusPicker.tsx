@@ -24,7 +24,7 @@ export function StatusPicker({ auth, benefitId, current }: { auth: Auth; benefit
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm text-muted">신청 상태</p>
-          <p className="text-[1.0625rem] font-semibold">{STATUS_LABEL[current]}</p>
+          <p className="text-headline font-semibold">{STATUS_LABEL[current]}</p>
         </div>
         <button onClick={() => { setPick(current); setOpen(true); }} className="rounded-full bg-accent-soft px-4 font-semibold text-accent">상태 바꾸기</button>
       </div>

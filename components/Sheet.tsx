@@ -18,7 +18,7 @@ export default function Sheet({ open, onClose, title, children }: { open: boolea
     >
       <div className="p-5 pb-8">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-[1.0625rem] font-semibold">{title}</h2>
+          <h2 className="text-headline font-semibold">{title}</h2>
           <button onClick={onClose} aria-label="닫기" className="-mr-2 flex w-11 items-center justify-center text-muted"><Icon name="close" size={22} /></button>
         </div>
         {children}

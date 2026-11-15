@@ -8,6 +8,7 @@ import { evaluate, validateInput, BENEFITS, STATUS_LABEL, type CaseInput } from 
 import { seedTasks, addDays } from "@/lib/timeline";
 import { PACKET } from "@/lib/packet";
 import { validDaily, upsertDaily } from "@/lib/daily";
+import { krDate } from "@/lib/format";
 
 const token = () => randomUUID().replaceAll("-", "");
 const isDate = (s: unknown): s is string => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
@@ -70,7 +71,7 @@ export async function updateCase(a: Auth, raw: CaseInput) {
     const { data: rel } = await db.from("tasks").select("id,rel_day").eq("case_id", actor.caseId).not("rel_day", "is", null);
     await Promise.all((rel ?? []).map((t) =>
       db.from("tasks").update({ due_date: input.dischargeDate ? addDays(input.dischargeDate, t.rel_day) : null }).eq("id", t.id)));
-    await act(actor.caseId, input.dischargeDate ? `퇴원일이 ${input.dischargeDate}(으)로 정해졌어요. 일정을 다시 계산했어요` : "퇴원일이 미정으로 바뀌었어요");
+    await act(actor.caseId, input.dischargeDate ? `퇴원일이 ${krDate(input.dischargeDate)}로 정해졌어요. 일정을 다시 계산했어요` : "퇴원일이 미정으로 바뀌었어요");
   }
   refresh();
 }

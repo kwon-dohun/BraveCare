@@ -58,8 +58,8 @@ export function RemoveMember({ auth, memberId, name }: { auth: Auth; memberId: s
   return (
     <span className="flex items-center gap-2 text-sm">
       {err && <span role="alert" className="text-warn">{err}</span>}
-      <button onClick={() => setAsk(false)} className="rounded-lg border border-line px-3">취소</button>
-      <button disabled={pending} onClick={() => run(() => removeMember(auth, memberId))} className="rounded-lg bg-warn px-3 font-semibold text-white">내보내기</button>
+      <button onClick={() => setAsk(false)} className="h-9 min-h-0 rounded-full bg-background px-3.5 font-medium">취소</button>
+      <button disabled={pending} onClick={() => run(() => removeMember(auth, memberId))} className="h-9 min-h-0 rounded-full bg-warn px-3.5 font-semibold text-white">내보내기</button>
     </span>
   );
 }

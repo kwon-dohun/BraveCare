@@ -47,7 +47,7 @@ export default function Mascot({ size = 64, mood = "idle", className = "" }: { s
 // 로고: 씩씩이 + 글자. 모든 화면 머리에 같은 모양으로 쓴다.
 export function Logo() {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[1.0625rem] font-bold tracking-tight text-ink">
+    <span className="inline-flex items-center gap-1.5 font-display text-headline text-ink">
       <Mascot size={28} />씩씩케어
     </span>
   );

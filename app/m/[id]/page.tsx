@@ -30,9 +30,9 @@ export default async function MemberHome(props: PageProps<"/m/[id]">) {
         <Logo />
         <span className="flex items-center gap-1.5 rounded-full bg-card py-1 pl-1 pr-3 text-xs font-medium text-muted shadow-card"><Avatar name={actor.name} size={24} />{actor.name}님</span>
       </header>
-      <section className="mt-4 flex items-start justify-between gap-3 overflow-hidden rounded-[1.75rem] bg-accent-soft p-5" aria-label="퇴원 일정">
+      <section className="mt-4 flex items-start justify-between gap-3 overflow-hidden rounded-3xl bg-accent-soft p-5" aria-label="퇴원 일정">
         <div className="min-w-0">
-          <h1 aria-label={dischargeLabel(data.input.dischargeDate, today)} className="text-[3.25rem] leading-none tracking-tight text-ink tabular-nums">{hero.big}</h1>
+          <h1 aria-label={dischargeLabel(data.input.dischargeDate, today)} className="text-display font-display tracking-tight text-ink tabular-nums">{hero.big}</h1>
           <p className="mt-2.5 text-sm font-medium text-accent">{hero.sub}</p>
           <p className="mt-3 text-sm text-ink">{actor.name}님, 맡은 일을 여기서 챙겨요.</p>
         </div>

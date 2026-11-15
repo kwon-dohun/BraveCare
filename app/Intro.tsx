@@ -34,16 +34,16 @@ export default function Intro({ deleted }: { deleted: boolean }) {
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-10">
       {deleted && <p role="status" className="mb-6 rounded-xl bg-accent-soft p-4 text-accent">씩씩케어와 모든 기록을 삭제했어요.</p>}
       <Logo />
-      <div className="relative mt-8 flex h-36 items-end justify-center overflow-hidden rounded-[1.75rem] bg-accent-soft">
+      <div className="relative mt-8 flex h-36 items-end justify-center overflow-hidden rounded-3xl bg-accent-soft">
         <span className="absolute left-5 top-5 rounded-2xl rounded-bl-sm bg-card px-3 py-1.5 text-xs font-medium text-ink shadow-card">퇴원 준비, 같이 해요!</span>
         <Mascot size={120} mood="cheer" className="mascot-bob -mb-5" />
       </div>
-      <h1 className="mt-7 text-[1.875rem] leading-tight">
+      <h1 className="mt-7 text-[1.875rem] font-display leading-tight">
         퇴원 소식을 들었다면,
         <br />
         <span className="text-accent">3분</span>이면 정리돼요
       </h1>
-      <p className="mt-3 text-[0.9375rem] text-muted">
+      <p className="mt-3 text-callout text-muted">
         퇴원 전부터 정기 외래까지, 받을 수 있는 공공 지원과 챙길 서류, 가족 분담을 한곳에서 정리해요. 특정 업체로 유도하지 않고 공공 지원부터 안내해요.
       </p>
 

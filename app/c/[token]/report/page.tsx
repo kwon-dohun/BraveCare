@@ -27,7 +27,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
   const box = "rounded-xl border-2 border-foreground p-4";
 
   return (
-    <div className="fixed inset-0 z-20 overflow-auto bg-white p-5 text-[1.0625rem] text-black landscape:text-xl">
+    <div className="fixed inset-0 z-20 overflow-auto bg-white p-5 text-headline text-black landscape:text-xl">
       <div className="mx-auto max-w-5xl">
         <div className="flex items-center justify-between print:hidden">
           <BackLink href={`${base}/daily`}>닫기</BackLink>

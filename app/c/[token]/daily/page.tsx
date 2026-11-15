@@ -19,7 +19,7 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
       <div className="flex items-center gap-3">
         <Mascot size={60} mood={today ? "cheer" : "idle"} />
         <div>
-          <h1 className="text-2xl">저녁 안부 체크</h1>
+          <h1 className="text-title font-display">저녁 안부 체크</h1>
           <p className="text-sm text-muted">{today ? "오늘 기록을 남겼어요. 고마워요!" : "환자와 오늘 하루를 10초 만에 남겨요"}</p>
         </div>
       </div>

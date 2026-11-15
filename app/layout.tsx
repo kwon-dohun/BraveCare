@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "퇴원 전부터 정기 외래까지, 공공 지원과 서류, 가족 분담을 한곳에서 정리해요",
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#f4faf7" }; // 모바일 브라우저 상단 막대도 바탕색과 같게
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

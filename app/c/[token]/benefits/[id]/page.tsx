@@ -3,7 +3,7 @@ import { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
 import { Badge } from "@/components/BenefitCard";
 import { StatusPicker, DocsChecklist } from "@/components/StatusPicker";
-import { dday } from "@/lib/format";
+import { dday, krDateYear, dotDate } from "@/lib/format";
 import { dayDiff } from "@/lib/benefits";
 
 const STALE_DAYS = 90; // 마지막 확인일이 이보다 오래되면 "정보 확인 필요"
@@ -23,12 +23,12 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
       <BackLink href={`${base}/benefits`}>지원 목록</BackLink>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <Badge verdict={r.verdict} needsIncome={r.needsIncome} />
-        {d.state === "open" && <span className="font-medium text-warn">{dday(d.daysLeft!)} ({d.endDate}까지)</span>}
-        {d.state === "closed" && <span className="text-muted">신청 기간 종료 ({d.endDate})</span>}
+        {d.state === "open" && <span className="font-medium text-warn">{dday(d.daysLeft!)} ({krDateYear(d.endDate!)}까지)</span>}
+        {d.state === "closed" && <span className="text-muted">신청 기간 종료 ({krDateYear(d.endDate!)})</span>}
         {d.state === "unknown" && b.deadline && <span className="text-muted">퇴원일 확정 시 마감 계산</span>}
         {stale && <span className="rounded-full bg-warn-soft px-2.5 py-0.5 text-sm text-warn">정보 확인 필요</span>}
       </div>
-      <h1 className="mt-2 text-2xl font-semibold">{b.name}</h1>
+      <h1 className="mt-2 text-title font-display">{b.name}</h1>
       <p className="text-muted">{b.operator}</p>
       <p className="mt-3">{b.summary}</p>
 
@@ -64,7 +64,7 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
       </section>
 
       <p className="mt-6 text-sm text-muted">
-        정보 마지막 확인: {b.lastVerified ?? "공식 확인 전 초안이에요"}
+        정보 마지막 확인: {b.lastVerified ? dotDate(b.lastVerified) : "공식 확인 전 초안이에요"}
         <br />최종 대상 여부는 운영 기관에서 결정돼요. 신청 전에 위 문의처에서 꼭 확인하세요.
       </p>
     </>

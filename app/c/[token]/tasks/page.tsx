@@ -27,7 +27,7 @@ export default async function Tasks(props: PageProps<"/c/[token]/tasks">) {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold">퇴원 타임라인</h1>
+      <h1 className="text-title font-display">퇴원 타임라인</h1>
       <p className="mt-1 text-sm text-muted">퇴원 준비부터 정기 외래까지 챙길 일이에요. 의료 판단은 담당 의료진에게 확인하세요.</p>
 
       <Link href={`${base}/scan`} className="mt-4 flex items-center justify-center rounded-full bg-accent-soft px-5 py-3 font-semibold text-accent">안내문·약봉투 촬영해서 할 일 추가</Link>

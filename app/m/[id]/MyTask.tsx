@@ -13,7 +13,7 @@ export default function MyTask({ auth, task, when, overdue }: { auth: Auth; task
 
   return (
     <li className="rounded-xl bg-card shadow-card p-4">
-      <p className={`text-[1.0625rem] ${task.done ? "text-muted line-through" : "font-medium"}`}>{task.title}</p>
+      <p className={`text-headline ${task.done ? "text-muted line-through" : "font-medium"}`}>{task.title}</p>
       <p className={`text-sm ${overdue ? "text-warn" : "text-muted"}`}>{when || "날짜 미정"}{overdue ? " · 지남" : ""}</p>
       {task.source === "doc" && task.source_quote && <p className="mt-1 text-sm text-muted">안내문 원문: “{task.source_quote}”</p>}
       {task.memo && !editing && <p className="mt-2 rounded-lg bg-background px-3 py-2 text-sm">메모: {task.memo}</p>}

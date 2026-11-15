@@ -10,7 +10,7 @@ export default async function Settings(props: PageProps<"/c/[token]/settings">) 
   return (
     <>
       <BackLink href={base}>홈</BackLink>
-      <h1 className="mt-2 text-2xl font-semibold">설정</h1>
+      <h1 className="mt-2 text-title font-display">설정</h1>
 
       <section className="mt-6" aria-labelledby="s1">
         <h2 id="s1" className="font-semibold">퇴원 정보</h2>

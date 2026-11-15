@@ -48,7 +48,7 @@ export default function ChatBox({ auth, chips, docs }: { auth: Auth; chips: stri
         {turns.map((t, i) => (
           <li key={turns.length - i} className="rounded-xl bg-card shadow-card p-4">
             <p className="text-sm text-muted">{t.q}</p>
-            <p className="mt-2 text-[1.0625rem] font-semibold">{t.a.summary}</p>
+            <p className="mt-2 text-headline font-semibold">{t.a.summary}</p>
             <div className="mt-3 rounded-lg bg-background p-3">
               <p className="text-sm font-medium text-muted">내 서류에 적힌 문장</p>
               <p className="mt-1">{t.a.sourceQuote ? `“${t.a.sourceQuote}”` : "서류에서 근거 문장을 찾지 못했어요. 위 답은 참고만 하고 꼭 병원에 확인하세요."}</p>

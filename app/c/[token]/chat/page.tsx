@@ -17,7 +17,7 @@ export default async function Chat(props: PageProps<"/c/[token]/chat">) {
   return (
     <>
       <BackLink href={`${base}/daily`}>기록</BackLink>
-      <h1 className="mt-2 text-2xl font-semibold">서류 내용 물어보기</h1>
+      <h1 className="mt-2 text-title font-display">서류 내용 물어보기</h1>
       <p className="mt-1 text-muted">촬영해 둔 약봉투와 안내문에 적힌 내용만 찾아서 알려드려요. 진단이나 처방은 하지 않아요.</p>
       {docs.length === 0 ? (
         <div className="mt-5 rounded-xl bg-card shadow-card p-4">

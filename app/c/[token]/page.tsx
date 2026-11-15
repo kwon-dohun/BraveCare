@@ -53,10 +53,10 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       </header>
 
       {/* 히어로: 큰 D-day 숫자 + 씩씩이 한마디 */}
-      <section className="relative mt-4 overflow-hidden rounded-[1.75rem] bg-accent-soft p-5" aria-label="퇴원 일정">
+      <section className="relative mt-4 overflow-hidden rounded-3xl bg-accent-soft p-5" aria-label="퇴원 일정">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 aria-label={dischargeLabel(input.dischargeDate, today)} className="text-[3.25rem] leading-none tracking-tight text-ink tabular-nums">{hero.big}</h1>
+            <h1 aria-label={dischargeLabel(input.dischargeDate, today)} className="text-display font-display tracking-tight text-ink tabular-nums">{hero.big}</h1>
             <p className="mt-2.5 text-sm font-medium text-accent">{hero.sub}</p>
           </div>
           <div className="flex shrink-0 flex-col items-end">
@@ -82,7 +82,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         ] as const).map(([href, label, n, sub, alert]) => (
           <Link key={label} href={href} className="flex flex-col rounded-xl bg-card px-3.5 py-3 shadow-card">
             <span className="text-xs text-muted">{label}</span>
-            <span className="mt-1 text-2xl font-bold leading-tight tabular-nums">{n}</span>
+            <span className="mt-1 font-display text-2xl leading-tight tabular-nums">{n}</span>
             <span className={`text-xs ${alert ? "font-medium text-warn" : "text-accent"}`}>{sub}</span>
           </Link>
         ))}

@@ -24,7 +24,7 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold">가족</h1>
+      <h1 className="text-title font-display">가족</h1>
       <nav aria-label="가족 보기" className="mt-4 flex rounded-full bg-card p-1 shadow-card">
         <Link href={`${base}/family`} aria-current={tab === "members" ? "page" : undefined} className={tabCls(tab === "members")}>구성원</Link>
         <Link href={`${base}/family?tab=schedule`} aria-current={tab === "schedule" ? "page" : undefined} className={tabCls(tab === "schedule")}>돌봄 일정표</Link>
@@ -40,7 +40,7 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
                   <div className="flex min-w-0 items-center gap-3">
                     <Avatar name={m.name} />
                     <div className="min-w-0">
-                      <p className="font-medium">{m.name}{m.role === "admin" && <span className="ml-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-accent">나 · 관리자</span>}</p>
+                      <p className="font-medium">{m.name}{m.role === "admin" && <span className="ml-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-caption font-semibold text-accent">나 · 관리자</span>}</p>
                       <p className="text-xs text-muted tabular-nums">맡은 일 {all.length}개 · 완료 {all.filter((t) => t.done).length}개</p>
                     </div>
                   </div>
@@ -68,7 +68,7 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
                     {list.map((t) => (
                       <li key={t.id}>
                         <Link href={`${base}/tasks/${t.id}`} className="flex items-center justify-between gap-3">
-                          <span className="text-[0.9375rem]">{t.title}</span>
+                          <span className="text-callout">{t.title}</span>
                           <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${t.assignee_id ? "bg-accent-soft text-accent" : "bg-warn-soft text-warn"}`}>{nameOf(t.assignee_id) ?? "담당자 없음"}</span>
                         </Link>
                       </li>
