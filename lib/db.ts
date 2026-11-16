@@ -27,6 +27,9 @@ export async function actorFromMemberId(memberId: string): Promise<Actor | null>
   return m ? { caseId: m.case_id, memberId: m.id, name: m.name, role: "member" } : null;
 }
 
+// 앱·API가 보내는 토큰 하나로 사람을 찾는다
+export const actorFromToken = (t: string) => (/^[0-9a-f]{32}$/.test(t) ? actorFromAdminToken(t) : actorFromMemberId(t));
+
 // 화면이 들고 있는 열쇠: 케이스 토큰("c") 또는 구성원 ID("m")
 export type Auth = { k: "c" | "m"; v: string };
 export async function resolve(a: Auth): Promise<Actor> {

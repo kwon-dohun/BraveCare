@@ -92,3 +92,11 @@ export function phaseOf(rel: number | null, due: string | null, discharge: strin
   if (off === null) return null;
   return off < 0 ? 0 : off === 0 ? 1 : off <= 14 ? 2 : 3;
 }
+
+// 반복 할 일의 다음 날짜. 밀린 일을 뒤늦게 끝내도 다음 회차가 과거로 잡히지 않게 한다.
+export function nextDue(due: string | null, repeat: "daily" | "weekly", today: string) {
+  let d = due ?? today;
+  do d = addDays(d, repeat === "daily" ? 1 : 7); while (d < today);
+  return d;
+}
+export const REPEAT_LABEL = { daily: "매일", weekly: "매주" } as const;

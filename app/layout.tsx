@@ -12,8 +12,10 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className="h-full antialiased">
+    <html lang="ko" className="h-full antialiased" suppressHydrationWarning>
       <head>
+        {/* 글자 크게 보기: 그리기 전에 적용해 깜빡이지 않게 */}
+        <script dangerouslySetInnerHTML={{ __html: "try{document.documentElement.dataset.font=localStorage.getItem('bc:font')||''}catch(e){}" }} />
         {/* Pretendard: 쓰는 글자만 받아오는 동적 서브셋 */}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
       </head>

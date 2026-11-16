@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
+import { unreadCount } from "@/lib/load";
 import { PACKET } from "@/lib/packet";
 import { dischargeLabel, dateLabel, dday, heroLabel, krDate } from "@/lib/format";
 import { buildEvents, weekday, EVENT_STYLE } from "@/lib/calendar";
@@ -15,6 +16,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const isNew = (await props.searchParams).new === "1";
   const { actor, data, auth, base } = await adminPage(token);
   const { input, today, tasks, members, results, status, activity } = data;
+  const unread = await unreadCount(actor.caseId, actor.memberId);
   const checkedToday = (await loadDaily(actor.caseId)).some((c) => c.check_date === today);
 
   // 시점에 따라 맨 위에 올 것이 달라진다: 병원 가는 날 → 퇴원 전 → 집에서 회복
@@ -53,6 +55,10 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         <Logo />
         <div className="-mr-2 flex items-center">
           <span className="rounded-full bg-card px-3 py-1 text-xs font-medium text-muted shadow-card">{actor.name}님 가족</span>
+          <Link href={`${base}/news`} aria-label={unread ? `새 소식 ${unread}개` : "새 소식"} className="relative flex w-11 items-center justify-center text-muted">
+            <Icon name="bell" size={20} />
+            {unread > 0 && <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#e0517a] ring-2 ring-background" />}
+          </Link>
           <Link href={`${base}/settings`} aria-label="설정" className="flex w-11 items-center justify-center text-muted"><Icon name="settings" size={20} /></Link>
         </div>
       </header>
@@ -213,7 +219,10 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       </section>
 
       <section className="mt-6" aria-labelledby="h-act">
-        <h2 id="h-act" className="mb-2 font-semibold">가족 최근 활동</h2>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 id="h-act" className="font-semibold">가족 최근 활동{unread > 0 && <span className="ml-1.5 rounded-full bg-[#ffe4ea] px-2 py-0.5 text-caption font-semibold text-[#a3324f]">새 소식 {unread}</span>}</h2>
+          <Link href={`${base}/news`} className="flex min-h-0 items-center py-1 text-sm text-accent">모두 보기</Link>
+        </div>
         <ul className="divide-y divide-line rounded-xl bg-card shadow-card">
           {activity.slice(0, 3).map((a) => <li key={a.id} className="px-4 py-3 text-sm">{a.text}</li>)}
         </ul>

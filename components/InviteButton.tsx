@@ -5,6 +5,22 @@ import type { Auth } from "@/lib/db";
 import Sheet from "./Sheet";
 import { useAct } from "./useAct";
 import Icon from "@/components/Icon";
+import { toApp, useInApp } from "@/lib/app";
+
+const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+interface KakaoSdk { isInitialized(): boolean; init(key: string): void; Share: { sendDefault(o: object): void } }
+// 카카오톡 공유는 버튼을 처음 누를 때 SDK를 받아온다
+async function kakaoShare(text: string, url: string) {
+  const w = window as Window & { Kakao?: KakaoSdk };
+  if (!w.Kakao) await new Promise((ok, no) => {
+    const s = document.createElement("script");
+    s.src = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js";
+    s.onload = ok; s.onerror = no;
+    document.head.append(s);
+  });
+  if (!w.Kakao!.isInitialized()) w.Kakao!.init(KAKAO_KEY!);
+  w.Kakao!.Share.sendDefault({ objectType: "text", text, link: { mobileWebUrl: url, webUrl: url }, buttonTitle: "참여하기" });
+}
 
 const TEXT = "가족 퇴원 준비를 씩씩케어에서 같이 나눠서 해요. 링크로 들어와 이름만 입력하면 돼요.";
 
@@ -13,13 +29,15 @@ export function Invite({ auth, path, expiresAt, expired }: { auth: Auth; path: s
   const [msg, setMsg] = useState("");
   const { run, pending, err } = useAct();
   const url = () => `${location.origin}${path}`;
-  const canShare = typeof navigator !== "undefined" && !!navigator.share;
+  const app = useInApp();
+  const canShare = app || (typeof navigator !== "undefined" && !!navigator.share);
 
   const copy = async () => {
     try { await navigator.clipboard.writeText(url()); setMsg("링크를 복사했어요. 카카오톡 대화방에 붙여넣어 보내세요."); }
     catch { setMsg(url()); } // 복사가 막힌 환경에서는 링크를 그대로 보여준다
   };
   const share = async () => {
+    if (app) return void toApp({ t: "share", text: TEXT, url: url() }); // 앱에서는 휴대폰 공유창
     try { await navigator.share({ title: "씩씩케어", text: TEXT, url: url() }); } catch {}
   };
   const row = "flex w-full items-center justify-between rounded-xl bg-card shadow-card px-4 py-3 text-left";
@@ -32,7 +50,8 @@ export function Invite({ auth, path, expiresAt, expired }: { auth: Auth; path: s
           <p className="rounded-xl bg-warn-soft p-3 text-warn">초대 링크가 만료됐어요. 새 링크를 만들어 보내주세요.</p>
         ) : (
           <div className="space-y-2">
-            {canShare && <button onClick={share} className={row}><span>카카오톡·다른 앱으로 보내기</span><Icon name="right" size={18} className="text-muted" /></button>}
+            {KAKAO_KEY && !app && <button onClick={() => kakaoShare(TEXT, url()).catch(() => setMsg("카카오톡을 열지 못했어요. 링크 복사를 써 주세요."))} className={row}><span>카카오톡으로 보내기</span><Icon name="right" size={18} className="text-muted" /></button>}
+            {canShare && <button onClick={share} className={row}><span>{KAKAO_KEY && !app ? "다른 앱으로 보내기" : "카카오톡·다른 앱으로 보내기"}</span><Icon name="right" size={18} className="text-muted" /></button>}
             <button onClick={() => { location.href = `sms:?&body=${encodeURIComponent(`${TEXT} ${url()}`)}`; }} className={row}><span>문자로 보내기</span><Icon name="right" size={18} className="text-muted" /></button>
             <button onClick={copy} className={row}><span>링크 복사</span><Icon name="right" size={18} className="text-muted" /></button>
           </div>

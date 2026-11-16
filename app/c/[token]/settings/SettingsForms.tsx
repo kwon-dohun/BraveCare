@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { updateCase, deleteCase } from "@/app/actions";
+import { useEffect, useState } from "react";
+import { updateCase, deleteCase, leaveCase, unlinkKakao } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import type { CaseInput, Income, Living, Reason } from "@/lib/benefits";
 import { SIDO, SEOUL_GU, REASON_LABEL, LIVING_LABEL, INCOME_OPTIONS } from "@/lib/options";
@@ -85,6 +85,52 @@ export function DeleteCase({ auth }: { auth: Auth }) {
       <button disabled={pending || text.trim() !== "삭제"} onClick={() => run(() => deleteCase(auth))} className="mt-3 w-full rounded-xl bg-warn px-5 py-3 font-semibold text-white disabled:opacity-40">
         {pending ? "삭제하는 중…" : "기록 전체 삭제"}
       </button>
+    </div>
+  );
+}
+
+const FONTS = [["", "보통"], ["l", "크게"], ["xl", "아주 크게"]] as const;
+export function FontSize() {
+  const [cur, setCur] = useState("");
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- 저장소는 클라이언트에서만 읽을 수 있다
+  useEffect(() => { setCur(document.documentElement.dataset.font ?? ""); }, []);
+  const pick = (v: string) => {
+    setCur(v);
+    document.documentElement.setAttribute("data-font", v);
+    try { localStorage.setItem("bc:font", v); } catch {}
+  };
+  return (
+    <div role="group" aria-label="글자 크기" className="mt-3 flex rounded-full bg-card p-1 shadow-card">
+      {FONTS.map(([v, label]) => (
+        <button key={v} type="button" aria-pressed={cur === v} onClick={() => pick(v)} className={`flex-1 rounded-full text-sm transition-colors ${cur === v ? "bg-accent-soft font-semibold text-accent" : "text-muted"}`}>{label}</button>
+      ))}
+    </div>
+  );
+}
+
+export function UnlinkKakao({ auth }: { auth: Auth }) {
+  const { run, pending, err } = useAct();
+  return (
+    <>
+      <p className="mt-3 rounded-xl bg-accent-soft px-4 py-3 text-sm font-medium text-accent">카카오 계정이 연결되어 있어요</p>
+      {err && <p role="alert" className="mt-1 text-warn">{err}</p>}
+      <button disabled={pending} onClick={() => run(() => unlinkKakao(auth))} className="mt-1 w-full text-sm text-muted underline">연결 끊기</button>
+    </>
+  );
+}
+
+export function LeaveCase({ auth }: { auth: Auth }) {
+  const [ask, setAsk] = useState(false);
+  const { run, pending, err } = useAct();
+  if (!ask) return <button onClick={() => setAsk(true)} className="mt-3 w-full rounded-xl border border-line px-5 py-3 text-muted">가족에서 나가기</button>;
+  return (
+    <div className="mt-3 rounded-xl border border-warn bg-warn-soft p-4">
+      <p className="text-warn">정말 나갈까요? 다시 들어오려면 새 초대 링크가 필요해요.</p>
+      {err && <p role="alert" className="mt-1 text-warn">{err}</p>}
+      <div className="mt-3 flex gap-2">
+        <button onClick={() => setAsk(false)} className="flex-1 rounded-xl bg-card px-4 shadow-card">취소</button>
+        <button disabled={pending} onClick={() => run(() => leaveCase(auth))} className="flex-1 rounded-xl bg-warn px-4 font-semibold text-white">나가기</button>
+      </div>
     </div>
   );
 }

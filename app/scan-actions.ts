@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { db, resolve, logEvent, type Auth } from "@/lib/db";
+import { act } from "@/lib/push";
 import { todaySeoul } from "@/lib/load";
 import { askJson, hasModel } from "@/lib/openai";
 import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, type DocItem, type DocType } from "@/lib/extract";
@@ -71,7 +72,7 @@ export async function confirmDocItems(a: Auth, items: { kind: DocItem["kind"]; t
 
   const { error } = await db.from("tasks").insert(rows);
   if (error) throw error;
-  await db.from("activity").insert({ case_id: actor.caseId, text: `${actor.name}님이 서류에서 할 일 ${rows.length}개를 추가했어요` });
+  await act(actor.caseId, `${actor.name}님이 서류에서 할 일 ${rows.length}개를 추가했어요`, actor.memberId);
   await logEvent(actor.caseId, "doc_items_confirmed", { count: rows.length });
   if (past) await logEvent(actor.caseId, "cycle_renewed", { cycle_number: past + 1 });
   revalidatePath("/c/[token]", "layout");

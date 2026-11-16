@@ -64,6 +64,9 @@ html {
   font-size: 16px;
   color-scheme: light;
 }
+/* 글자 크게 보기(설정). 크기가 모두 rem이라 화면 전체가 같은 비율로 커진다 */
+html[data-font="l"] { font-size: 18px; }
+html[data-font="xl"] { font-size: 20px; }
 
 body {
   background: var(--background);

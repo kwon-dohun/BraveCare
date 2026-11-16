@@ -10,7 +10,15 @@ const CONSENTS = [
   "이 서비스는 의료 상담·진단을 하지 않고, 지원 대상 여부는 운영 기관이 최종 결정한다는 점을 확인했어요",
 ];
 
-export default function Intro({ deleted }: { deleted: boolean }) {
+const NOTICE = {
+  deleted: "씩씩케어와 모든 기록을 삭제했어요.",
+  left: "가족에서 나왔어요. 내 참여 기록을 지웠어요.",
+  "kakao-none": "이 카카오 계정에 연결된 씩씩케어가 없어요. 연결은 전체 > 설정 > 카카오로 되찾기에서 할 수 있어요.",
+  "kakao-fail": "카카오 로그인을 마치지 못했어요. 다시 시도해 주세요.",
+} as const;
+
+export default function Intro({ notice, kakao }: { notice: keyof typeof NOTICE | null; kakao: boolean }) {
+  const deleted = notice === "deleted" || notice === "left";
   const router = useRouter();
   const [checked, setChecked] = useState<boolean[]>(CONSENTS.map(() => false));
   const [last, setLast] = useState<{ path: string; label: string } | null>(null);
@@ -22,6 +30,10 @@ export default function Intro({ deleted }: { deleted: boolean }) {
       const v = localStorage.getItem("toewon:last");
       // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage는 클라이언트에서만 읽을 수 있다
       if (v) setLast(JSON.parse(v));
+      // 어디서 들어왔는지(KPI 유입 경로). ?src=가 없으면 들어오기 전 사이트 주소만 본다.
+      if (!sessionStorage.getItem("bc:src")) {
+        sessionStorage.setItem("bc:src", new URLSearchParams(location.search).get("src") ?? (document.referrer ? new URL(document.referrer).hostname : "direct"));
+      }
     } catch {}
   }, [deleted]);
 
@@ -32,7 +44,7 @@ export default function Intro({ deleted }: { deleted: boolean }) {
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-10">
-      {deleted && <p role="status" className="mb-6 rounded-xl bg-accent-soft p-4 text-accent">씩씩케어와 모든 기록을 삭제했어요.</p>}
+      {notice && <p role="status" className="mb-6 rounded-xl bg-accent-soft p-4 text-accent">{NOTICE[notice]}</p>}
       <Logo />
       <div className="relative mt-8 flex h-36 items-end justify-center overflow-hidden rounded-3xl bg-accent-soft">
         <span className="absolute left-5 top-5 rounded-2xl rounded-bl-sm bg-card px-3 py-1.5 text-xs font-medium text-ink shadow-card">퇴원 준비, 같이 해요!</span>
@@ -70,6 +82,11 @@ export default function Intro({ deleted }: { deleted: boolean }) {
       <button onClick={start} disabled={!all} className="mt-6 flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">
         {last ? "새 씩씩케어 만들기" : "시작하기"}
       </button>
+      {kakao && (
+        <form method="post" action="/api/kakao/start">
+          <button className="mt-3 w-full text-sm text-muted underline">이미 쓰고 있었나요? 카카오로 내 씩씩케어 찾기</button>
+        </form>
+      )}
     </main>
   );
 }

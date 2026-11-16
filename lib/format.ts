@@ -9,6 +9,11 @@ export function dischargeLabel(discharge: string | null, today: string) {
 // 화면에 보이는 날짜는 ISO(2026-11-18) 대신 사람이 읽는 꼴로
 export const krDate = (d: string) => `${Number(d.slice(5, 7))}월 ${Number(d.slice(8, 10))}일`;
 export const krDateYear = (d: string) => `${d.slice(0, 4)}년 ${krDate(d)}`;
+// 14:00 → 오후 2시, 09:30 → 오전 9시 30분
+export function krTime(t: string) {
+  const [h, m] = t.split(":").map(Number);
+  return `${h < 12 ? "오전" : "오후"} ${h % 12 || 12}시${m ? ` ${m}분` : ""}`;
+}
 export const dotDate = (d: string) => d.slice(0, 10).replaceAll("-", ".");
 
 // 히어로용: 큰 숫자 하나 + 설명 한 줄

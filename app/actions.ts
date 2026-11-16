@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db, resolve, logEvent, type Auth } from "@/lib/db";
 import { todaySeoul } from "@/lib/load";
-import { evaluate, validateInput, BENEFITS, STATUS_LABEL, type CaseInput } from "@/lib/benefits";
-import { seedTasks, addDays } from "@/lib/timeline";
+import { evaluate, validateInput, dayDiff, BENEFITS, STATUS_LABEL, type CaseInput } from "@/lib/benefits";
+import { seedTasks, addDays, nextDue } from "@/lib/timeline";
+import { act } from "@/lib/push";
 import { PACKET } from "@/lib/packet";
 import { validDaily, upsertDaily } from "@/lib/daily";
 import { krDate } from "@/lib/format";
@@ -19,12 +20,20 @@ function refresh() {
   revalidatePath("/c/[token]", "layout");
   revalidatePath("/m/[id]", "layout");
 }
-const act = (caseId: string, text: string) => db.from("activity").insert({ case_id: caseId, text });
+const isTime = (s: unknown): s is string => typeof s === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(s);
 
 // ---- 케이스 ----
 
-export async function logStart() {
-  await logEvent(null, "onboarding_started");
+export async function logStart(source = "direct") {
+  await logEvent(null, "onboarding_started", { entry_source: /^[\w.-]{1,40}$/.test(source) ? source : "other" });
+}
+
+// 하루 한 번(기기 기준) 화면을 열었다는 기록. KPI G7(D+7 재방문율)용이라 퇴원일 기준 며칠째인지 같이 남긴다.
+export async function logOpen(a: Auth, app: boolean) {
+  const actor = await resolve(a);
+  const { data: c } = await db.from("cases").select("input").eq("id", actor.caseId).single();
+  const discharge = (c?.input as CaseInput | undefined)?.dischargeDate;
+  await logEvent(actor.caseId, "app_opened", { day: discharge ? -dayDiff(discharge, todaySeoul()) : null, role: actor.role, app: !!app });
 }
 
 export async function createCase(raw: CaseInput, adminName: string, consented: boolean, durationSec = NaN) {
@@ -39,7 +48,7 @@ export async function createCase(raw: CaseInput, adminName: string, consented: b
     .insert({ admin_token: adminToken, share_token: token(), share_expires_at: shareExpiry(), input, consent_at: new Date().toISOString() })
     .select("id").single();
   if (error) throw new Error("저장하지 못했어요. 잠시 후 다시 시도해주세요");
-  await db.from("members").insert({ case_id: c.id, name, role: "admin" });
+  const { data: me } = await db.from("members").insert({ case_id: c.id, name, role: "admin" }).select("id").single();
 
   const results = evaluate(input, today);
   await db.from("benefit_status").insert(results.filter((r) => r.verdict !== "no").map((r) => ({ case_id: c.id, benefit_id: r.benefit.id })));
@@ -49,7 +58,7 @@ export async function createCase(raw: CaseInput, adminName: string, consented: b
       due_date: input.dischargeDate ? addDays(input.dischargeDate, t.rel) : null,
     })),
   );
-  await act(c.id, `${name}님이 씩씩케어를 시작했어요`);
+  await act(c.id, `${name}님이 씩씩케어를 시작했어요`, me?.id);
   await logEvent(c.id, "onboarding_completed", { duration_sec: Number.isFinite(durationSec) ? Math.min(3600, Math.max(0, Math.round(durationSec))) : null, diagnosis: input.reason, living: input.living });
   redirect(`/c/${adminToken}?new=1`);
 }
@@ -66,19 +75,41 @@ export async function updateCase(a: Auth, raw: CaseInput) {
     const { data: rel } = await db.from("tasks").select("id,rel_day").eq("case_id", actor.caseId).not("rel_day", "is", null);
     await Promise.all((rel ?? []).map((t) =>
       db.from("tasks").update({ due_date: input.dischargeDate ? addDays(input.dischargeDate, t.rel_day) : null }).eq("id", t.id)));
-    await act(actor.caseId, input.dischargeDate ? `퇴원일이 ${krDate(input.dischargeDate)}로 정해졌어요. 일정을 다시 계산했어요` : "퇴원일이 미정으로 바뀌었어요");
+    await act(actor.caseId, input.dischargeDate ? `퇴원일이 ${krDate(input.dischargeDate)}로 정해졌어요. 일정을 다시 계산했어요` : "퇴원일이 미정으로 바뀌었어요", actor.memberId);
   }
   refresh();
 }
 
 export async function deleteCase(a: Auth) {
   const actor = await resolve(a);
+  if (actor.role !== "admin") throw new Error("전체 삭제는 처음 만든 가족만 할 수 있어요"); // 되돌릴 수 없는 일이라 한 사람에게만
   await db.from("cases").delete().eq("id", actor.caseId); // members·tasks·상태·활동은 FK cascade로 함께 삭제
   await logEvent(null, "case_deleted");
   redirect("/?deleted=1");
 }
 
 // ---- 가족 ----
+
+// 참여한 가족이 스스로 나간다. 맡았던 할 일은 '담당자 없음'이 된다.
+export async function leaveCase(a: Auth) {
+  const actor = await resolve(a);
+  if (actor.role === "admin") throw new Error("처음 만든 가족은 나갈 수 없어요. 기록을 지우려면 전체 삭제를 써주세요");
+  await db.from("members").delete().eq("id", actor.memberId);
+  await act(actor.caseId, `${actor.name}님이 가족에서 나갔어요`);
+  redirect("/?left=1");
+}
+
+// 새 소식을 봤다고 표시
+export async function markSeen(a: Auth) {
+  const actor = await resolve(a);
+  await db.from("members").update({ seen_at: new Date().toISOString() }).eq("id", actor.memberId); // 보고 있는 목록의 '새 소식' 점이 바로 사라지지 않게 화면은 다시 그리지 않는다
+}
+
+export async function unlinkKakao(a: Auth) {
+  const actor = await resolve(a);
+  await db.from("members").update({ kakao_id: null }).eq("id", actor.memberId);
+  refresh();
+}
 
 export async function joinCase(shareToken: string, name: string) {
   const n = name.trim().slice(0, 20);
@@ -89,7 +120,7 @@ export async function joinCase(shareToken: string, name: string) {
   if ((count ?? 0) >= 12) throw new Error("참여 인원이 가득 찼어요");
   const { data: m, error } = await db.from("members").insert({ case_id: c.id, name: n, role: "member" }).select("id").single();
   if (error) throw new Error("참여하지 못했어요. 다시 시도해주세요");
-  await act(c.id, `${n}님이 가족으로 참여했어요`);
+  await act(c.id, `${n}님이 가족으로 참여했어요`, m.id);
   await logEvent(c.id, "member_joined");
   redirect(`/c/${m.id}`);
 }
@@ -109,7 +140,7 @@ export async function removeMember(a: Auth, memberId: string) {
   if (!m) throw new Error("가족을 찾을 수 없어요");
   if (m.role === "admin") throw new Error("처음 만든 가족은 내보낼 수 없어요"); // 이 사람의 주소가 케이스 토큰이라 지우면 그 주소가 끊긴다
   await db.from("members").delete().eq("id", memberId).eq("case_id", actor.caseId); // 담당 할 일은 FK set null로 '담당자 없음'이 된다
-  await act(actor.caseId, `${m.name}님이 가족에서 빠졌어요`);
+  await act(actor.caseId, `${m.name}님이 가족에서 빠졌어요`, actor.memberId);
   refresh();
 }
 
@@ -117,11 +148,14 @@ export async function removeMember(a: Auth, memberId: string) {
 
 export async function toggleTask(a: Auth, taskId: string, done: boolean) {
   const actor = await resolve(a);
-  const { data: t } = await db.from("tasks").select("title,assignee_id").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
+  const { data: t } = await db.from("tasks").select("title,kind,due_date,due_time,repeat,assignee_id,memo").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
   if (!t) throw new Error("할 일을 찾을 수 없어요");
-  await db.from("tasks").update({ done: !!done, done_at: done ? new Date().toISOString() : null, done_by: done ? actor.name : null }).eq("id", taskId);
+  // 반복 할 일은 끝낼 때 다음 회차를 새로 만들고, 끝낸 쪽의 반복은 지운다(체크를 풀었다 다시 눌러도 두 번 생기지 않게)
+  const next = done && t.repeat ? { ...t, case_id: actor.caseId, source: "manual", due_date: nextDue(t.due_date, t.repeat, todaySeoul()) } : null;
+  await db.from("tasks").update({ done: !!done, done_at: done ? new Date().toISOString() : null, done_by: done ? actor.name : null, ...(next ? { repeat: null } : {}) }).eq("id", taskId);
+  if (next) await db.from("tasks").insert(next);
   if (done) {
-    await act(actor.caseId, `${actor.name}님이 완료했어요: ${t.title}`);
+    await act(actor.caseId, `${actor.name}님이 완료했어요: ${t.title}`, actor.memberId);
     await logEvent(actor.caseId, "task_completed", { role: actor.role });
   }
   refresh();
@@ -134,7 +168,7 @@ export async function assignTask(a: Auth, taskId: string, memberId: string | nul
   if (memberId) {
     const { data: m } = await db.from("members").select("name").eq("id", memberId).eq("case_id", actor.caseId).maybeSingle();
     if (!m) throw new Error("가족을 찾을 수 없어요");
-    await act(actor.caseId, `담당 지정 (${m.name}): ${t.title}`);
+    await act(actor.caseId, `담당 지정 (${m.name}): ${t.title}`, actor.memberId);
   }
   await db.from("tasks").update({ assignee_id: memberId }).eq("id", taskId).eq("case_id", actor.caseId);
   refresh();
@@ -146,23 +180,23 @@ export async function claimTask(a: Auth, taskId: string) {
   const { data: t } = await db.from("tasks").update({ assignee_id: actor.memberId })
     .eq("id", taskId).eq("case_id", actor.caseId).is("assignee_id", null).select("title").maybeSingle();
   if (!t) throw new Error("이미 다른 가족이 맡았거나 없는 할 일이에요");
-  await act(actor.caseId, `${actor.name}님이 맡았어요: ${t.title}`);
+  await act(actor.caseId, `${actor.name}님이 맡았어요: ${t.title}`, actor.memberId);
   await logEvent(actor.caseId, "task_claimed", { role: actor.role });
   refresh();
 }
 
 // schedule은 병원 방문 일정(그날 홈에 외래 리포트가 먼저 나온다), question은 외래 때 의료진에게 물어볼 것.
-export async function addTask(a: Auth, title: string, dueDate: string | null, kind: "custom" | "schedule" | "question" = "custom") {
+export async function addTask(a: Auth, title: string, dueDate: string | null, kind: "custom" | "schedule" | "question" = "custom", dueTime: string | null = null) {
   const actor = await resolve(a);
   const t = title.trim().slice(0, 100);
   if (!t) throw new Error("내용을 입력해주세요");
   if (!["custom", "schedule", "question"].includes(kind)) throw new Error("잘못된 요청이에요");
   if (kind === "schedule" && !isDate(dueDate)) throw new Error("병원 일정은 날짜가 필요해요");
-  await db.from("tasks").insert({ case_id: actor.caseId, title: t, kind, source: "manual", due_date: isDate(dueDate) ? dueDate : null });
+  await db.from("tasks").insert({ case_id: actor.caseId, title: t, kind, source: "manual", due_date: isDate(dueDate) ? dueDate : null, due_time: isDate(dueDate) && isTime(dueTime) ? dueTime : null });
   refresh();
 }
 
-export async function updateTask(a: Auth, taskId: string, patch: { title: string; dueDate: string | null; assigneeId: string | null; memo: string }) {
+export async function updateTask(a: Auth, taskId: string, patch: { title: string; dueDate: string | null; dueTime: string | null; repeat: string | null; assigneeId: string | null; memo: string }) {
   const actor = await resolve(a);
   const title = patch.title.trim().slice(0, 100);
   if (!title) throw new Error("할 일 내용을 입력해주세요");
@@ -174,7 +208,9 @@ export async function updateTask(a: Auth, taskId: string, patch: { title: string
   }
   const due = isDate(patch.dueDate) ? patch.dueDate : null;
   await db.from("tasks").update({
-    title, due_date: due, assignee_id: patch.assigneeId || null, memo: patch.memo.trim().slice(0, 500) || null,
+    title, due_date: due, due_time: due && isTime(patch.dueTime) ? patch.dueTime : null,
+    repeat: due && (patch.repeat === "daily" || patch.repeat === "weekly") ? patch.repeat : null, // 날짜가 있어야 반복할 수 있다
+    assignee_id: patch.assigneeId || null, memo: patch.memo.trim().slice(0, 500) || null,
     // 날짜를 직접 바꾸면 그때부터 퇴원일 변경을 따라가지 않는다
     ...(due !== cur.due_date ? { rel_day: null } : {}),
   }).eq("id", taskId).eq("case_id", actor.caseId);
@@ -205,7 +241,7 @@ export async function setBenefitStatus(a: Auth, benefitId: string, status: strin
   if (!b || !STATUSES.includes(status)) throw new Error("잘못된 요청이에요");
   const { data: prev } = await db.from("benefit_status").select("status").eq("case_id", actor.caseId).eq("benefit_id", benefitId).maybeSingle();
   await db.from("benefit_status").upsert({ case_id: actor.caseId, benefit_id: benefitId, status, updated_by: actor.name, updated_at: new Date().toISOString() });
-  await act(actor.caseId, `${actor.name}님이 "${b.name}" 상태를 변경했어요: ${STATUS_LABEL[status]}`);
+  await act(actor.caseId, `${actor.name}님이 "${b.name}" 상태를 변경했어요: ${STATUS_LABEL[status]}`, actor.memberId);
   await logEvent(actor.caseId, "benefit_status_changed", { benefit: benefitId, from: prev?.status ?? "none", to: status });
   refresh();
 }

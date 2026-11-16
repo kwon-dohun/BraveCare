@@ -33,7 +33,9 @@ export default function Wizard() {
       if (v) setD({ ...EMPTY, ...JSON.parse(v) });
     } catch {}
     startedAt = Date.now();
-    logStart().catch(() => {});
+    let src = "direct";
+    try { src = sessionStorage.getItem("bc:src") ?? src; } catch {}
+    logStart(src).catch(() => {});
     setReady(true);
   }, [router]);
   useEffect(() => {

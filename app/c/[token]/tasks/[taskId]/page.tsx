@@ -22,7 +22,7 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
         {t.done && t.done_by ? ` · ${t.done_by} 완료` : ""}
       </p>
       {t.source_quote && <p className="mt-2 rounded-xl bg-background p-3 text-sm">안내문 원문: “{t.source_quote}”</p>}
-      <TaskForm auth={auth} back={`${base}/tasks`} members={data.members} task={{ id: t.id, title: t.title, due_date: t.due_date, rel_day: t.rel_day, assignee_id: t.assignee_id, memo: t.memo }} />
+      <TaskForm auth={auth} back={`${base}/tasks`} members={data.members} task={{ id: t.id, title: t.title, due_date: t.due_date, rel_day: t.rel_day, assignee_id: t.assignee_id, memo: t.memo, due_time: t.due_time, repeat: t.repeat }} />
     </>
   );
 }

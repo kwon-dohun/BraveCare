@@ -8,7 +8,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/ics/[k]/[v]/[ta
   const actor = k === "c" ? await actorFromAdminToken(v) : k === "m" ? await actorFromMemberId(v) : null;
   if (!actor || !/^[0-9a-f-]{36}$/.test(taskId)) return new Response("not found", { status: 404 });
   const [{ data: t }, { data: c }] = await Promise.all([
-    db.from("tasks").select("id,title,due_date,memo,kind").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle(),
+    db.from("tasks").select("id,title,due_date,due_time,memo,kind").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle(),
     db.from("cases").select("hospital").eq("id", actor.caseId).single(),
   ]);
   if (!t?.due_date) return new Response("not found", { status: 404 });

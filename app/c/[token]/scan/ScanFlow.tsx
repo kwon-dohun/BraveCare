@@ -1,9 +1,10 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { extractFromImage, extractFromPaste, confirmDocItems } from "@/app/scan-actions";
 import type { Auth } from "@/lib/db";
 import { DOC_TYPE_LABEL, type DocItem } from "@/lib/extract";
+import { toApp, useInApp } from "@/lib/app";
 
 const KIND: Record<DocItem["kind"], string> = { schedule: "일정", medication: "복약", caution: "주의사항", contact: "문의처" };
 const MAX = 3; // 한 번에 읽는 사진 수
@@ -11,7 +12,7 @@ const MAX = 3; // 한 번에 읽는 사진 수
 interface Row extends DocItem { quote: string; include: boolean }
 
 // 서버 업로드 한도와 속도를 위해 긴 변 1600px JPEG로 줄인다
-async function toJpegBase64(file: File): Promise<string> {
+async function toJpegBase64(file: Blob): Promise<string> {
   const bmp = await createImageBitmap(file);
   const s = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
   const c = document.createElement("canvas");
@@ -31,7 +32,9 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
   const [pending, start] = useTransition();
   const toRows = (items: DocItem[]) => items.map((i) => ({ ...i, quote: i.text, include: !i.needsCheck }));
 
-  const onFiles = async (list: FileList | null) => {
+  const app = useInApp();
+
+  const onFiles = async (list: FileList | Blob[] | null) => {
     const files = [...(list ?? [])].slice(0, MAX);
     if (!files.length) return;
     setErr(""); setRows(null); setFound([]);
@@ -55,6 +58,16 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
       if (!all.length) setErr("글자는 보관했지만 할 일로 만들 항목은 찾지 못했어요. 글자가 흐리면 밝은 곳에서 다시 촬영하거나, 할 일을 직접 추가해주세요.");
     }
   };
+
+  // 앱의 문서 스캐너(자동으로 반듯하게 잘라 줌)가 찍은 사진을 받는다. 매번 최신 onFiles를 쓰도록 의존성 없이 다시 건다.
+  useEffect(() => {
+    const got = async (e: Event) => {
+      const shots = (e as CustomEvent<string[]>).detail ?? [];
+      onFiles(await Promise.all(shots.map((b) => fetch(`data:image/jpeg;base64,${b}`).then((r) => r.blob()))));
+    };
+    window.addEventListener("bravecare:scan", got);
+    return () => window.removeEventListener("bravecare:scan", got);
+  });
 
   const onPaste = async () => {
     setErr(""); setRows(null); setFound([]); setBusy("읽는 중…");
@@ -83,8 +96,13 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
 
   return (
     <>
-      <label className="flex cursor-pointer items-center justify-center rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink">
-        {busy ? "읽는 중…" : rows ? "다시 촬영하기" : "촬영하거나 사진 고르기"}
+      {app && (
+        <button type="button" disabled={!!busy} onClick={() => toApp({ t: "scan", max: MAX })} className="mb-2 flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink">
+          {busy ? "읽는 중…" : "문서 스캔하기 (자동으로 반듯하게)"}
+        </button>
+      )}
+      <label className={`flex cursor-pointer items-center justify-center px-5 font-semibold ${app ? "rounded-full bg-accent-soft py-3 text-accent" : "rounded-xl bg-primary py-3.5 text-ink"}`}>
+        {app ? "사진첩에서 고르기" : busy ? "읽는 중…" : rows ? "다시 촬영하기" : "촬영하거나 사진 고르기"}
         <input type="file" accept="image/*" multiple className="sr-only" disabled={!!busy} onChange={(e) => { onFiles(e.target.files); e.target.value = ""; }} />
       </label>
       <p className="mt-2 text-sm text-muted">퇴원 안내문, 약봉투, 영수증을 한 번에 {MAX}장까지 고를 수 있어요. 종이 전체가 보이게 밝은 곳에서 찍어주세요. 사진은 글자를 읽은 뒤 저장하지 않고, 읽은 글자만 보관해요.</p>

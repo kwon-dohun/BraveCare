@@ -2,14 +2,14 @@
 import Link from "next/link";
 import { toggleTask, assignTask, claimTask } from "@/app/actions";
 import type { Auth } from "@/lib/db";
-import { KIND_LABEL } from "@/lib/timeline";
-import { dateLabel } from "@/lib/format";
+import { KIND_LABEL, REPEAT_LABEL } from "@/lib/timeline";
+import { dateLabel, krTime } from "@/lib/format";
 import { useAct } from "./useAct";
 import Icon from "@/components/Icon";
 import Mascot from "@/components/Mascot";
 import { taskHelp } from "@/lib/task-help";
 
-export interface T { id: string; title: string; kind: keyof typeof KIND_LABEL; due_date: string | null; rel_day: number | null; assignee_id: string | null; done: boolean; done_by: string | null; source: string; source_quote: string | null; memo: string | null }
+export interface T { id: string; title: string; kind: keyof typeof KIND_LABEL; due_date: string | null; rel_day: number | null; assignee_id: string | null; done: boolean; done_by: string | null; source: string; source_quote: string | null; memo: string | null; due_time?: string | null; repeat?: "daily" | "weekly" | null }
 interface M { id: string; name: string }
 
 export default function TaskList({ tasks, members, auth, meId, canAssign, today, emptyText, detailBase, showDate = true }: {
@@ -32,7 +32,7 @@ export default function TaskList({ tasks, members, auth, meId, canAssign, today,
         {tasks.map((t) => {
           const canCheck = canAssign || t.assignee_id === meId;
           const overdue = !t.done && !!t.due_date && t.due_date < today;
-          const meta = [KIND_LABEL[t.kind], showDate ? dateLabel(t.due_date, t.rel_day, today) : "", overdue ? "지남" : "", t.done && t.done_by ? `${t.done_by} 완료` : ""].filter(Boolean).join(" · ");
+          const meta = [KIND_LABEL[t.kind], showDate ? dateLabel(t.due_date, t.rel_day, today) : "", t.due_time ? krTime(t.due_time) : "", t.repeat ? `${REPEAT_LABEL[t.repeat]} 반복` : "", overdue ? "지남" : "", t.done && t.done_by ? `${t.done_by} 완료` : ""].filter(Boolean).join(" · ");
           return (
             <li key={t.id} className="flex items-start gap-3 px-4 py-3">
               <button

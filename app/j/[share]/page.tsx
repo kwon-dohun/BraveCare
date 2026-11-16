@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import JoinForm from "./JoinForm";
 import { Logo } from "@/components/Mascot";
+import GetApp from "@/components/GetApp";
 
 // 미리보기와 화면이 같은 조회를 쓴다
 const lookup = cache(async (share: string) => {
@@ -40,6 +41,7 @@ export default async function Join(props: PageProps<"/j/[share]">) {
           <h1 className="mt-6 text-[1.75rem] font-display leading-tight">{admin?.name}님이 가족 퇴원 준비를 같이 하자고 초대했어요</h1>
           <p className="mt-3 text-muted">이름만 입력하면 바로 같이 쓸 수 있어요. 할 일 나누기, 일정, 지원, 씩씩이 물어보기까지 모두 똑같이 쓸 수 있어요.</p>
           <JoinForm share={share} />
+          <GetApp />
         </>
       )}
     </main>

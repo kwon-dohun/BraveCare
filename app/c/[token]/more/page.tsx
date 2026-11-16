@@ -26,7 +26,8 @@ export default async function More(props: PageProps<"/c/[token]/more">) {
     ]],
     ["도움말", [
       ["/glossary", "book", "쉬운 용어 사전", "외래·산정특례·실손24…", "bg-[#dff7ec] text-[#0b7a57]"],
-      ["/settings", "settings", "설정", "퇴원일 바꾸기·주소 복사", "bg-[#eef1f0] text-[#45524d]"],
+      ["/help", "help", "도움말·문의", "자주 묻는 질문", "bg-[#e3f0ff] text-[#1f5aa6]"],
+      ["/settings", "settings", "설정", "퇴원일·글자 크기·주소", "bg-[#eef1f0] text-[#45524d]"],
     ]],
   ];
 

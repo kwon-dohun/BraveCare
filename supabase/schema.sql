@@ -110,3 +110,20 @@ create index if not exists documents_case_idx on public.documents(case_id, creat
 
 alter table public.daily_checks enable row level security;
 alter table public.documents enable row level security;
+
+-- ---- 출시 준비 (2026-11-16) ----
+-- 카카오 로그인(되찾기)은 카카오 회원번호만, 앱 푸시는 기기 토큰만 둔다. seen_at은 새 소식을 마지막으로 본 시각.
+alter table public.members
+  add column if not exists kakao_id text,
+  add column if not exists push_token text,
+  add column if not exists seen_at timestamptz not null default now();
+create index if not exists members_kakao_idx on public.members(kakao_id);
+
+-- 할 일 시간(외래 오후 2시)과 반복(매일 소독). 반복은 완료할 때 다음 회차를 새로 만든다.
+alter table public.tasks
+  add column if not exists due_time time,
+  add column if not exists repeat text check (repeat in ('daily','weekly'));
+
+-- 누가 한 일인지. 내가 한 일은 내 새 소식에서 뺀다.
+alter table public.activity
+  add column if not exists member_id uuid references public.members(id) on delete set null;

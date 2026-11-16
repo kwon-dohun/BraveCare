@@ -12,7 +12,7 @@ const SIDE: [string, string, IconName][] = [
   ["/more", "전체", "grid"],
 ];
 // '전체' 아래에 있는 화면들
-const UNDER_MORE = /\/(more|benefits|family|daily|report|docs|scan|settings|glossary)(\/|$)/;
+const UNDER_MORE = /\/(more|benefits|family|daily|report|docs|scan|settings|glossary|help)(\/|$)/;
 
 export default function Nav({ base }: { base: string }) {
   const path = usePathname();

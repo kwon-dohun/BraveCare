@@ -7,13 +7,15 @@ import { useAct } from "@/components/useAct";
 
 interface Props {
   auth: Auth; back: string; members: { id: string; name: string }[];
-  task: { id: string; title: string; due_date: string | null; rel_day: number | null; assignee_id: string | null; memo: string | null };
+  task: { id: string; title: string; due_date: string | null; rel_day: number | null; assignee_id: string | null; memo: string | null; due_time: string | null; repeat: "daily" | "weekly" | null };
 }
 
 export default function TaskForm({ auth, back, members, task }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState(task.title);
   const [date, setDate] = useState(task.due_date ?? "");
+  const [time, setTime] = useState(task.due_time ?? "");
+  const [repeat, setRepeat] = useState<string>(task.repeat ?? "");
   const [assignee, setAssignee] = useState(task.assignee_id ?? "");
   const [memo, setMemo] = useState(task.memo ?? "");
   const [confirmDel, setConfirmDel] = useState(false);
@@ -22,7 +24,7 @@ export default function TaskForm({ auth, back, members, task }: Props) {
   const field = "mt-1 w-full rounded-xl border border-line bg-card px-4 py-3";
 
   return (
-    <form className="mt-5 space-y-4" onSubmit={(e) => { e.preventDefault(); run(() => updateTask(auth, task.id, { title, dueDate: date || null, assigneeId: assignee || null, memo }), done); }}>
+    <form className="mt-5 space-y-4" onSubmit={(e) => { e.preventDefault(); run(() => updateTask(auth, task.id, { title, dueDate: date || null, dueTime: time || null, repeat: repeat || null, assigneeId: assignee || null, memo }), done); }}>
       <div>
         <label htmlFor="tt" className="font-semibold">할 일</label>
         <textarea id="tt" rows={2} maxLength={100} value={title} onChange={(e) => setTitle(e.target.value)} className={field} />
@@ -34,6 +36,21 @@ export default function TaskForm({ auth, back, members, task }: Props) {
           <p className="mt-1 text-sm text-muted">지금은 퇴원일 기준으로 자동 계산돼요. 날짜를 직접 바꾸면 퇴원일이 바뀌어도 이 날짜는 그대로 유지돼요.</p>
         )}
       </div>
+      {date && (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="th" className="font-semibold">시간 <span className="text-sm font-normal text-muted">(선택)</span></label>
+            <input id="th" type="time" value={time} onChange={(e) => setTime(e.target.value)} className={field} />
+          </div>
+          <div>
+            <label htmlFor="tr" className="font-semibold">반복</label>
+            <select id="tr" value={repeat} onChange={(e) => setRepeat(e.target.value)} className={field}>
+              <option value="">안 함</option><option value="daily">매일</option><option value="weekly">매주</option>
+            </select>
+          </div>
+          {repeat && <p className="col-span-2 text-sm text-muted">끝냈다고 체크하면 다음 {repeat === "daily" ? "날" : "주"} 할 일이 자동으로 생겨요.</p>}
+        </div>
+      )}
       <div>
         <label htmlFor="ta" className="font-semibold">담당자</label>
         <select id="ta" value={assignee} onChange={(e) => setAssignee(e.target.value)} className={field}>

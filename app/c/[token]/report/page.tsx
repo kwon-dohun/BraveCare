@@ -5,6 +5,7 @@ import { loadDaily } from "@/lib/daily";
 import { summarize, TEMP_LABEL, BOWEL_LABEL } from "@/lib/report";
 import { REASON_LABEL } from "@/lib/options";
 import AddQuestion from "./AddQuestion";
+import Bright from "@/components/Bright";
 
 export const metadata = { title: "외래 리포트 · 씩씩케어" };
 
@@ -28,6 +29,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
 
   return (
     <div className="fixed inset-0 z-20 overflow-auto bg-white p-5 text-headline text-black landscape:text-xl">
+      <Bright />
       <div className="mx-auto max-w-5xl">
         <div className="flex items-center justify-between print:hidden">
           <BackLink href={`${base}/daily`}>닫기</BackLink>
