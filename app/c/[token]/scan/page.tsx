@@ -22,7 +22,7 @@ export default async function Scan(props: PageProps<"/c/[token]/scan">) {
     <>
       <BackLink href={`${base}/more`}>전체</BackLink>
       <h1 className="mt-2 text-title font-display">서류 찍어서 정리</h1>
-      <p className="mb-5 mt-1 text-muted">외래·검사 날짜는 가족 달력에 넣고, 약봉투·영수증·진단서 글자는 보관함에 저장해요. 서류에 적힌 내용만 그대로 옮겨요.</p>
+      <p className="mb-5 mt-1 text-muted">진단서, 퇴원 안내문, 약봉투, 영수증 글자를 보관함에 안전하게 저장해요. 서류에 적힌 내용을 바탕으로 씩씩이가 질문에 답변해 드려요.</p>
       <ScanFlow auth={auth} base={base} initialDocs={docs} />
     </>
   );

@@ -24,9 +24,22 @@ export default function TaskForm({ auth, back, members, task }: Props) {
   const { run, pending, err } = useAct();
 
   const copyHelp = async () => {
-    // 주소는 넣지 않는다: 지금 주소가 곧 내 열쇠라, 단톡방에 붙이면 누구나 내 화면으로 들어올 수 있다
-    const dStr = date ? ` [${date}]` : "";
-    const text = `[${title}]${dStr} 아직 담당 가족이 없어요. 시간 되시는 분이 씩씩케어에서 ‘내가 할게’를 눌러 주세요.`;
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://bravecare-kr.vercel.app";
+    const taskUrl = `${origin}/c/${auth.v}/tasks/${task.id}`;
+    const dateStr = date ? `${date}${time ? ` ${time}` : ""}` : "기한 미정";
+    const memoStr = memo ? `\n📝 메모: ${memo}` : "";
+
+    const text = `[씩씩케어] 가족 돌봄 부탁드려요 🌿
+
+📌 할 일: ${title}
+🗓 일시: ${dateStr}${memoStr}
+
+아직 맡은 가족이 없어요.
+시간 되시는 분이 아래 링크에서 '내가 할게'를 눌러주세요!
+
+👉 바로 확인하고 맡기:
+${taskUrl}`;
+
     try {
       await navigator.clipboard.writeText(text);
       setCopiedHelp(true);

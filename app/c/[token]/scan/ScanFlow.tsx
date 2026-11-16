@@ -203,7 +203,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
         {app ? "사진첩에서 고르기" : busy ? "읽는 중…" : rows ? "다시 촬영하기" : "촬영하거나 사진 고르기"}
         <input type="file" accept="image/*" multiple className="sr-only" disabled={!!busy} onChange={(e) => { onFiles(e.target.files); e.target.value = ""; }} />
       </label>
-      <p className="mt-2 text-sm text-muted">진단서·확인서, 퇴원 안내문, 약봉투, 영수증을 한 번에 {MAX}장까지 고를 수 있어요. 종이 전체가 보이게 밝은 곳에서 찍어주세요. 사진은 글자를 읽은 뒤 저장하지 않고, 읽은 글자만 보관해요.</p>
+      <p className="mt-2 text-sm text-muted">진단서·확인서, 퇴원 안내문, 약봉투, 영수증을 한 번에 {MAX}장까지 고를 수 있어요. 사진은 글자를 읽은 뒤 즉시 파기하고 글자만 보관해요. (외래 진료 날짜는 캘린더에서 직접 등록하거나 아래 &lsquo;병원 문자 붙여넣기&rsquo;를 이용해 주세요)</p>
 
       <details className="mt-4 rounded-xl bg-card shadow-card p-4">
         <summary className="cursor-pointer font-semibold">병원 문자·알림톡 붙여넣기</summary>
@@ -270,8 +270,8 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
 
       {rows && rows.some((r) => r.kind === "schedule") && (
         <section className="mt-5" aria-labelledby="rv">
-          <h2 id="rv" className="font-semibold">일정으로 넣을 것</h2>
-          <p className="text-sm text-muted">서류와 비교해 맞는 것만 체크하세요. 체크한 일정은 가족 달력에 들어가요.</p>
+          <h2 id="rv" className="font-semibold">서류에서 발견된 일정</h2>
+          <p className="text-sm text-muted">서류에 적힌 날짜 중 캘린더에 넣을 일정을 선택하세요.</p>
           <ul className="mt-3 space-y-3">{rows.map((r, i) => r.kind === "schedule" && rowItem(r, i))}</ul>
         </section>
       )}

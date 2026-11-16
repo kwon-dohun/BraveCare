@@ -76,20 +76,21 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
       <div className="flex items-center justify-between">
         <Segmented inline label="일정 보기" active={isList ? 1 : 0} items={[{ label: "달력", href: `${base}/tasks` }, { label: "할 일 목록", href: `${base}/tasks?view=list` }]} />
 
-        {!isList ? (
-          <Link scroll={false} href={calHref(`d=${today}`)} className="flex h-8 items-center justify-center rounded-full bg-card px-3.5 text-xs font-semibold shadow-card text-ink">
-            오늘
-          </Link>
-        ) : (
+        <div className="flex items-center gap-1.5">
+          {!isList && (
+            <Link scroll={false} href={calHref(`d=${today}`)} className="flex h-8 items-center justify-center rounded-full bg-card px-3 text-xs font-semibold shadow-card text-ink hover:text-accent">
+              오늘
+            </Link>
+          )}
           <details className="relative">
-            <summary className="flex h-8 cursor-pointer items-center justify-center gap-1 rounded-full bg-card px-3.5 text-xs font-semibold shadow-card text-ink">
-              <Icon name="plus" size={14} />추가
+            <summary className="flex h-8 cursor-pointer items-center justify-center gap-1 rounded-full bg-card px-3 text-xs font-semibold shadow-card text-ink hover:text-accent">
+              <Icon name="plus" size={14} />{isList ? "할 일 추가" : "외래·일정 추가"}
             </summary>
             <div className="absolute right-0 top-9 z-20 w-80 rounded-2xl bg-card p-4 shadow-card ring-1 ring-line">
-              <AddTask auth={auth} />
+              <AddTask auth={auth} defaultVisit={!isList} />
             </div>
           </details>
-        )}
+        </div>
       </div>
 
       {/* ======================= [1. 메인: 월별 캘린더 뷰] ======================= */}
@@ -321,8 +322,12 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
             )}
 
             <details className="mt-3 rounded-xl bg-card shadow-card">
-              <summary className="cursor-pointer px-4 py-3 text-sm font-semibold"><span className="flex items-center gap-1.5"><Icon name="plus" size={16} />이 날에 할 일 추가</span></summary>
-              <div className="px-4 pb-4"><AddTask auth={auth} defaultDate={sel} plain /></div>
+              <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">
+                <span className="flex items-center gap-1.5 text-accent">
+                  <Icon name="plus" size={16} />이 날에 외래 일정 또는 할 일 추가
+                </span>
+              </summary>
+              <div className="px-4 pb-4"><AddTask auth={auth} defaultDate={sel} defaultVisit={true} plain /></div>
             </details>
           </section>
 

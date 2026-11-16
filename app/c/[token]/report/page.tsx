@@ -11,7 +11,7 @@ export const metadata = { title: "외래 리포트 · 씩씩케어" };
 
 const md = (d: string) => `${Number(d.slice(5, 7))}/${Number(d.slice(8))}`;
 
-// 진료실에서 휴대폰을 가로로 돌려 의료진에게 보여주는 한 장. 화면 전체를 덮고, 가로일 때 글자를 더 키운다.
+// 진료실에서 의료진에게 보여주거나 보호자가 점검하는 1장 요약 리포트. 모바일 세로/가로 회전 시에도 일그러짐 없이 반응형으로 표시된다.
 export default async function Report(props: PageProps<"/c/[token]/report">) {
   const { token } = await props.params;
   const { actor, data, auth, base } = await adminPage(token);
@@ -20,113 +20,157 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
   const s = summarize(checks, data.input.dischargeDate && first && data.input.dischargeDate < first ? data.input.dischargeDate : first ?? data.today, data.today);
   const asked = data.tasks.filter((t) => t.kind === "question" && !t.done);
   const allAsked = asked.length;
-  const questions = [...asked.filter((t) => t.source === "manual"), ...asked.filter((t) => t.source !== "manual" && (t.rel_day ?? 0) > 0)].slice(0, 3);
+  const questions = [...asked.filter((t) => t.source === "manual"), ...asked.filter((t) => t.source !== "manual" && (t.rel_day ?? 0) > 0)].slice(0, 5);
 
   // 통증 추이: 0~10점을 그대로 찍는다
   const W = 320, H = 130, L = 28, B = 22;
   const x = (i: number) => L + (s.pain.length === 1 ? (W - L - 8) / 2 : (i * (W - L - 8)) / (s.pain.length - 1));
   const y = (p: number) => 8 + ((10 - p) * (H - B - 8)) / 10;
-  const box = "rounded-xl border-2 border-foreground p-4";
+  const box = "rounded-2xl border border-line bg-card p-4 shadow-card";
 
   return (
-    <div className="fixed inset-0 z-20 overflow-auto bg-white p-5 text-headline text-black landscape:text-xl">
+    <div className="min-h-screen bg-background p-4 pb-20 text-ink">
       <Bright />
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-3xl">
         <div className="flex items-center justify-between print:hidden">
-          <BackLink href={`${base}/daily`}>닫기</BackLink>
-          <p className="text-base text-muted portrait:block landscape:hidden">휴대폰을 가로로 돌리면 크게 보여요</p>
+          <BackLink href={`${base}/daily`}>데일리 체크</BackLink>
+          <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">
+            진료실 공유용 리포트
+          </span>
         </div>
-        <h1 className="mt-2 text-2xl font-semibold landscape:text-3xl">퇴원 후 경과 요약</h1>
-        <p className="text-base text-muted">
-          {REASON_LABEL.find(([k]) => k === data.input.reason)?.[1]} · {data.input.birthYear}년생
-          {data.input.dischargeDate ? ` · 퇴원 ${data.input.dischargeDate}` : ""} · 보호자가 기록한 내용이에요
-        </p>
+
+        <div className="mt-3">
+          <h1 className="text-xl font-bold font-display sm:text-2xl">퇴원 후 경과 요약 (외래 리포트)</h1>
+          <p className="mt-1 text-xs text-muted leading-relaxed sm:text-sm">
+            {REASON_LABEL.find(([k]) => k === data.input.reason)?.[1]} · {data.input.birthYear}년생
+            {data.input.dischargeDate ? ` · 퇴원일 ${data.input.dischargeDate}` : ""} · 보호자가 매일 기록한 실제 경과예요
+          </p>
+        </div>
 
         {s.days === 0 ? (
-          <>
-          <div className="mt-6 rounded-xl border border-line p-5">
-            <p>아직 기록이 없어요. 데일리 체크를 하루만 남겨도 이 리포트가 만들어져요.</p>
-            <Link href={`${base}/daily`} className="mt-4 flex items-center justify-center rounded-xl bg-primary px-5 py-3 font-semibold text-ink">오늘 데일리 체크 남기기</Link>
-          </div>
-          <div className="mt-4 grid gap-4 landscape:grid-cols-2">
-            <section className={box} aria-labelledby="r4">
-              <h2 id="r4" className="font-semibold">여쭤보고 싶은 것</h2>
-              {questions.length
-                ? <ol className="mt-1 list-decimal space-y-1 pl-6">{questions.map((q) => <li key={q.id}>{q.title}</li>)}</ol>
-                : <p className="mt-1 text-base text-muted">아직 적어둔 질문이 없어요.</p>}
-              <AddQuestion auth={auth} />
-              <Link href={`${base}/questions`} className="mt-2 inline-block text-base text-muted underline print:hidden landscape:hidden">전체 질문 보기{allAsked > questions.length ? ` (${allAsked}개)` : ""}</Link>
-            </section>
+          <div className="mt-6 space-y-4">
+            <div className="rounded-2xl border border-line bg-card p-5 shadow-card text-center">
+              <p className="font-semibold text-ink">아직 데일리 체크 기록이 없어요.</p>
+              <p className="mt-1 text-xs text-muted">퇴원 후 상태를 하루만 기록해도 의사에게 보여줄 요약 리포트가 완성돼요.</p>
+              <Link href={`${base}/daily`} className="mt-4 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 font-semibold text-ink shadow-sm hover:opacity-90">
+                오늘 데일리 체크 남기기
+              </Link>
+            </div>
 
-            {checks.some((c) => c.notes) && (
-              <section className={`${box} col-span-full`} aria-labelledby="r5">
-                <h2 id="r5" className="font-semibold">보호자 특이사항 메모</h2>
-                <ul className="mt-2 space-y-1.5 text-sm">
-                  {checks.filter((c) => c.notes).slice(0, 5).map((c) => (
-                    <li key={c.check_date} className="rounded-lg bg-background p-2.5">
-                      <span className="font-semibold text-accent">{md(c.check_date)}: </span>
-                      <span>{c.notes}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
+            <section className={box} aria-labelledby="r-ask">
+              <h2 id="r-ask" className="font-semibold text-ink">여쭤보고 싶은 것</h2>
+              {questions.length ? (
+                <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm">
+                  {questions.map((q) => <li key={q.id}>{q.title}</li>)}
+                </ol>
+              ) : (
+                <p className="mt-2 text-xs text-muted">아직 적어둔 질문이 없어요. 아래에서 바로 추가할 수 있어요.</p>
+              )}
+              <div className="mt-3"><AddQuestion auth={auth} /></div>
+              <Link href={`${base}/questions`} className="mt-2.5 inline-block text-xs text-accent underline">
+                전체 질문 목록 보기{allAsked > questions.length ? ` (${allAsked}개)` : ""}
+              </Link>
+            </section>
           </div>
-          </>
         ) : (
-          <div className="mt-4 grid gap-4 landscape:grid-cols-2">
+          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {/* 1. 약 복용 */}
             <section className={box} aria-labelledby="r1">
-              <h2 id="r1" className="font-semibold">약 복용</h2>
-              <p className="mt-1 text-4xl font-semibold landscape:text-5xl">{s.adherence}%</p>
-              <p className="text-base">기록한 {s.days}일 기준 (전체 {s.span}일 중 {s.days}일 기록)</p>
-              {s.sideEffects.length > 0 && <p className="mt-2 font-semibold">약 먹고 불편했던 날: {s.sideEffects.map(md).join(", ")}</p>}
+              <div className="flex items-center justify-between">
+                <h2 id="r1" className="font-semibold text-ink">약 복용 이행률</h2>
+                <span className="text-xs text-muted">{s.days}일 기록</span>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-accent sm:text-4xl">{s.adherence}%</span>
+                <span className="text-xs text-muted">(경과 {s.span}일 중 {s.days}일 복약 기록)</span>
+              </div>
+              {s.sideEffects.length > 0 ? (
+                <p className="mt-2 text-xs text-warn font-medium">⚠️ 약 먹고 불편했던 날: {s.sideEffects.map(md).join(", ")}</p>
+              ) : (
+                <p className="mt-2 text-xs text-muted">약 복용 후 이상 반응 없음</p>
+              )}
             </section>
 
+            {/* 2. 통증 추이 */}
             <section className={box} aria-labelledby="r2">
-              <h2 id="r2" className="font-semibold">통증 (0~10점)</h2>
-              {s.avgPain === null
-                ? <p className="mt-1 text-base">기록이 3일 미만이라 평균 대신 날짜별 점수를 보여드려요: {s.pain.map((p) => `${md(p.date)} ${p.pain}점`).join(", ")}</p>
-                : <p className="mt-1">평균 <b className="text-3xl">{s.avgPain}</b>점 · 가장 아팠던 날 {s.maxPain}점</p>}
-              <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`통증 추이: ${s.pain.map((p) => `${md(p.date)} ${p.pain}점`).join(", ")}`} className="mt-2 w-full">
-                {[0, 5, 10].map((v) => (
-                  <g key={v}>
-                    <line x1={L} x2={W - 4} y1={y(v)} y2={y(v)} stroke="#bbb" strokeWidth="1" strokeDasharray={v ? "3 3" : undefined} />
-                    <text x={L - 6} y={y(v) + 4} textAnchor="end" fontSize="11">{v}</text>
-                  </g>
-                ))}
-                <polyline fill="none" stroke="#000" strokeWidth="2.5" points={s.pain.map((p, i) => `${x(i)},${y(p.pain)}`).join(" ")} />
-                {s.pain.map((p, i) => <circle key={p.date} cx={x(i)} cy={y(p.pain)} r="3.5" />)}
-                <text x={L} y={H - 4} fontSize="11">{md(s.pain[0].date)}</text>
-                {s.pain.length > 1 && <text x={W - 4} y={H - 4} fontSize="11" textAnchor="end">{md(s.pain.at(-1)!.date)}</text>}
-              </svg>
+              <div className="flex items-center justify-between">
+                <h2 id="r2" className="font-semibold text-ink">통증 추이 (0~10점)</h2>
+                {s.avgPain !== null && (
+                  <span className="text-xs text-muted">평균 <b className="text-ink font-semibold">{s.avgPain}</b>점 · 최대 {s.maxPain}점</span>
+                )}
+              </div>
+              {s.avgPain === null ? (
+                <p className="mt-2 text-xs text-muted">기록 3일 미만: {s.pain.map((p) => `${md(p.date)} (${p.pain}점)`).join(", ")}</p>
+              ) : (
+                <div className="mt-2">
+                  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`통증 추이 그래프`} className="mx-auto w-full max-w-sm h-auto">
+                    {[0, 5, 10].map((v) => (
+                      <g key={v}>
+                        <line x1={L} x2={W - 4} y1={y(v)} y2={y(v)} stroke="#e0e8e4" strokeWidth="1" strokeDasharray={v ? "3 3" : undefined} />
+                        <text x={L - 6} y={y(v) + 4} textAnchor="end" fontSize="10" fill="#607369">{v}</text>
+                      </g>
+                    ))}
+                    <polyline fill="none" stroke="#2c9670" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" points={s.pain.map((p, i) => `${x(i)},${y(p.pain)}`).join(" ")} />
+                    {s.pain.map((p, i) => <circle key={p.date} cx={x(i)} cy={y(p.pain)} r="3.5" fill="#1b5e46" />)}
+                    <text x={L} y={H - 4} fontSize="10" fill="#607369">{md(s.pain[0].date)}</text>
+                    {s.pain.length > 1 && <text x={W - 4} y={H - 4} fontSize="10" textAnchor="end" fill="#607369">{md(s.pain.at(-1)!.date)}</text>}
+                  </svg>
+                </div>
+              )}
             </section>
 
+            {/* 3. 체온·상처·배변 */}
             <section className={box} aria-labelledby="r3">
-              <h2 id="r3" className="font-semibold">열·수술 부위·배변</h2>
-              <ul className="mt-1 space-y-1">
-                <li>열: {s.fevers.length ? s.fevers.map((f) => `${md(f.date)} ${TEMP_LABEL[f.temp]}`).join(", ") : "기록한 날은 모두 정상"}</li>
-                <li>수술 부위 진물·벌어짐: {s.wounds.length ? s.wounds.map(md).join(", ") : "없음"}</li>
-                <li>배변 불편: {s.bowel.length ? s.bowel.map((b) => `${md(b.date)} ${BOWEL_LABEL[b.bowel]}`).join(", ") : "없음"}</li>
+              <h2 id="r3" className="font-semibold text-ink">체온 · 상처 부위 · 배변</h2>
+              <ul className="mt-2 divide-y divide-line/60 text-xs sm:text-sm">
+                <li className="flex justify-between py-1.5">
+                  <span className="text-muted">발열 여부</span>
+                  <span className={s.fevers.length ? "font-semibold text-warn" : "text-ink"}>
+                    {s.fevers.length ? s.fevers.map((f) => `${md(f.date)} ${TEMP_LABEL[f.temp]}`).join(", ") : "기록일 정상 체온"}
+                  </span>
+                </li>
+                <li className="flex justify-between py-1.5">
+                  <span className="text-muted">수술 부위 진물·벌어짐</span>
+                  <span className={s.wounds.length ? "font-semibold text-warn" : "text-ink"}>
+                    {s.wounds.length ? `${s.wounds.map(md).join(", ")} 확인됨` : "이상 없음"}
+                  </span>
+                </li>
+                <li className="flex justify-between py-1.5">
+                  <span className="text-muted">배변 상태</span>
+                  <span className="text-ink">
+                    {s.bowel.length ? s.bowel.map((b) => `${md(b.date)} ${BOWEL_LABEL[b.bowel]}`).join(", ") : "이상 없음"}
+                  </span>
+                </li>
               </ul>
             </section>
 
+            {/* 4. 의사에게 여쭤볼 것 */}
             <section className={box} aria-labelledby="r4">
-              <h2 id="r4" className="font-semibold">여쭤보고 싶은 것</h2>
-              {questions.length
-                ? <ol className="mt-1 list-decimal space-y-1 pl-6">{questions.map((q) => <li key={q.id}>{q.title}</li>)}</ol>
-                : <p className="mt-1 text-base text-muted">아직 적어둔 질문이 없어요.</p>}
-              <AddQuestion auth={auth} />
-              <Link href={`${base}/questions`} className="mt-2 inline-block text-base text-muted underline print:hidden landscape:hidden">전체 질문 보기{allAsked > questions.length ? ` (${allAsked}개)` : ""}</Link>
+              <div className="flex items-center justify-between">
+                <h2 id="r4" className="font-semibold text-ink">의료진에게 여쭤볼 것</h2>
+                <Link href={`${base}/questions`} className="text-xs text-accent underline">
+                  전체 ({allAsked})
+                </Link>
+              </div>
+              {questions.length ? (
+                <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-xs sm:text-sm">
+                  {questions.map((q) => <li key={q.id} className="text-ink">{q.title}</li>)}
+                </ol>
+              ) : (
+                <p className="mt-2 text-xs text-muted">아직 적어둔 질문이 없어요. 아래에서 바로 추가할 수 있어요.</p>
+              )}
+              <div className="mt-3"><AddQuestion auth={auth} /></div>
             </section>
 
+            {/* 5. 보호자 특이사항 메모 (전체 폭) */}
             {checks.some((c) => c.notes) && (
-              <section className={`${box} col-span-full`} aria-labelledby="r5">
-                <h2 id="r5" className="font-semibold">보호자 특이사항 메모</h2>
-                <ul className="mt-2 space-y-1.5 text-sm">
+              <section className={`${box} sm:col-span-2`} aria-labelledby="r5">
+                <h2 id="r5" className="font-semibold text-ink">보호자가 기록한 날짜별 특이사항</h2>
+                <ul className="mt-2 space-y-2 text-xs sm:text-sm">
                   {checks.filter((c) => c.notes).slice(0, 5).map((c) => (
-                    <li key={c.check_date} className="rounded-lg bg-background p-2.5">
+                    <li key={c.check_date} className="rounded-xl bg-background p-3">
                       <span className="font-semibold text-accent">{md(c.check_date)}: </span>
-                      <span>{c.notes}</span>
+                      <span className="text-ink">{c.notes}</span>
                     </li>
                   ))}
                 </ul>
