@@ -124,8 +124,16 @@ export async function searchAdditionalBenefits(params: {
 ${params.customKeyword?.trim() ? `- 환자/가족이 찾고 있는 관심 키워드: ${params.customKeyword.trim()}` : ""}
 `;
 
+  // 기본 메인 모델: gpt-4o-mini (빠른 속도와 비용 절감). 복합 특수 질환 조건일 때만 gpt-4o로 라우팅
+  const useFlagship =
+    params.extraTags.includes("특정 희귀·난치질환") ||
+    params.diagnosis.includes("암") ||
+    params.diagnosis.includes("뇌혈관");
+
+  const modelToUse = useFlagship ? (process.env.GPT_FLAGSHIP_MODEL ?? "gpt-4o") : "gpt-4o-mini";
+
   try {
-    const raw = await askJson(systemPrompt, [{ type: "text", text: userPrompt }]);
+    const raw = await askJson(systemPrompt, [{ type: "text", text: userPrompt }], modelToUse);
     if (!raw) return filterPresets(params);
 
     const parsed = JSON.parse(raw);
