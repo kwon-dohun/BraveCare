@@ -127,3 +127,39 @@ alter table public.tasks
 -- 누가 한 일인지. 내가 한 일은 내 새 소식에서 뺀다.
 alter table public.activity
   add column if not exists member_id uuid references public.members(id) on delete set null;
+
+-- ---- 자동 파기 (2026-11-16) ----
+-- 마지막 이용일로부터 keep_days(기본 365일)가 지난 케이스를 모든 기록과 함께 지운다. dry=true면 지우지 않고 대상 수만 돌려준다.
+-- 마지막 이용일 = 케이스 생성·가족 활동·이벤트(화면 열기 포함)·안부 기록·할 일 완료 중 가장 늦은 시각. 매일 /api/cron/purge가 부른다.
+create or replace function public.purge_inactive_cases(keep_days int default 365, dry boolean default false)
+returns int
+language plpgsql
+set search_path = public
+as $$
+declare n int;
+begin
+  if keep_days < 180 then
+    raise exception 'keep_days는 180일 이상이어야 해요 (실수로 전부 지우는 것을 막는 안전장치)';
+  end if;
+
+  create temp table _gone on commit drop as
+    select c.id from cases c
+    where greatest(
+      c.created_at,
+      coalesce((select max(a.created_at) from activity a where a.case_id = c.id), c.created_at),
+      coalesce((select max(e.created_at) from events e where e.case_id = c.id), c.created_at),
+      coalesce((select max(d.updated_at) from daily_checks d where d.case_id = c.id), c.created_at),
+      coalesce((select max(t.done_at) from tasks t where t.case_id = c.id), c.created_at)
+    ) < now() - make_interval(days => keep_days);
+
+  select count(*) into n from _gone;
+  if not dry then
+    delete from events where case_id in (select id from _gone);  -- 이벤트는 외래키가 없어 따로 지운다
+    delete from cases where id in (select id from _gone);        -- 나머지는 on delete cascade
+  end if;
+  return n;
+end;
+$$;
+
+revoke all on function public.purge_inactive_cases(int, boolean) from public, anon, authenticated;
+grant execute on function public.purge_inactive_cases(int, boolean) to service_role;
