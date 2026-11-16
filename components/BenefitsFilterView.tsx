@@ -1,6 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import { deadlineScore, type Result } from "@/lib/benefits";
+import type { Auth } from "@/lib/db";
 import BenefitCard from "./BenefitCard";
 import Icon from "./Icon";
 import Mascot from "./Mascot";
@@ -9,18 +10,21 @@ const FILTERS = [
   { key: "", label: "전체" },
   { key: "high", label: "가능성 높음" },
   { key: "check", label: "확인 필요" },
-  { key: "no", label: "해당 없음" },
 ] as const;
 
 export default function BenefitsFilterView({
   results,
   status,
   base,
+  auth,
+  saved,
   initialFilter = "",
 }: {
-  results: Result[];
+  results: Result[]; // '해당 없음'은 빼고 받는다(지역이 다른 제도 등이 내 목록에 보이면 오해를 산다)
   status: Record<string, string>;
   base: string;
+  auth: Auth;
+  saved: string[];
   initialFilter?: string;
 }) {
   const [filter, setFilter] = useState<string>(initialFilter);
@@ -29,20 +33,17 @@ export default function BenefitsFilterView({
 
   const highCount = results.filter((r) => r.verdict === "high").length;
   const checkCount = results.filter((r) => r.verdict === "check").length;
-  const noCount = results.filter((r) => r.verdict === "no").length;
 
   const countMap: Record<string, number> = {
     "": results.length,
     high: highCount,
     check: checkCount,
-    no: noCount,
   };
 
   // 1차: 탭 필터링
   const tabFiltered = useMemo(() => {
     if (filter === "high") return results.filter((r) => r.verdict === "high");
     if (filter === "check") return results.filter((r) => r.verdict === "check");
-    if (filter === "no") return results.filter((r) => r.verdict === "no");
     return results;
   }, [results, filter]);
 
@@ -66,24 +67,17 @@ export default function BenefitsFilterView({
   }, [tabFiltered, search]);
 
   // 3차: 가능성순은 서버가 준 순서(sortResults) 그대로, 마감 임박순만 다시 정렬
-  // '해당 없음'은 마감이 가까워도 맨 뒤로: 대상이 아닌 제도가 위에 뜨면 헷갈린다
   const sortedList = useMemo(
-    () => sortBy === "verdict" ? searchFiltered : [...searchFiltered].sort((a, b) => Number(a.verdict === "no") - Number(b.verdict === "no") || deadlineScore(a) - deadlineScore(b)),
+    () => sortBy === "verdict" ? searchFiltered : [...searchFiltered].sort((a, b) => deadlineScore(a) - deadlineScore(b)),
     [searchFiltered, sortBy],
   );
 
   const card = (r: Result) => (
     <li key={r.benefit.id}>
-      <BenefitCard r={r} href={`${base}/benefits/${r.benefit.id}`} status={status[r.benefit.id]} />
+      <BenefitCard r={r} href={`${base}/benefits/${r.benefit.id}`} status={status[r.benefit.id]} auth={auth} saved={saved.includes(`b:${r.benefit.id}`)} />
     </li>
   );
 
-  const noRow = (r: Result) => (
-    <li key={r.benefit.id} className="px-4 py-3">
-      <p className="font-medium">{r.benefit.name}</p>
-      <p className="text-sm text-muted">{r.reason}</p>
-    </li>
-  );
 
   return (
     <div className="mt-4">
@@ -171,7 +165,7 @@ export default function BenefitsFilterView({
           <Mascot size={48} mood="rest" />
           <p className="mt-3 font-semibold text-ink">일치하는 지원 제도가 없어요</p>
           <p className="mt-1 text-xs text-muted">
-            {search ? `‘${search}’ 키워드 대신 다른 단어로 검색하거나 상단의 AI 맞춤 탐색을 이용해 보세요.` : "조건에 맞는 제도가 없어요."}
+            {search ? `‘${search}’ 키워드 대신 다른 단어로 검색하거나 위의 '더 알아볼 곳'을 확인해 보세요.` : "조건에 맞는 제도가 없어요."}
           </p>
           {search && (
             <button
@@ -183,26 +177,10 @@ export default function BenefitsFilterView({
             </button>
           )}
         </div>
-      ) : filter === "no" ? (
-        <ul className="mt-4 divide-y divide-line rounded-xl bg-card shadow-card">
-          {sortedList.map(noRow)}
-        </ul>
       ) : sortBy === "deadline" ? (
         /* 마감 임박순: 기한이 급한 지원부터 최우선 노출 */
         <>
-          <ul className="mt-4 space-y-3">
-            {filter === "" && !search.trim()
-              ? sortedList.filter((r) => r.verdict !== "no").map(card)
-              : sortedList.map(card)}
-          </ul>
-          {filter === "" && !search.trim() && noCount > 0 && (
-            <details className="mt-6 rounded-xl bg-card shadow-card">
-              <summary className="cursor-pointer p-4 font-semibold text-sm text-muted">해당 없음 ({noCount})</summary>
-              <ul className="divide-y divide-line border-t border-line">
-                {results.filter((r) => r.verdict === "no").map(noRow)}
-              </ul>
-            </details>
-          )}
+          <ul className="mt-4 space-y-3">{sortedList.map(card)}</ul>
         </>
       ) : filter === "high" || filter === "check" || search.trim() ? (
         /* 가능성순 단일 탭 / 검색 플랫 리스트 */
@@ -234,14 +212,6 @@ export default function BenefitsFilterView({
             </ul>
           </section>
 
-          {noCount > 0 && (
-            <details className="mt-6 rounded-xl bg-card shadow-card">
-              <summary className="cursor-pointer p-4 font-semibold text-sm text-muted">해당 없음 ({noCount})</summary>
-              <ul className="divide-y divide-line border-t border-line">
-                {results.filter((r) => r.verdict === "no").map(noRow)}
-              </ul>
-            </details>
-          )}
         </>
       )}
     </div>

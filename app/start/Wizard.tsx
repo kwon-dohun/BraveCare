@@ -6,7 +6,7 @@ import { useAct } from "@/components/useAct";
 import Icon from "@/components/Icon";
 import Mascot from "@/components/Mascot";
 import type { CaseInput, Income, Living, Reason } from "@/lib/benefits";
-import { SIDO, SEOUL_GU, REASON_LABEL, LIVING_LABEL, INCOME_OPTIONS } from "@/lib/options";
+import { SIDO, SIGUNGU, SEOUL_GU, REASON_LABEL, LIVING_LABEL, INCOME_OPTIONS } from "@/lib/options";
 
 const DRAFT = "toewon:draft";
 let startedAt = 0; // 온보딩 소요 시간 측정용 (KPI)

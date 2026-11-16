@@ -164,3 +164,14 @@ $$;
 
 revoke all on function public.purge_inactive_cases(int, boolean) from public, anon, authenticated;
 grant execute on function public.purge_inactive_cases(int, boolean) to service_role;
+
+-- 찜한 지원(구성원별). 기본 지원은 b:<id>, 추가 확인처는 x:<id>. 케이스·구성원이 지워지면 함께 지워진다.
+create table if not exists saved_benefits (
+  member_id uuid not null references members(id) on delete cascade,
+  case_id uuid not null references cases(id) on delete cascade,
+  item text not null check (item ~ '^(b|x):[a-z0-9_]{1,60}$'),
+  created_at timestamptz not null default now(),
+  primary key (member_id, item)
+);
+create index if not exists saved_benefits_case_idx on saved_benefits(case_id);
+alter table saved_benefits enable row level security;

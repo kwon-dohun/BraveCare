@@ -10,6 +10,7 @@ import { act } from "@/lib/push";
 import { PACKET } from "@/lib/packet";
 import { validDaily, upsertDaily } from "@/lib/daily";
 import { krDate } from "@/lib/format";
+import { isValidSaved } from "@/lib/saved";
 
 const token = () => randomUUID().replaceAll("-", "");
 const isDate = (s: unknown): s is string => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
@@ -324,4 +325,16 @@ export async function saveDaily(a: Auth, raw: unknown) {
   if (!v) throw new Error("입력값을 확인해주세요");
   await upsertDaily(actor.caseId, actor.name, todaySeoul(), v);
   refresh();
+}
+
+// 지원 찜하기/해제. 구성원마다 따로 저장한다.
+export async function toggleSaved(a: Auth, item: string, on: boolean) {
+  const actor = await resolve(a);
+  if (!isValidSaved(item)) throw new Error("없는 지원이에요");
+  const { error } = on
+    ? await db.from("saved_benefits").upsert({ member_id: actor.memberId, case_id: actor.caseId, item })
+    : await db.from("saved_benefits").delete().eq("member_id", actor.memberId).eq("item", item);
+  if (error) throw error;
+  if (on) await logEvent(actor.caseId, "benefit_saved", { item });
+  revalidatePath("/c/[token]/benefits", "layout");
 }

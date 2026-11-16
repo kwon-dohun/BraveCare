@@ -47,3 +47,9 @@ export async function unreadCount(caseId: string, memberId: string) {
     .eq("case_id", caseId).gt("created_at", m?.seen_at ?? "1970-01-01").or(`member_id.is.null,member_id.neq.${memberId}`);
   return count ?? 0;
 }
+
+// 내가 찜한 지원(구성원별). 최근에 찜한 것부터.
+export async function loadSaved(memberId: string): Promise<string[]> {
+  const { data } = await db.from("saved_benefits").select("item").eq("member_id", memberId).order("created_at", { ascending: false });
+  return (data ?? []).map((r) => r.item as string);
+}

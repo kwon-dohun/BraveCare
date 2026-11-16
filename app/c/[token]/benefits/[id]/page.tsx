@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
+import { loadSaved } from "@/lib/load";
+import SaveButton from "@/components/SaveButton";
 import { Badge } from "@/components/BenefitCard";
 import { StatusPicker, DocsChecklist } from "@/components/StatusPicker";
 import { dday, krDateYear, dotDate } from "@/lib/format";
@@ -10,7 +12,7 @@ const STALE_DAYS = 90; // 마지막 확인일이 이보다 오래되면 "정보 
 
 export default async function BenefitDetail(props: PageProps<"/c/[token]/benefits/[id]">) {
   const { token, id } = await props.params;
-  const { data, auth, base } = await adminPage(token);
+  const { actor, data, auth, base } = await adminPage(token);
   const r = data.results.find((x) => x.benefit.id === id);
   if (!r) notFound();
   const b = r.benefit;
@@ -28,7 +30,10 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
         {d.state === "unknown" && b.deadline && <span className="text-muted">퇴원일 확정 시 마감 계산</span>}
         {stale && <span className="rounded-full bg-warn-soft px-2.5 py-0.5 text-sm text-warn">정보 확인 필요</span>}
       </div>
-      <h1 className="mt-2 text-title font-display">{b.name}</h1>
+      <div className="mt-2 flex items-start justify-between gap-2">
+        <h1 className="text-title font-display">{b.name}</h1>
+        <SaveButton auth={auth} item={`b:${b.id}`} saved={(await loadSaved(actor.memberId)).includes(`b:${b.id}`)} className="-mr-2 shrink-0" />
+      </div>
       <p className="text-muted">{b.operator}</p>
       <p className="mt-3">{b.summary}</p>
 

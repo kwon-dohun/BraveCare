@@ -115,7 +115,7 @@ export async function askChat(a: Auth, question: string): Promise<ChatAnswer> {
   return verifyAnswer(parseChatJson(raw), sources);
 }
 
-import { findExtraHelp, extraById, type AiBenefitItem } from "@/lib/ai-benefits";
+import { findExtraHelp } from "@/lib/ai-benefits";
 
 // ---- 기본 26개 제도 밖의 추가 지원 확인처 (확인된 기관·제도만, AI 생성 없음) ----
 
@@ -131,21 +131,4 @@ export async function searchAdditionalBenefitsAction(a: Auth, extraTags: string[
     extraTags,
     customKeyword: customKeyword.slice(0, 50),
   });
-}
-
-export async function saveAiBenefitAction(a: Auth, item: AiBenefitItem) {
-  const actor = await resolve(a);
-  const e = extraById(item.id); // 화면에서 온 글자를 믿지 않고 목록에서 다시 꺼낸다
-  if (!e) throw new Error("없는 항목이에요");
-  const { error } = await db.from("tasks").insert({
-    case_id: actor.caseId,
-    title: `[추가 지원] ${e.organization} ${e.title} 확인하기`,
-    kind: "prep",
-    memo: `${e.summary}
-확인처: ${e.howToCheck}`,
-    source: "manual",
-  });
-  if (error) throw error;
-  await act(actor.caseId, `${actor.name}님이 ‘${e.title}’ 확인을 할 일에 담았어요`, actor.memberId);
-  revalidatePath("/c/[token]", "layout");
 }

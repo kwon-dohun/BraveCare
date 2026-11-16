@@ -130,3 +130,12 @@ test("추가 확인처: 지어낸 사업명·금액 없이 조건으로만 고�
   assert.ok(kw.keywordHit && kw.items.some((i) => i.id === "assistive_device"));
   assert.equal(findExtraHelp({ ...p, customKeyword: "탈모" }).keywordHit, false);
 });
+
+import { isValidSaved } from "./saved.ts";
+test("찜: 목록에 있는 지원만 받는다", () => {
+  assert.equal(isValidSaved("b:seoul_sos"), true);
+  assert.equal(isValidSaved("x:hospital_sw"), true);
+  assert.equal(isValidSaved("b:없는제도"), false);
+  assert.equal(isValidSaved("x:asan:extra"), false);
+  assert.equal(isValidSaved("z:seoul_sos"), false);
+});

@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { searchAdditionalBenefitsAction, saveAiBenefitAction } from "@/app/scan-actions";
+import { searchAdditionalBenefitsAction } from "@/app/scan-actions";
+import SaveButton from "@/components/SaveButton";
 import type { AiBenefitItem } from "@/lib/ai-benefits";
 import type { Auth } from "@/lib/db";
 import Mascot from "@/components/Mascot";
@@ -27,9 +28,11 @@ export default function AiBenefitsExplorer({
   region,
   reasonLabel,
   base,
+  savedExtra,
 }: {
   auth: Auth;
   base: string;
+  savedExtra: string[];
   region: string | null;
   reasonLabel: string;
 }) {
@@ -39,7 +42,6 @@ export default function AiBenefitsExplorer({
   const [customKeyword, setCustomKeyword] = useState<string>("");
   const [result, setResult] = useState<{ items: AiBenefitItem[]; basics: { id: string; name: string }[]; keywordHit: boolean; keyword: string } | null>(null);
   const items = result?.items ?? null;
-  const [savedIds, setSavedIds] = useState<Record<string, boolean>>({});
   const [err, setErr] = useState<string | null>(null);
 
   const toggleTag = (tag: string) => {
@@ -61,14 +63,6 @@ export default function AiBenefitsExplorer({
     }
   };
 
-  const handleSave = async (it: AiBenefitItem) => {
-    try {
-      await saveAiBenefitAction(auth, it);
-      setSavedIds((prev) => ({ ...prev, [it.id]: true }));
-    } catch {
-      alert("할 일에 담지 못했어요. 잠시 후 다시 시도해 주세요.");
-    }
-  };
 
   return (
     <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
@@ -80,7 +74,7 @@ export default function AiBenefitsExplorer({
             <p className="font-semibold text-ink">기본 지원 밖에서 더 알아볼 곳</p>
           </div>
           <p className="mt-1 text-xs text-muted leading-relaxed">
-            기본 26개 제도 밖에서 우리 조건으로 더 물어볼 수 있는 기관과 제도를 알려드려요. {region ? <b>{region}</b> : "지역"} 자체 사업은 지역마다 달라서 확인하는 방법을 안내해요.
+            기본 지원 목록 밖에서 우리 조건으로 더 물어볼 수 있는 기관과 제도를 알려드려요. {region ? <b>{region}</b> : "지역"} 자체 사업은 지역마다 달라서 확인하는 방법을 안내해요.
           </p>
 
           {!open && (
@@ -234,12 +228,11 @@ export default function AiBenefitsExplorer({
               )}
               {items.length === 0 ? (
                 <p className="py-4 text-center text-xs text-muted">
-                  조건에 맞는 곳을 찾지 못했어요. 기본 26가지 공공 지원을 먼저 확인해 보세요.
+                  조건에 맞는 곳을 찾지 못했어요. 아래 지원 목록을 먼저 확인해 보세요.
                 </p>
               ) : (
                 items.map((it) => {
                   const badge = CATEGORY_STYLE[it.category];
-                  const isSaved = savedIds[it.id];
                   const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(it.searchQuery)}`;
 
                   return (
@@ -253,6 +246,7 @@ export default function AiBenefitsExplorer({
                             {it.organization} · {it.title}
                           </h3>
                         </div>
+                        <SaveButton auth={auth} item={`x:${it.id}`} saved={savedExtra.includes(`x:${it.id}`)} className="-mr-2 -mt-2" />
                       </div>
 
                       <p className="mt-2 text-xs text-muted leading-relaxed">{it.summary}</p>
@@ -267,7 +261,7 @@ export default function AiBenefitsExplorer({
                       </p>
 
                       {/* 하단 액션 버튼 */}
-                      <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-2.5">
+                      <div className="mt-3 border-t border-line pt-2.5">
                         <a
                           href={searchUrl}
                           target="_blank"
@@ -276,19 +270,6 @@ export default function AiBenefitsExplorer({
                         >
                           검색해서 확인하기 <Icon name="right" size={12} />
                         </a>
-
-                        <button
-                          type="button"
-                          disabled={isSaved}
-                          onClick={() => handleSave(it)}
-                          className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                            isSaved
-                              ? "bg-line text-muted"
-                              : "bg-accent-soft text-accent hover:opacity-90"
-                          }`}
-                        >
-                          {isSaved ? "할 일에 담김 ✓" : "할 일에 담기"}
-                        </button>
                       </div>
                     </div>
                   );
