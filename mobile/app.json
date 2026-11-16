@@ -2,7 +2,7 @@
   "expo": {
     "name": "씩씩케어",
     "slug": "bravecare",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
