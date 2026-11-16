@@ -8,6 +8,7 @@ export interface Daily {
   wound_issue: boolean;
   pain: number; // 0~10
   bowel: "good" | "constipation" | "diarrhea";
+  notes?: string | null;
 }
 
 export const TEMP_LABEL = { normal: "정상", mild: "미열 (37.5도 이상)", high: "고열 (38도 이상)" } as const;

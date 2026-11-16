@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
+import { REASON_LABEL } from "@/lib/options";
 import BenefitCard from "@/components/BenefitCard";
+import AiBenefitsExplorer from "@/components/AiBenefitsExplorer";
 
 export const metadata = { title: "지원 · 씩씩케어" };
 
@@ -11,7 +13,7 @@ const FILTERS = [["", "전체"], ["high", "가능성 높음"], ["check", "확인
 export default async function Benefits(props: PageProps<"/c/[token]/benefits">) {
   const { token } = await props.params;
   const v = (await props.searchParams).v;
-  const { data, base } = await adminPage(token);
+  const { data, auth, base } = await adminPage(token);
   const { results, status } = data;
   const high = results.filter((r) => r.verdict === "high");
   const check = results.filter((r) => r.verdict === "check");
@@ -20,11 +22,17 @@ export default async function Benefits(props: PageProps<"/c/[token]/benefits">) 
   const card = (r: (typeof results)[number]) => <li key={r.benefit.id}><BenefitCard r={r} href={`${base}/benefits/${r.benefit.id}`} status={status[r.benefit.id]} /></li>;
   const noRow = (r: (typeof results)[number]) => <li key={r.benefit.id} className="px-4 py-3"><p className="font-medium">{r.benefit.name}</p><p className="text-sm text-muted">{r.reason}</p></li>;
 
+  const reasonLabel = REASON_LABEL.find(([k]) => k === data.input.reason)?.[1] ?? "퇴원 후 회복";
+  const region = `${data.input.sido} ${data.input.sigungu}`.trim();
+
   return (
     <>
       <BackLink href={`${base}/more`}>전체</BackLink>
       <h1 className="mt-2 text-title font-display leading-snug">우리 가족이 받을 수 있는<br />지원 <span className="text-accent tabular-nums">{high.length}개</span></h1>
       <p className="mt-1 text-sm text-muted">공공 지원 {results.length}가지를 입력한 조건으로 가려냈어요. 특정 업체로 연결하지 않아요.</p>
+
+      {/* AI 맞춤 추가 지원 탐색기 (지자체 특화 조례 사업 및 민간 공익재단 지원) */}
+      <AiBenefitsExplorer auth={auth} region={region || null} reasonLabel={reasonLabel} />
 
       <nav aria-label="지원 필터" className="-mx-5 mt-4 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
         {FILTERS.map(([k, label]) => {

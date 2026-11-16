@@ -78,6 +78,18 @@ export default function DailyForm({ auth, today, yesterday }: { auth: Auth; toda
         </div>
       </fieldset></div>
 
+      <div className={box}><fieldset>
+        <legend className="mb-2 w-full text-sm font-semibold">특이사항 (선택)</legend>
+        <textarea
+          value={v.notes ?? ""}
+          onChange={(e) => set({ notes: e.target.value })}
+          maxLength={300}
+          placeholder="약 추가 복용, 특별한 증상이나 의료진에게 전달할 메모가 있다면 남겨주세요."
+          rows={2}
+          className="w-full rounded-xl border border-line bg-background p-3 text-sm outline-none focus:ring-1 focus:ring-primary"
+        />
+      </fieldset></div>
+
       <button disabled={pending} onClick={() => save(v)} className="mt-6 w-full rounded-full bg-accent-soft px-5 py-3.5 font-semibold text-accent disabled:opacity-40">
         {pending ? "저장하는 중…" : today ? "오늘 기록 고치기" : "이대로 저장"}
       </button>

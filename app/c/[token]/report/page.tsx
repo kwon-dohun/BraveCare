@@ -57,6 +57,20 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
               <AddQuestion auth={auth} />
               <Link href={`${base}/questions`} className="mt-2 inline-block text-base text-muted underline print:hidden landscape:hidden">전체 질문 보기{allAsked > questions.length ? ` (${allAsked}개)` : ""}</Link>
             </section>
+
+            {checks.some((c) => c.notes) && (
+              <section className={`${box} col-span-full`} aria-labelledby="r5">
+                <h2 id="r5" className="font-semibold">보호자 특이사항 메모</h2>
+                <ul className="mt-2 space-y-1.5 text-sm">
+                  {checks.filter((c) => c.notes).slice(0, 5).map((c) => (
+                    <li key={c.check_date} className="rounded-lg bg-background p-2.5">
+                      <span className="font-semibold text-accent">{md(c.check_date)}: </span>
+                      <span>{c.notes}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
           </>
         ) : (
@@ -104,6 +118,20 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
               <AddQuestion auth={auth} />
               <Link href={`${base}/questions`} className="mt-2 inline-block text-base text-muted underline print:hidden landscape:hidden">전체 질문 보기{allAsked > questions.length ? ` (${allAsked}개)` : ""}</Link>
             </section>
+
+            {checks.some((c) => c.notes) && (
+              <section className={`${box} col-span-full`} aria-labelledby="r5">
+                <h2 id="r5" className="font-semibold">보호자 특이사항 메모</h2>
+                <ul className="mt-2 space-y-1.5 text-sm">
+                  {checks.filter((c) => c.notes).slice(0, 5).map((c) => (
+                    <li key={c.check_date} className="rounded-lg bg-background p-2.5">
+                      <span className="font-semibold text-accent">{md(c.check_date)}: </span>
+                      <span>{c.notes}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
         )}
       </div>

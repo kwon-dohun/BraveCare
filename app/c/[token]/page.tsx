@@ -9,6 +9,7 @@ import { addDays } from "@/lib/timeline";
 import { dayDiff } from "@/lib/benefits";
 import TaskList from "@/components/TaskList";
 import Remember from "@/components/Remember";
+import WeekStrip from "@/components/WeekStrip";
 import Icon from "@/components/Icon";
 import Mascot, { Logo } from "@/components/Mascot";
 
@@ -183,42 +184,14 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         />
       </section>
 
-      {/* 이번 주: 오늘부터 7일 달력 띠 + 다가오는 일정 */}
-      <section className="mt-6" aria-labelledby="h-week">
-        <div className="mb-2 flex items-end justify-between">
-          <h2 id="h-week" className="font-display text-headline">이번 주 일정</h2>
-          <Link href={`${base}/calendar`} className="flex items-center text-sm font-medium text-accent">달력 보기</Link>
-        </div>
-        <div className="rounded-xl bg-card p-3 shadow-card">
-          <ol className="grid grid-cols-7 gap-1">
-            {week.map((d) => {
-              const ev = events.get(d) ?? [];
-              const kinds = [...new Set(ev.map((e) => e.kind))].slice(0, 3);
-              return (
-                <li key={d}>
-                  <Link href={`${base}/calendar?d=${d}`}
-                    className={`flex min-h-0 flex-col items-center gap-1 rounded-2xl py-2 ${d === today ? "bg-accent-soft" : ""} ${d === input.dischargeDate ? "ring-[1.5px] ring-[#ef7a4a]" : ""}`}>
-                    <span className={`text-caption ${d === today ? "font-semibold text-accent" : "text-muted"}`}>{d === today ? "오늘" : weekday(d)}</span>
-                    <span className="font-display text-headline tabular-nums">{Number(d.slice(8))}<span className="sr-only">일, 일정 {ev.length}개</span></span>
-                    <span className="flex h-1.5 gap-0.5">{kinds.map((k) => <span key={k} className="h-1.5 w-1.5 rounded-full" style={{ background: EVENT_STYLE[k].dot }} />)}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ol>
-          {upcoming.length > 0 && (
-            <ul className="mt-2 space-y-1.5 border-t border-line pt-3">
-              {upcoming.map(([d, e]) => (
-                <li key={d + e.title} className="flex items-center gap-2 text-sm">
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-caption font-semibold ${EVENT_STYLE[e.kind].chip}`}>{EVENT_STYLE[e.kind].label}</span>
-                  <span className="min-w-0 flex-1 truncate">{e.title}</span>
-                  <span className="shrink-0 text-xs text-muted tabular-nums">{d === today ? "오늘" : krDate(d)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
+      {/* 이번 주: 오늘부터 7일 달력 띠 (홈에서 바로 날짜별 일정 확인) */}
+      <WeekStrip
+        week={week}
+        today={today}
+        dischargeDate={input.dischargeDate}
+        eventsData={[...events.entries()]}
+        calendarBase={`${base}/calendar`}
+      />
 
       {noOwnerVisits > 0 && (
         <Link href={`${base}/tasks?f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={16} /></Link>

@@ -114,3 +114,58 @@ export async function askChat(a: Auth, question: string): Promise<ChatAnswer> {
   if (raw === null) throw new Error("지금은 답을 만들지 못했어요. 잠시 뒤에 다시 물어봐 주세요");
   return verifyAnswer(parseChatJson(raw), sources);
 }
+
+// ---- AI 지자체 특화 및 민간 재단 추가 지원 탐색 ----
+
+export interface ExtraBenefitSuggestion {
+  name: string;
+  agency: string;
+  target: string;
+  content: string;
+  howToApply: string;
+  tip: string;
+}
+
+export async function exploreExtraBenefits(a: Auth): Promise<ExtraBenefitSuggestion[]> {
+  const actor = await resolve(a);
+  if (!hasModel()) throw new Error("AI 추천 기능이 아직 준비되지 않았어요");
+  await limit(actor.caseId, "benefit_ai_explored", 10, "오늘은 AI 추가 탐색 횟수를 다 썼어요");
+
+  const data = await loadCase(actor.caseId);
+  const age = 2026 - data.input.birthYear;
+  const regionStr = `${data.input.sido} ${data.input.sigungu}`.trim() || "전국";
+  const prompt = `너는 대한민국 지자체 복지 조례 및 민간 공익재단 의료 복지 전문 상담사야.
+환자 조건:
+- 입원/수술 사유: ${data.input.reason}
+- 연령: 만 ${age}세 (${data.input.birthYear}년생)
+- 거주 지역: ${regionStr}
+- 가구 소득 구간: ${data.input.income}
+- 거주/돌봄 형태: ${data.input.living}
+
+국가 기본 8대 제도(장기요양보험, 긴급복지지원, 재난적의료비, 산정특례, 암환자의료비, 보건소 돌봄 등 기본 공공 25종)는 이미 안내되었어.
+환자의 질환 특성과 거주 지자체, 연령, 소득에 맞춰 신청할 수 있는 지자체 특화 복지 조례 사업(예: 구청 간병비 지원, 돌봄SOS센터), 보건소 특화 사업, 민간 공익재단(아산사회복지재단, 삼성생명공익재단, 한국혈액암협회, 밀알복지재단, 사랑의열매 등) 환우 지원금 중 유력한 3가지를 골라 추천해줘.
+이모지와 특수 기호는 쓰지 마. 한국어 존댓말, 짧고 담백하게.
+
+JSON으로만 출력해:
+{
+  "suggestions": [
+    {
+      "name": "지원 사업명",
+      "agency": "운영 기관/지자체/재단명",
+      "target": "누가 받을 수 있는지",
+      "content": "지원 내용 (금액 또는 서비스)",
+      "howToApply": "신청처 및 문의 방법 (예: 병원 사회사업팀, 관할 보건소, 주민센터 등)",
+      "tip": "주의사항 또는 선정 팁 (예: 예산 소진 전 조기 신청, 소득 증빙 서류 준비 등)"
+    }
+  ]
+}`;
+
+  const raw = await askJson(prompt, [{ type: "text", text: "우리 가족 조건에 맞는 지자체 및 민간 재단 추가 지원을 찾아줘" }]);
+  if (!raw) throw new Error("지금은 추천을 불러오지 못했어요. 잠시 후 다시 시도해 주세요");
+  try {
+    const parsed = JSON.parse(raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim());
+    return (parsed.suggestions ?? []) as ExtraBenefitSuggestion[];
+  } catch {
+    return [];
+  }
+}

@@ -93,6 +93,7 @@ create table if not exists public.daily_checks (
   wound_issue boolean not null default false,
   pain int not null default 0 check (pain between 0 and 10),
   bowel text not null default 'good' check (bowel in ('good','constipation','diarrhea')),
+  notes text,
   updated_by text,
   updated_at timestamptz not null default now(),
   primary key (case_id, check_date)

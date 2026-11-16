@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { askChat } from "@/app/scan-actions";
+import { addTask } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import { isEmergency, type ChatAnswer } from "@/lib/chat";
 import Mascot from "@/components/Mascot";
@@ -16,6 +17,8 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
   const [urgent, setUrgent] = useState(false);
+  const [addingQ, setAddingQ] = useState(false);
+  const [addedQ, setAddedQ] = useState<Record<string, boolean>>({});
   const end = useRef<HTMLDivElement>(null);
 
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [turns, busy]);
@@ -38,6 +41,19 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
     }
   };
 
+  const handleAddQuestion = async (qTitle: string) => {
+    if (addingQ || addedQ[qTitle]) return;
+    setAddingQ(true);
+    try {
+      await addTask(auth, qTitle, null, "question");
+      setAddedQ((s) => ({ ...s, [qTitle]: true }));
+    } catch {
+      // ignore
+    } finally {
+      setAddingQ(false);
+    }
+  };
+
   // 홈의 질문창에서 넘어온 질문은 들어오자마자 묻는다
   const started = useRef(false);
   useEffect(() => {
@@ -46,42 +62,64 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
   }, []);
 
   return (
-    <>
+    <div className="flex flex-1 flex-col justify-between pt-3">
       {/* 위험 신호는 대화보다 먼저 */}
-      <details open={urgent} className="mt-4 rounded-xl bg-warn-soft px-4 text-warn">
-        <summary className="cursor-pointer text-sm font-semibold">이럴 땐 기다리지 말고 119·응급실</summary>
-        <ul className="grid grid-cols-2 gap-x-3 gap-y-1 pb-3 text-sm">
-          {RED_FLAGS.map((f) => <li key={f}>· {f}</li>)}
-        </ul>
-        <a href="tel:119" className="mb-4 flex items-center justify-center rounded-full bg-warn px-4 py-2.5 text-sm font-semibold text-white">119에 전화하기</a>
-      </details>
+      {urgent && (
+        <aside className="mb-4 rounded-xl bg-warn-soft p-4 text-warn" role="alert">
+          <p className="text-sm font-semibold">이럴 땐 기다리지 말고 119·응급실</p>
+          <ul className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+            {RED_FLAGS.map((f) => <li key={f}>· {f}</li>)}
+          </ul>
+          <a href="tel:119" className="mt-3 flex items-center justify-center rounded-full bg-warn px-4 py-2.5 text-sm font-semibold text-white">119에 전화하기</a>
+        </aside>
+      )}
 
-      <div className="mt-5 space-y-4" aria-live="polite">
+      <div className="space-y-4" aria-live="polite">
         <Bot>
-          <p>안녕하세요, 씩씩이예요. 우리 집 퇴원 일정과 할 일, 받을 수 있는 지원{docCount ? `, 보관한 서류 ${docCount}장` : ""}을 보고 답해 드려요.</p>
+          <p>안녕하세요, 씩씩이예요. 우리 집 일정과 할 일, 받을 수 있는 지원{docCount ? `, 보관한 서류 ${docCount}장` : ""}을 보고 답해 드려요.</p>
           <p className="mt-1 text-sm text-muted">진단이나 약 처방은 하지 않아요. 몸 상태는 꼭 의료진에게 확인해 주세요.</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {chips.map((c) => (
-              <button key={c} disabled={busy} onClick={() => ask(c)} className="h-9 min-h-0 rounded-full bg-accent-soft px-3 text-sm font-medium text-accent disabled:opacity-50">{c}</button>
+              <button key={c} disabled={busy} onClick={() => ask(c)} className="h-8 min-h-0 rounded-full bg-accent-soft px-3 text-xs font-medium text-accent disabled:opacity-50">{c}</button>
             ))}
           </div>
         </Bot>
 
         {turns.map((t, i) => (
-          <div key={i} className="space-y-4">
+          <div key={i} className="space-y-3">
             <p className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-callout text-ink">{t.q}</p>
             {t.a ? (
               <Bot>
-                <p className="font-semibold">{t.a.summary}</p>
+                <p className="font-semibold leading-relaxed">{t.a.summary}</p>
                 {t.a.sourceQuote ? (
                   <div className="mt-2.5 rounded-lg bg-background px-3 py-2">
                     <p className="text-caption font-semibold text-accent">근거 · {t.a.source}</p>
-                    <p className="mt-0.5 text-sm">“{t.a.sourceQuote}”</p>
+                    <p className="mt-0.5 text-xs text-ink/80">“{t.a.sourceQuote}”</p>
                   </div>
                 ) : (
-                  <p className="mt-2.5 rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">자료에서 근거 문장을 찾지 못했어요. 참고만 하고 꼭 병원에 확인해 주세요.</p>
+                  <p className="mt-2.5 rounded-lg bg-warn-soft px-3 py-2 text-xs text-warn">자료에서 근거 문장을 찾지 못했어요. 참고만 하고 꼭 병원에 확인해 주세요.</p>
                 )}
-                <p className="mt-2.5 text-sm text-muted">{t.a.advice}</p>
+                <p className="mt-2.5 text-xs text-muted leading-relaxed">{t.a.advice}</p>
+
+                {/* 민감한 의료 질문 발생 시 -> 의료진에게 물어볼 질문 리스트 추가 연결 */}
+                {t.a.suggestDoctorQuestion && (
+                  <div className="mt-3 rounded-xl border border-primary/40 bg-accent-soft p-3">
+                    <p className="text-caption font-semibold text-accent">진료실에서 의료진에게 여쭤볼 수 있어요</p>
+                    <p className="mt-1 text-xs font-medium text-ink">“{t.a.suggestDoctorQuestion}”</p>
+                    {addedQ[t.a.suggestDoctorQuestion] ? (
+                      <p className="mt-2 text-caption font-semibold text-accent">✓ 의료진에게 물어볼 질문에 등록했어요 (외래 리포트에도 나와요)</p>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={addingQ}
+                        onClick={() => handleAddQuestion(t.a!.suggestDoctorQuestion!)}
+                        className="mt-2 flex items-center gap-1 rounded-full bg-card px-3 py-1 text-xs font-semibold text-accent shadow-card hover:bg-accent-soft disabled:opacity-50"
+                      >
+                        <Icon name="plus" size={13} /> 질문 리스트에 추가
+                      </button>
+                    )}
+                  </div>
+                )}
               </Bot>
             ) : t.err ? (
               <Bot><p className="text-sm text-warn">{t.err}</p></Bot>
@@ -90,16 +128,16 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
             )}
           </div>
         ))}
-        <div ref={end} className="scroll-mb-40" />
+        <div ref={end} className="scroll-mb-36" />
       </div>
 
-      {/* 입력창은 하단 탭 위에 붙어 있다 */}
-      <form className="sticky bottom-[5.25rem] mt-6 flex items-center gap-2 rounded-full bg-card p-1.5 pl-4 shadow-card" onSubmit={(e) => { e.preventDefault(); ask(text); }}>
+      {/* 입력창은 하단 탭 바로 위에 mt-auto로 붙어 항상 최하단에 위치 */}
+      <form className="sticky bottom-[4.5rem] z-10 mt-6 flex items-center gap-2 rounded-full bg-card/95 p-1.5 pl-4 shadow-lg border border-line backdrop-blur-md" onSubmit={(e) => { e.preventDefault(); ask(text); }}>
         <label htmlFor="cq" className="sr-only">씩씩이에게 질문</label>
-        <input id="cq" value={text} maxLength={300} onChange={(e) => setText(e.target.value)} placeholder="무엇이든 물어보세요" className="min-h-0 min-w-0 flex-1 bg-transparent py-2 outline-none" />
-        <button disabled={busy || !text.trim()} aria-label="보내기" className="flex h-10 w-10 min-h-0 items-center justify-center rounded-full bg-primary text-ink"><Icon name="send" size={18} /></button>
+        <input id="cq" value={text} maxLength={300} onChange={(e) => setText(e.target.value)} placeholder="무엇이든 물어보세요" className="min-h-0 min-w-0 flex-1 bg-transparent py-2 text-sm outline-none" />
+        <button disabled={busy || !text.trim()} aria-label="보내기" className="flex h-10 w-10 min-h-0 shrink-0 items-center justify-center rounded-full bg-primary text-ink disabled:opacity-30"><Icon name="send" size={18} /></button>
       </form>
-    </>
+    </div>
   );
 }
 
