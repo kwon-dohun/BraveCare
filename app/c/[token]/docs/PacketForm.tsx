@@ -104,13 +104,12 @@ export default function PacketForm({
         setName(target.name);
         setS24("yes");
         save(target.name, "yes", sel, customList);
-        setSearchMsg(`✅ '${target.name}'은(는) 실손24 전산 청구 지원 병원입니다`);
+        setSearchMsg(`'${target.name}'은 실손24로 청구할 수 있는 병원이에요`);
       } else if (list.length > 1) {
         setSearchMsg(`실손24 참여 병원 ${list.length}곳이 검색되었어요. 해당 병원을 선택해 주세요.`);
       } else {
-        setS24("no");
-        save(name, "no", sel, customList);
-        setSearchMsg("⚠️ 실손24 참여 목록에 없습니다. 미참여 병원이면 퇴원 전 서류 4종을 꼭 받아두세요.");
+        // 이름이 조금만 달라도 못 찾을 수 있어 '미참여'로 단정해 저장하지 않는다
+        setSearchMsg("실손24 참여 병원 목록에서 찾지 못했어요. 병원 이름을 바꿔 다시 찾거나, 아래에서 직접 골라 주세요. 참여하지 않는 병원이면 퇴원 전에 서류 4종을 꼭 받아 두세요.");
       }
     } catch {
       setSearchMsg("일시적으로 조회가 원활하지 않아요. 수동으로 선택하거나 공식 사이트를 확인해 주세요.");
@@ -124,7 +123,7 @@ export default function PacketForm({
     setS24("yes");
     save(h.name, "yes", sel, customList);
     setSearchResults(null);
-    setSearchMsg(`✅ '${h.name}' 실손24 전산 청구 가능 병원으로 등록되었어요`);
+    setSearchMsg(`'${h.name}'을 실손24 청구 가능 병원으로 저장했어요`);
   };
 
   return (
@@ -269,7 +268,7 @@ export default function PacketForm({
             <p className="mt-2 text-sm text-muted">필요한 모든 서류를 챙기셨어요!</p>
           )}
           <p className="mt-2.5 text-xs text-muted border-t border-line/60 pt-2">
-            💡 퇴원 창구에서 이 화면을 직원에게 그대로 보여주시면 빠른 발급이 가능해요.
+            퇴원 창구에서 이 화면을 직원에게 그대로 보여 주면 한 번에 받기 쉬워요.
           </p>
         </div>
 

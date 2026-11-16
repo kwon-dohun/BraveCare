@@ -42,3 +42,19 @@ const HELP: Record<string, string> = {
 
 export const taskHelp = (title: string): string | null =>
   HELP[title] ?? (title.endsWith(" 신청 알아보기") ? "우리 가족 조건에 맞을 가능성이 높은 지원이에요. '지원' 화면에서 신청 방법과 필요한 서류를 볼 수 있어요." : null);
+
+// 단톡방에 붙일 도움 요청 문구. 주소에는 열쇠를 넣지 않는다(내 주소를 붙이면 누구나 내 화면으로 들어온다).
+// 앱 첫 화면 주소만 넣어 두면, 이미 참여한 가족은 자기 기기에서 '이어서 보기'로 들어온다.
+export function helpRequestText(t: { title: string; when: string; memo?: string | null }, origin: string): string {
+  return [
+    "가족 여러분, 씩씩이에요.",
+    "아직 맡은 사람이 없는 일이 있어요. 시간 되시는 분이 맡아 주실 수 있을까요?",
+    "",
+    `할 일: ${t.title}`,
+    `일시: ${t.when}`,
+    ...(t.memo ? [`메모: ${t.memo}`] : []),
+    "",
+    `씩씩케어를 열고 이 할 일에서 '내가 할게'를 눌러 주세요.`,
+    origin,
+  ].join("\n");
+}

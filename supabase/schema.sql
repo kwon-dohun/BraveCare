@@ -103,7 +103,7 @@ create table if not exists public.daily_checks (
 create table if not exists public.documents (
   id uuid primary key default gen_random_uuid(),
   case_id uuid not null references public.cases(id) on delete cascade,
-  doc_type text not null check (doc_type in ('receipt','medication','guide','message','other')),
+  doc_type text not null check (doc_type in ('receipt','medication','guide','certificate','message','other')),
   transcript text not null,
   created_at timestamptz not null default now()
 );
@@ -185,3 +185,9 @@ create table if not exists saved_benefits (
 );
 create index if not exists saved_benefits_case_idx on saved_benefits(case_id);
 alter table saved_benefits enable row level security;
+
+-- ---- 운영 DB 반영 누락분 (2026-11-17) ----
+-- 위 create table에는 있었지만 이미 만든 DB에는 없던 것. 같은 문장을 다시 돌려도 안전하다.
+alter table public.daily_checks add column if not exists notes text;
+alter table public.documents drop constraint if exists documents_doc_type_check;
+alter table public.documents add constraint documents_doc_type_check check (doc_type in ('receipt','medication','guide','certificate','message','other'));

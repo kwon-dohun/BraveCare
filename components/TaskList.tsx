@@ -11,6 +11,7 @@ import { useAct } from "./useAct";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
 import Mascot from "@/components/Mascot";
+import { helpRequestText } from "@/lib/task-help";
 
 export interface T { id: string; title: string; kind: keyof typeof KIND_LABEL; due_date: string | null; rel_day: number | null; assignee_id: string | null; done: boolean; done_by: string | null; source: string; source_quote: string | null; memo: string | null; due_time?: string | null; repeat?: "daily" | "weekly" | null }
 interface M { id: string; name: string }
@@ -27,31 +28,12 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
   const nameOf = (id: string | null) => members.find((m) => m.id === id)?.name;
 
   const copyHelp = async (t: T) => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://bravecare-kr.vercel.app";
-    const taskPath = detailBase ? `${detailBase}/${t.id}` : `/c/${auth.v}/tasks`;
-    const taskUrl = `${origin}${taskPath}`;
-
-    const dateStr = t.due_date ? `${krDate(t.due_date)}${t.due_time ? ` ${krTime(t.due_time)}` : ""}` : "날짜 미정";
-    const memoLine = t.memo ? `• 메모: ${t.memo}\n` : "";
-
-    const text = `가족 여러분, 씩씩이에요 🌱
-
-아직 맡은 사람이 없는 일이 있어요!
-시간 되시는 분이 도와주실 수 있나요?
-
-• 할 일: ${t.title}
-• 일시: ${dateStr}
-${memoLine}
-아래 링크에서 ‘내가 할게’를 꾹 눌러주시면 돼요.
-오늘도 다 같이 씩씩하게! ✨
-
-👉 바로 확인하고 맡기:
-${taskUrl}`;
-
+    const when = t.due_date ? `${krDate(t.due_date)}${t.due_time ? ` ${krTime(t.due_time)}` : ""}` : "날짜 미정";
+    const text = helpRequestText({ title: t.title, when, memo: t.memo }, window.location.origin);
     try {
       await navigator.clipboard.writeText(text);
       setCopiedId(t.id);
-      setToast("카톡 단톡방용 부탁 메시지와 링크가 복사되었어요. 단톡방에 붙여넣어 공유하세요!");
+      setToast("부탁 메시지를 복사했어요. 가족 단톡방에 붙여 넣어 주세요.");
       setTimeout(() => {
         setCopiedId(null);
         setToast(null);
@@ -70,8 +52,8 @@ ${taskUrl}`;
       {err && <p role="alert" className="mb-2 text-warn">{err}</p>}
       {toast && (
         <div role="status" className="mb-2.5 flex items-center justify-between rounded-xl bg-accent-soft p-3 text-xs font-medium text-accent shadow-sm">
-          <span>💬 {toast}</span>
-          <button type="button" onClick={() => setToast(null)} className="ml-2 font-bold opacity-60 hover:opacity-100">×</button>
+          <span>{toast}</span>
+          <button type="button" onClick={() => setToast(null)} aria-label="닫기" className="-my-2 ml-2 flex min-h-0 h-8 w-8 shrink-0 items-center justify-center opacity-60 hover:opacity-100"><Icon name="close" size={14} /></button>
         </div>
       )}
       <ul className="divide-y divide-line overflow-hidden rounded-xl bg-card shadow-card">
@@ -150,7 +132,7 @@ ${taskUrl}`;
                         className={`${inlineBtn} text-muted hover:text-accent`}
                         title="내 스마트폰 캘린더에 일정 등록"
                       >
-                        캘린더 알람 (.ics)
+                        내 달력에 넣기
                       </a>
                     )}
                   </div>
@@ -167,7 +149,7 @@ ${taskUrl}`;
                           <button
                             type="button"
                             onClick={() => run(() => unclaimTask(auth, t.id))}
-                            className="mt-0.5 text-[10px] text-muted underline decoration-line/80 hover:text-warn hover:decoration-warn transition-colors"
+                            className="min-h-0 py-0.5 text-caption text-muted underline underline-offset-2 hover:text-warn"
                             title="담당을 취소하고 다시 미배정 상태로 돌립니다"
                           >
                             담당 취소

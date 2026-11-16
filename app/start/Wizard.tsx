@@ -6,7 +6,7 @@ import { useAct } from "@/components/useAct";
 import Icon from "@/components/Icon";
 import Mascot from "@/components/Mascot";
 import type { CaseInput, Income, Living, Reason } from "@/lib/benefits";
-import { SIDO, SIGUNGU, SEOUL_GU, REASON_LABEL, LIVING_LABEL, INCOME_OPTIONS } from "@/lib/options";
+import { SIDO, SIGUNGU, REASON_LABEL, LIVING_LABEL, INCOME_OPTIONS } from "@/lib/options";
 
 const DRAFT = "toewon:draft";
 let startedAt = 0; // 온보딩 소요 시간 측정용 (KPI)
@@ -163,29 +163,11 @@ export default function Wizard() {
               )}
             </div>
             {d.living === "alone" && (
-              <div className="mt-5 rounded-2xl bg-accent-soft p-4 animate-in fade-in">
-                <p className="font-semibold text-sm text-ink">이 앱은 주로 누가 쓰시나요?</p>
-                <div className="mt-3 space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => next({ isSelfCare: true })}
-                    className={`flex w-full items-center justify-between rounded-xl border p-3.5 text-left text-sm font-semibold transition-all ${
-                      d.isSelfCare ? "border-primary bg-primary/20 text-ink" : "border-line bg-card text-muted hover:border-line/80"
-                    }`}
-                  >
-                    <span>환자 본인이 직접 써요 (1인 가구 셀프 케어 모드)</span>
-                    <span className="text-xs text-accent font-bold">혼자 챙기기</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => next({ isSelfCare: false })}
-                    className={`flex w-full items-center justify-between rounded-xl border p-3.5 text-left text-sm font-semibold transition-all ${
-                      !d.isSelfCare ? "border-primary bg-primary/20 text-ink" : "border-line bg-card text-muted hover:border-line/80"
-                    }`}
-                  >
-                    <span>떨어져 사는 가족이 챙겨드려요</span>
-                    <span className="text-xs text-muted">가족 돌봄</span>
-                  </button>
+              <div className="view-in mt-5">
+                <p className="font-semibold">이 앱은 누가 쓰시나요?</p>
+                <div className="mt-3 space-y-3">
+                  {choice("환자 본인이 직접 써요", d.isSelfCare, () => next({ isSelfCare: true }))}
+                  {choice("떨어져 사는 가족이 챙겨요", false, () => next({ isSelfCare: false }))}
                 </div>
               </div>
             )}

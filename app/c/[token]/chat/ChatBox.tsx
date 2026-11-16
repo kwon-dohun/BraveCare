@@ -114,7 +114,7 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
                     <p className="text-caption font-semibold text-accent">진료실에서 의료진에게 여쭤볼 수 있어요</p>
                     <p className="mt-1 text-sm leading-relaxed text-ink">“{t.a.suggestDoctorQuestion}”</p>
                     {addedQ[t.a.suggestDoctorQuestion] ? (
-                      <p className="mt-2 text-caption font-semibold text-accent">✓ 의료진에게 물어볼 질문에 등록했어요 (외래 리포트에도 나와요)</p>
+                      <p className="mt-2 flex items-center gap-1 text-caption font-semibold text-accent"><Icon name="check" size={12} />물어볼 것에 넣었어요. 외래 리포트에도 나와요</p>
                     ) : (
                       <button
                         type="button"

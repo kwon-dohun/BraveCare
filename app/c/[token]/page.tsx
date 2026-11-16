@@ -21,6 +21,9 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const { input, today, tasks, members, results, status, activity } = data;
   const [unread, daily] = await Promise.all([unreadCount(actor.caseId, actor.memberId), loadDaily(actor.caseId)]);
   const checkedToday = daily.some((c) => c.check_date === today);
+  // 환자가 직접 남긴 오늘 안부에 위험 신호가 있으면 가족 홈 맨 위에 알린다
+  const td = daily.find((c) => c.check_date === today && c.source_role === "patient");
+  const patientAlert = td ? [td.pain >= 7 && "통증이 심해요", td.temp === "high" && "고열이 있어요", td.wound_issue && "수술 부위가 불편해요"].filter(Boolean).join(", ") : "";
 
   // 시점에 따라 맨 위에 올 것이 달라진다: 병원 가는 날 → 퇴원 전 → 집에서 회복
   const visit = tasks.find((t) => t.kind === "schedule" && t.due_date === today);
@@ -62,7 +65,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         <Logo />
         <div className="-mr-2 flex items-center">
           <span className="rounded-full bg-card px-3 py-1 text-xs font-medium text-muted shadow-card">
-            {actor.name}님 {data.isSelfCare ? "(셀프 케어)" : "가족"}
+            {actor.name}님{data.isSelfCare ? "" : " 가족"}
           </span>
           <Link href={`${base}/news`} aria-label={unread ? `새 소식 ${unread}개` : "새 소식"} className="relative flex w-11 items-center justify-center text-muted">
             <Icon name="bell" size={20} />
@@ -92,6 +95,13 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           <Link href={`${base}/settings`} className="mt-3 flex items-center justify-center rounded-full bg-card px-4 py-2.5 text-sm font-semibold text-ink shadow-card">퇴원일 확정하기</Link>
         )}
       </section>
+
+      {patientAlert && (
+        <Link href={`${base}/daily`} className="mt-3 block rounded-xl bg-warn-soft px-4 py-3 text-warn">
+          <p className="font-semibold">환자분이 오늘 안부에서 {patientAlert}</p>
+          <p className="mt-0.5 text-sm">전화로 상태를 확인해 보세요. 숨이 차거나 의식이 흐리면 바로 119에 전화하세요.</p>
+        </Link>
+      )}
 
       {/* 주말·공휴일 원무과/주민센터 휴무 사전 경고 (D-1 주말 보정) */}
       {weekendWarning && (

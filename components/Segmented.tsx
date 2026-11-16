@@ -20,7 +20,7 @@ export default function Segmented({ items, active, label, inline = false }: {
       />
       {items.map((it, i) => {
         const on = i === sel;
-        const cls = `relative flex items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors duration-200 ${on ? "text-accent" : "text-muted hover:text-ink"}`;
+        const cls = `relative flex items-center justify-center whitespace-nowrap rounded-full px-4 text-sm font-semibold transition-colors duration-200 ${on ? "text-accent" : "text-muted hover:text-ink"}`;
         return it.href ? (
           <Link key={it.label} href={it.href} onClick={() => setSel(i)} aria-current={on ? "page" : undefined} className={cls}>{it.label}</Link>
         ) : (

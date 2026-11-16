@@ -29,7 +29,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
   const box = "rounded-2xl border border-line bg-card p-4 shadow-card";
 
   return (
-    <div className="min-h-screen bg-background p-4 pb-20 text-ink">
+    <div className="text-ink">
       <Bright />
       <div className="mx-auto max-w-3xl">
         <div className="flex items-center justify-between print:hidden">
@@ -40,10 +40,11 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
         </div>
 
         <div className="mt-3">
-          <h1 className="text-xl font-bold font-display sm:text-2xl">퇴원 후 경과 요약 (외래 리포트)</h1>
-          <p className="mt-1 text-xs text-muted leading-relaxed sm:text-sm">
+          <h1 className="text-title font-display">퇴원 후 경과 요약 (외래 리포트)</h1>
+          <p className="mt-1 text-sm text-muted leading-relaxed">
             {REASON_LABEL.find(([k]) => k === data.input.reason)?.[1]} · {data.input.birthYear}년생
-            {data.input.dischargeDate ? ` · 퇴원일 ${data.input.dischargeDate}` : ""} · 보호자가 매일 기록한 실제 경과예요
+            {data.input.dischargeDate ? ` · 퇴원일 ${data.input.dischargeDate}` : ""}
+            {checks.length > 0 && ` · 환자 직접 기록 ${checks.filter((c) => c.source_role === "patient").length}일, 가족 기록 ${checks.filter((c) => c.source_role !== "patient").length}일`}
           </p>
         </div>
 
@@ -51,7 +52,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
           <div className="mt-6 space-y-4">
             <div className="rounded-2xl border border-line bg-card p-5 shadow-card text-center">
               <p className="font-semibold text-ink">아직 데일리 체크 기록이 없어요.</p>
-              <p className="mt-1 text-xs text-muted">퇴원 후 상태를 하루만 기록해도 의사에게 보여줄 요약 리포트가 완성돼요.</p>
+              <p className="mt-1 text-sm text-muted">퇴원 후 상태를 하루만 기록해도 의사에게 보여줄 요약 리포트가 완성돼요.</p>
               <Link href={`${base}/daily`} className="mt-4 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 font-semibold text-ink shadow-sm hover:opacity-90">
                 오늘 데일리 체크 남기기
               </Link>
@@ -64,7 +65,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
                   {questions.map((q) => <li key={q.id}>{q.title}</li>)}
                 </ol>
               ) : (
-                <p className="mt-2 text-xs text-muted">아직 적어둔 질문이 없어요. 아래에서 바로 추가할 수 있어요.</p>
+                <p className="mt-2 text-sm text-muted">아직 적어둔 질문이 없어요. 아래에서 바로 추가할 수 있어요.</p>
               )}
               <div className="mt-3"><AddQuestion auth={auth} /></div>
               <Link href={`${base}/questions`} className="mt-2.5 inline-block text-xs text-accent underline">
@@ -81,13 +82,13 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
                 <span className="text-xs text-muted">{s.days}일 기록</span>
               </div>
               <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-accent sm:text-4xl">{s.adherence}%</span>
-                <span className="text-xs text-muted">(경과 {s.span}일 중 {s.days}일 복약 기록)</span>
+                <span className="text-display font-display text-accent">{s.adherence}%</span>
+                <span className="text-sm text-muted">(퇴원 후 {s.span}일 중 기록한 날 기준)</span>
               </div>
               {s.sideEffects.length > 0 ? (
-                <p className="mt-2 text-xs text-warn font-medium">⚠️ 약 먹고 불편했던 날: {s.sideEffects.map(md).join(", ")}</p>
+                <p className="mt-2 text-sm text-warn font-medium">약 먹고 불편했던 날: {s.sideEffects.map(md).join(", ")}</p>
               ) : (
-                <p className="mt-2 text-xs text-muted">약 복용 후 이상 반응 없음</p>
+                <p className="mt-2 text-sm text-muted">기록한 날 중 약 먹고 불편했던 날 없음</p>
               )}
             </section>
 
@@ -96,11 +97,11 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
               <div className="flex items-center justify-between">
                 <h2 id="r2" className="font-semibold text-ink">통증 추이 (0~10점)</h2>
                 {s.avgPain !== null && (
-                  <span className="text-xs text-muted">평균 <b className="text-ink font-semibold">{s.avgPain}</b>점 · 최대 {s.maxPain}점</span>
+                  <span className="text-sm text-muted">평균 <b className="text-ink font-semibold">{s.avgPain}</b>점 · 최대 {s.maxPain}점</span>
                 )}
               </div>
               {s.avgPain === null ? (
-                <p className="mt-2 text-xs text-muted">기록 3일 미만: {s.pain.map((p) => `${md(p.date)} (${p.pain}점)`).join(", ")}</p>
+                <p className="mt-2 text-sm text-muted">기록 3일 미만: {s.pain.map((p) => `${md(p.date)} (${p.pain}점)`).join(", ")}</p>
               ) : (
                 <div className="mt-2">
                   <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`통증 추이 그래프`} className="mx-auto w-full max-w-sm h-auto">
@@ -122,7 +123,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
             {/* 3. 체온·상처·배변 */}
             <section className={box} aria-labelledby="r3">
               <h2 id="r3" className="font-semibold text-ink">체온 · 상처 부위 · 배변</h2>
-              <ul className="mt-2 divide-y divide-line/60 text-xs sm:text-sm">
+              <ul className="mt-2 divide-y divide-line/60 text-sm">
                 <li className="flex justify-between py-1.5">
                   <span className="text-muted">발열 여부</span>
                   <span className={s.fevers.length ? "font-semibold text-warn" : "text-ink"}>
@@ -153,7 +154,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
                 </Link>
               </div>
               {questions.length ? (
-                <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-xs sm:text-sm">
+                <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm">
                   {questions.map((q) => <li key={q.id} className="text-ink">{q.title}</li>)}
                 </ol>
               ) : (
@@ -165,8 +166,8 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
             {/* 5. 보호자 특이사항 메모 (전체 폭) */}
             {checks.some((c) => c.notes) && (
               <section className={`${box} sm:col-span-2`} aria-labelledby="r5">
-                <h2 id="r5" className="font-semibold text-ink">보호자가 기록한 날짜별 특이사항</h2>
-                <ul className="mt-2 space-y-2 text-xs sm:text-sm">
+                <h2 id="r5" className="font-semibold text-ink">날짜별 메모</h2>
+                <ul className="mt-2 space-y-2 text-sm">
                   {checks.filter((c) => c.notes).slice(0, 5).map((c) => (
                     <li key={c.check_date} className="rounded-xl bg-background p-3">
                       <span className="font-semibold text-accent">{md(c.check_date)}: </span>

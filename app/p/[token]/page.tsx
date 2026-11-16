@@ -3,12 +3,13 @@ import { caseFromPatientToken } from "@/lib/db";
 import { db } from "@/lib/db";
 import { todaySeoul } from "@/lib/load";
 import { krDate } from "@/lib/format";
+import { weekday } from "@/lib/calendar";
 import type { Daily } from "@/lib/report";
 import PatientCheckFlow from "./PatientCheckFlow";
 
 export const metadata = {
   title: "오늘 안부 보내기 · 씩씩케어",
-  description: "버튼 4개로 오늘 컨디션을 가족에게 알려드려요",
+  description: "버튼 몇 번으로 오늘 몸 상태를 가족에게 알려요",
   robots: { index: false },
 };
 
@@ -29,13 +30,11 @@ export default async function PatientPage({
     .eq("check_date", today)
     .maybeSingle();
 
-  const todayDateObj = new Date();
-  const days = ["일", "월", "화", "수", "목", "금", "토"];
-  const dayName = days[todayDateObj.getDay()];
-  const todayStr = `${krDate(today)} (${dayName}요일)`;
+  // 서버 시간대와 상관없이 한국 날짜 기준 요일
+  const todayStr = `${krDate(today)} ${weekday(today)}요일`;
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background text-ink">
       <PatientCheckFlow
         patientToken={token}
         todayStr={todayStr}

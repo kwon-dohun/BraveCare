@@ -24,8 +24,8 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
   const { actor, data, auth, base } = await adminPage(token);
   const me = actor.memberId;
   const isSelfCare = !!data.isSelfCare;
-  // 기본(디폴트): 셀프 케어 모드는 할 일 목록 뷰, 일반 가족 모드는 월별 캘린더
-  const isList = isSelfCare ? sp.view !== "calendar" : sp.view === "list";
+  // 기본은 월별 달력, ?view=list 일 때 할 일 목록
+  const isList = sp.view === "list";
 
   const pool = data.tasks.filter((t) => t.kind !== "question");
   const open = pool.filter((t) => !t.done);
@@ -79,13 +79,13 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
 
         <div className="flex items-center gap-1.5">
           {!isList && (
-            <Link scroll={false} href={calHref(`d=${today}`)} className="flex h-8 items-center justify-center rounded-full bg-card px-3 text-xs font-semibold shadow-card text-ink hover:text-accent">
+            <Link scroll={false} href={calHref(`d=${today}`)} className="flex h-8 items-center justify-center whitespace-nowrap rounded-full bg-card px-3 text-xs font-semibold shadow-card text-ink hover:text-accent">
               오늘
             </Link>
           )}
           <details className="relative">
-            <summary className="flex h-8 cursor-pointer items-center justify-center gap-1 rounded-full bg-card px-3 text-xs font-semibold shadow-card text-ink hover:text-accent">
-              <Icon name="plus" size={14} />{isList ? "할 일 추가" : "외래·일정 추가"}
+            <summary aria-label={isList ? "할 일 추가" : "병원 일정이나 할 일 추가"} className="flex h-8 cursor-pointer items-center justify-center gap-1 whitespace-nowrap rounded-full bg-card px-3 text-xs font-semibold shadow-card text-ink hover:text-accent after:hidden">
+              <Icon name="plus" size={14} />추가
             </summary>
             <div className="absolute right-0 top-9 z-20 w-80 rounded-2xl bg-card p-4 shadow-card ring-1 ring-line">
               <AddTask auth={auth} defaultVisit={!isList} />

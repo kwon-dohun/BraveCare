@@ -26,8 +26,10 @@ export const loadCase = cache(async (caseId: string) => {
   const today = todaySeoul();
   let patientToken = (c.data.patient_token ?? null) as string | null;
   if (!patientToken) {
-    patientToken = crypto.randomUUID().replaceAll("-", "");
-    await db.from("cases").update({ patient_token: patientToken }).eq("id", caseId);
+    // 여러 화면이 동시에 그려져도 토큰은 하나만 남게: 비어 있을 때만 쓰고, 저장된 값을 다시 읽는다
+    await db.from("cases").update({ patient_token: crypto.randomUUID().replaceAll("-", "") }).eq("id", caseId).is("patient_token", null);
+    const { data: saved } = await db.from("cases").select("patient_token").eq("id", caseId).single();
+    patientToken = (saved?.patient_token ?? null) as string | null;
   }
   const isSelfCare = !!(c.data.is_self_care ?? input.isSelfCare);
   // DB의 시간은 14:00:00 꼴이라 분까지만 쓴다

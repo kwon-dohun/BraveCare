@@ -7,7 +7,6 @@ import { todaySeoul } from "@/lib/load";
 import { evaluate, validateInput, dayDiff, BENEFITS, STATUS_LABEL, type CaseInput } from "@/lib/benefits";
 import { seedTasks, addDays, nextDue } from "@/lib/timeline";
 import { act } from "@/lib/push";
-import { PACKET } from "@/lib/packet";
 import { validDaily, upsertDaily } from "@/lib/daily";
 import { krDate } from "@/lib/format";
 import { isValidSaved } from "@/lib/saved";

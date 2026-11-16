@@ -233,3 +233,12 @@ test("서류 보관함 ↔ 원무과 4종 패키지 교차 식별", () => {
   assert.ok(matched.includes("admission"));
   assert.ok(!matched.includes("disabled_cert"));
 });
+
+test("도움 요청 문구: 열쇠가 든 주소를 넣지 않고 이모지도 쓰지 않는다", async () => {
+  const { helpRequestText } = await import("./task-help.ts");
+  const text = helpRequestText({ title: "외래 동행", when: "11월 27일 오후 2:00", memo: "예약증은 냉장고 옆" }, "https://bravecare-kr.vercel.app");
+  assert.match(text, /할 일: 외래 동행/);
+  assert.match(text, /메모: 예약증은 냉장고 옆/);
+  assert.ok(!/\/c\/|\/m\//.test(text));
+  assert.ok(!/[\u{1F300}-\u{1FAFF}☀-➿]/u.test(text));
+});

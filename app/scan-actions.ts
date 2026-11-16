@@ -5,7 +5,7 @@ import { act } from "@/lib/push";
 import { todaySeoul } from "@/lib/load";
 import { askJson, hasModel } from "@/lib/openai";
 import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, extractCautionTags, validateTranscript, type DocItem, type DocType } from "@/lib/extract";
-import { CHAT_PROMPT, buildChatPrompt, parseChatJson, verifyAnswer, type ChatAnswer, type Source } from "@/lib/chat";
+import { buildChatPrompt, parseChatJson, verifyAnswer, type ChatAnswer, type Source } from "@/lib/chat";
 import { DOC_TYPE_LABEL } from "@/lib/extract";
 import { loadCase } from "@/lib/load";
 import { caseBrief } from "@/lib/brief";
@@ -21,8 +21,6 @@ async function limit(caseId: string, event: string, max: number, msg: string) {
 }
 
 // 원본 사진은 저장하지 않는다. 옮겨 적은 글자만 보관함에 남기고, 챗봇은 그 글자만 근거로 쓴다.
-const keep = (caseId: string, docType: DocType, transcript: string) =>
-  db.from("documents").insert({ case_id: caseId, doc_type: docType, transcript: maskIds(transcript).slice(0, 6000) });
 
 export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{
   items: DocItem[];
@@ -41,19 +39,19 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{
   if (raw === null) throw new Error("지금은 서류 인식이 어려워요. 병원 문자를 복사해 ‘병원 문자·알림톡 붙여넣기’에 넣으면 바로 일정을 만들 수 있어요. 아니면 잠시 뒤 다시 시도하거나 할 일을 직접 추가해 주세요");
   const parsed = parseModelJson(raw);
 
-  // 서버 방어막: 의료/행정 키워드 및 길이 검증 (셀카, 사물, 무관한 사진 원천 차단)
-  if (!validateTranscript(parsed.transcript)) {
-    throw new Error("유효한 병원 서류(진단서, 퇴원 안내문, 약봉투, 영수증 등)를 찾을 수 없어요. 병원 서류가 잘 보이게 다시 촬영해 주세요.");
-  }
-
   // 원문에 없는 항목은 여기서 버린다
   const items = toDocItems(verifyItems(parsed.transcript, parsed.items), todaySeoul());
+  // 셀카·풍경처럼 병원 서류가 아닌 사진은 보관하지 않는다
+  if (!validateTranscript(parsed.transcript, items.length)) {
+    throw new Error("병원 서류(진단서, 퇴원 안내문, 약봉투, 영수증 등)로 읽히지 않았어요. 글자가 잘 보이게 밝은 곳에서 다시 찍어 주세요");
+  }
   const cautions = extractCautionTags(parsed.transcript);
-  const { data: inserted } = await db.from("documents").insert({
+  const { data: inserted, error: saveErr } = await db.from("documents").insert({
     case_id: actor.caseId,
     doc_type: parsed.docType,
     transcript: maskIds(parsed.transcript).slice(0, 6000),
   }).select("id").maybeSingle();
+  if (saveErr) throw new Error("읽은 글자를 보관하지 못했어요. 잠시 뒤 다시 시도해 주세요");
 
   revalidatePath("/c/[token]", "layout");
   return {
@@ -71,11 +69,12 @@ export async function extractFromPaste(a: Auth, text: string): Promise<{ items: 
   const actor = await resolve(a);
   const t = text.trim().slice(0, 2000);
   if (t.length < 5) throw new Error("병원에서 받은 문자를 붙여넣어 주세요");
-  const { data: inserted } = await db.from("documents").insert({
+  const { data: inserted, error: saveErr } = await db.from("documents").insert({
     case_id: actor.caseId,
     doc_type: "message",
     transcript: maskIds(t),
   }).select("id").maybeSingle();
+  if (saveErr) throw new Error("읽은 글자를 보관하지 못했어요. 잠시 뒤 다시 시도해 주세요");
   revalidatePath("/c/[token]", "layout");
   return { items: itemsFromText(t, todaySeoul()), docId: inserted?.id ?? null, transcript: t };
 }

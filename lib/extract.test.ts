@@ -63,7 +63,10 @@ test("서버 방어막 validateTranscript: 의료 키워드 및 길이 검증", 
   assert.equal(validateTranscript("오늘 날씨가 너무 좋아서 친구와 카페에서 커피를 마셨다"), false);
   assert.equal(validateTranscript("맥북 프로 16인치 M3 맥스 스페이스 블랙"), false);
 
-  // 20자 미만의 너무 짧은 텍스트 차단
+  // 약봉투처럼 약 이름·용법만 있어도 통과, 원문에서 확인된 항목이 있으면 통과
+  assert.equal(validateTranscript("타이레놀이알서방정 650mg 1일 3회 아침 점심 저녁"), true);
+  assert.equal(validateTranscript("짧은 글", 1), true);
+  // 너무 짧은 텍스트 차단
   assert.equal(validateTranscript("서울병원 진료"), false);
   assert.equal(validateTranscript(""), false);
 });

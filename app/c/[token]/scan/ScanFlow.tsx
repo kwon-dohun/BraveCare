@@ -84,7 +84,6 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
     const types: DocType[] = [];
     const allCautions: string[] = [];
     const newScanned: { docType: DocType; transcript: string; itemsCount: number }[] = [];
-    let failed = 0;
 
     for (const [i, f] of files.entries()) {
       setBusy(`${files.length}장 중 ${i + 1}장째 읽는 중… (장당 10초쯤 걸려요)`);
@@ -108,7 +107,6 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
           ]);
         }
       } catch (e) {
-        failed++;
         setErr(e instanceof Error ? e.message : "읽지 못했어요. 다시 촬영해주세요");
       }
     }
@@ -203,7 +201,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
         {app ? "사진첩에서 고르기" : busy ? "읽는 중…" : rows ? "다시 촬영하기" : "촬영하거나 사진 고르기"}
         <input type="file" accept="image/*" multiple className="sr-only" disabled={!!busy} onChange={(e) => { onFiles(e.target.files); e.target.value = ""; }} />
       </label>
-      <p className="mt-2 text-sm text-muted">진단서·확인서, 퇴원 안내문, 약봉투, 영수증을 한 번에 {MAX}장까지 고를 수 있어요. 사진은 글자를 읽은 뒤 즉시 파기하고 글자만 보관해요. (외래 진료 날짜는 캘린더에서 직접 등록하거나 아래 &lsquo;병원 문자 붙여넣기&rsquo;를 이용해 주세요)</p>
+      <p className="mt-2 text-sm text-muted">진단서·확인서, 퇴원 안내문, 약봉투, 영수증을 한 번에 {MAX}장까지 고를 수 있어요. 종이 전체가 보이게 밝은 곳에서 찍어 주세요. 사진은 글자를 읽은 뒤 저장하지 않고, 읽은 글자만 보관해요.</p>
 
       <details className="mt-4 rounded-xl bg-card shadow-card p-4">
         <summary className="cursor-pointer font-semibold">병원 문자·알림톡 붙여넣기</summary>
@@ -220,7 +218,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       {err && <p role="alert" className="mt-3 text-warn font-medium leading-relaxed">{err}</p>}
       {found.length > 0 && (
         <section role="status" className="mt-4 rounded-xl bg-accent-soft p-4 text-sm text-accent">
-          <p className="font-semibold text-ink">✅ 서류 분석 완료: {found.map((t) => DOC_TYPE_LABEL[t]).join(", ")}</p>
+          <p className="font-semibold text-ink">다 읽었어요: {found.map((t) => DOC_TYPE_LABEL[t]).join(", ")}</p>
           <p className="mt-1 font-medium">
             사진 원본은 개인정보 보호를 위해 저장하지 않고, <strong>읽어낸 글자만 서류 보관함에 안전하게 저장했어요.</strong>
           </p>
@@ -239,18 +237,16 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       {scannedDocs.length > 0 && (
         <div className="mt-3 space-y-3">
           {scannedDocs.map((s, idx) => (
-            <div key={idx} className="rounded-xl border border-line bg-card p-4 shadow-sm text-xs">
-              <div className="flex items-center justify-between font-semibold text-ink">
-                <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-accent">{DOC_TYPE_LABEL[s.docType]}</span>
-                <span className="text-[11px] font-normal text-muted">보관함에 저장 완료</span>
+            <div key={idx} className="rounded-xl bg-card p-4 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">{DOC_TYPE_LABEL[s.docType]}</span>
+                <span className="text-xs text-muted">보관함에 저장했어요</span>
               </div>
-              <p className="mt-2 text-ink/80 bg-background p-2.5 rounded-lg line-clamp-4 font-mono whitespace-pre-wrap leading-relaxed">
+              <p className="mt-2 line-clamp-4 whitespace-pre-wrap rounded-lg bg-background p-2.5 text-sm leading-relaxed text-ink/80">
                 {s.transcript}
               </p>
               {s.itemsCount === 0 && (
-                <p className="mt-2 text-xs text-muted">
-                  ℹ️ 서류 글자가 보관함에 안전하게 저장되었어요. 외래 방문 일정이 적힌 서류가 아니라서 캘린더에 추가할 일정은 없습니다. 씩씩이에게 이 서류 내용을 물어보시면 즉시 답변해 드려요!
-                </p>
+                <p className="mt-2 text-sm text-muted">이 서류에는 달력에 넣을 날짜가 없어요. 내용이 궁금하면 씩씩이에게 물어보세요.</p>
               )}
             </div>
           ))}

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { updateCase, deleteCase, leaveCase, unlinkKakao } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import type { CaseInput, Income, Living, Reason } from "@/lib/benefits";
-import { SIDO, SIGUNGU, SEOUL_GU, REASON_LABEL, LIVING_LABEL, INCOME_OPTIONS } from "@/lib/options";
+import { SIDO, SIGUNGU, REASON_LABEL, LIVING_LABEL, INCOME_OPTIONS } from "@/lib/options";
 import { useAct } from "@/components/useAct";
 import Mascot from "@/components/Mascot";
 

@@ -18,11 +18,13 @@ export const maskIds = (s: string) => s.replace(/(\d{6})\s*-\s*[1-8]\d{6}/g, "$1
 
 // 유효한 의료/행정 서류인지 검증하는 서버 방어선 (셀카, 사물, 일상 사진 원천 차단)
 export const MEDICAL_KEYWORDS_REGEX =
-  /병원|의원|의료|진료|처방|영수증|진단|소견|환자|질병|입원|퇴원|외래|복약|투약|약국|검사|급여|비급여|본인부담|원무|수술|치료|재활|상병|질환|주치의|병동/;
+  /병원|의원|의료|진료|처방|영수증|진단|소견|환자|질병|입원|퇴원|외래|복약|투약|약국|약제|조제|검사|급여|비급여|본인부담|원무|수술|치료|재활|상병|질환|주치의|병동|간호|예약|접수|복용|식후|식전|취침|\d\s*(mg|ml|mL|정|캡슐|포)|보험|청구|소독|드레싱|실밥|주사/;
 
-export function validateTranscript(transcript: string): boolean {
+// shortcut: 키워드 사전 판별이라 낯선 서식은 놓칠 수 있다. 오탐이 실제로 보이면 모델의 docType 판단을 같이 본다
+export function validateTranscript(transcript: string, verifiedItems = 0): boolean {
   const t = norm(transcript);
-  if (t.length < 20) return false;
+  if (verifiedItems > 0) return true; // 원문에서 확인된 일정·복약 문장이 있으면 서류로 본다
+  if (t.length < 15) return false;
   return MEDICAL_KEYWORDS_REGEX.test(t);
 }
 

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { updateTask, deleteTask } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import { useAct } from "@/components/useAct";
+import { helpRequestText } from "@/lib/task-help";
+import { krDate, krTime } from "@/lib/format";
 
 interface Props {
   auth: Auth; back: string; members: { id: string; name: string }[];
@@ -24,25 +26,8 @@ export default function TaskForm({ auth, back, members, task }: Props) {
   const { run, pending, err } = useAct();
 
   const copyHelp = async () => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://bravecare-kr.vercel.app";
-    const taskUrl = `${origin}/c/${auth.v}/tasks/${task.id}`;
-    const dateStr = date ? `${date}${time ? ` ${time}` : ""}` : "날짜 미정";
-    const memoLine = memo ? `• 메모: ${memo}\n` : "";
-
-    const text = `가족 여러분, 씩씩이에요 🌱
-
-아직 맡은 사람이 없는 일이 있어요!
-시간 되시는 분이 도와주실 수 있나요?
-
-• 할 일: ${title}
-• 일시: ${dateStr}
-${memoLine}
-아래 링크에서 ‘내가 할게’를 꾹 눌러주시면 돼요.
-오늘도 다 같이 씩씩하게! ✨
-
-👉 바로 확인하고 맡기:
-${taskUrl}`;
-
+    const when = date ? `${krDate(date)}${time ? ` ${krTime(time)}` : ""}` : "날짜 미정";
+    const text = helpRequestText({ title, when, memo }, window.location.origin);
     try {
       await navigator.clipboard.writeText(text);
       setCopiedHelp(true);
