@@ -7,17 +7,48 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "app.bravecare.mobile",
+      "associatedDomains": [
+        "applinks:bravecare-kr.vercel.app"
+      ],
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "퇴원 안내문·약봉투·영수증을 촬영해 글자를 읽는 데 카메라를 써요. 사진은 저장하지 않아요.",
+        "NSPhotoLibraryUsageDescription": "서류 사진을 골라 글자를 읽는 데 사진첩을 써요. 사진은 저장하지 않아요."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#dff7ec",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "app.bravecare.mobile"
+      "package": "app.bravecare.mobile",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "https",
+              "host": "bravecare-kr.vercel.app",
+              "pathPrefix": "/j/"
+            },
+            {
+              "scheme": "https",
+              "host": "bravecare-kr.vercel.app",
+              "pathPrefix": "/c/"
+            }
+          ]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -26,6 +57,21 @@
       "eas": {
         "projectId": "db582143-2a1f-4eb5-83da-7fbf1a54db51"
       }
-    }
+    },
+    "plugins": [
+      [
+        "react-native-document-scanner-plugin",
+        {
+          "cameraPermission": "퇴원 안내문·약봉투·영수증을 촬영해 글자를 읽는 데 카메라를 써요. 사진은 저장하지 않아요."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#62deae"
+        }
+      ]
+    ],
+    "scheme": "bravecare"
   }
 }
