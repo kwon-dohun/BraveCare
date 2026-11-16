@@ -23,7 +23,7 @@ export default async function Calendar(props: PageProps<"/c/[token]/calendar">) 
   const others = dayEvents.filter((e) => !e.taskId);
   const [y, m] = ym.split("-").map(Number);
   const href = (q: string) => `${base}/calendar?${q}`;
-  const list = { members: data.members, auth, meId: actor.memberId, canAssign: true, today, detailBase: `${base}/tasks`, showDate: false };
+  const list = { members: data.members, auth, meId: actor.memberId, today, detailBase: `${base}/tasks`, showDate: false };
 
   return (
     <>

@@ -15,7 +15,7 @@ export const EVENT_STYLE: Record<EventKind, { label: string; dot: string; chip: 
   deadline: { label: "지원 마감", dot: "#e0517a", chip: "bg-[#ffe4ea] text-[#a3324f]" },
 };
 
-const KIND: Record<TaskKind, EventKind> = { schedule: "visit", admin: "admin", question: "question", prep: "prep", custom: "prep" };
+export const KIND: Record<TaskKind, EventKind> = { schedule: "visit", admin: "admin", question: "question", prep: "prep", custom: "prep" };
 
 export function buildEvents(d: {
   input: CaseInput;

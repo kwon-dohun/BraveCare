@@ -163,14 +163,22 @@ export async function toggleTask(a: Auth, taskId: string, done: boolean) {
 
 export async function assignTask(a: Auth, taskId: string, memberId: string | null) {
   const actor = await resolve(a);
-  const { data: t } = await db.from("tasks").select("title").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
+  const { data: t } = await db.from("tasks").select("title,assignee_id").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
   if (!t) throw new Error("할 일을 찾을 수 없어요");
-  if (memberId) {
-    const { data: m } = await db.from("members").select("name").eq("id", memberId).eq("case_id", actor.caseId).maybeSingle();
-    if (!m) throw new Error("가족을 찾을 수 없어요");
-    await act(actor.caseId, `담당 지정 (${m.name}): ${t.title}`, actor.memberId);
-  }
-  await db.from("tasks").update({ assignee_id: memberId }).eq("id", taskId).eq("case_id", actor.caseId);
+  if ((t.assignee_id ?? null) === (memberId || null)) return; // 바뀐 게 없다
+  const { data: names } = await db.from("members").select("id,name").eq("case_id", actor.caseId);
+  const nameOf = (id: string | null) => names?.find((m) => m.id === id)?.name;
+  if (memberId && !nameOf(memberId)) throw new Error("가족을 찾을 수 없어요");
+  await db.from("tasks").update({ assignee_id: memberId || null }).eq("id", taskId).eq("case_id", actor.caseId);
+
+  // 남의 일도 바꿀 수 있게 열어 두는 대신, 바뀐 사실이 가족 모두에게 남고 알림이 간다
+  const prev = nameOf(t.assignee_id);
+  const to = memberId ? nameOf(memberId) : null;
+  const text = !memberId ? `${actor.name}님이 ${prev}님의 담당을 비웠어요: ${t.title}`
+    : memberId === actor.memberId ? (prev ? `${actor.name}님이 ${prev}님의 일을 넘겨받았어요: ${t.title}` : `${actor.name}님이 맡았어요: ${t.title}`)
+    : prev ? `${actor.name}님이 담당을 ${prev}님에서 ${to}님으로 바꿨어요: ${t.title}` : `${actor.name}님이 ${to}님에게 맡겼어요: ${t.title}`;
+  await act(actor.caseId, text, actor.memberId);
+  if (memberId === actor.memberId) await logEvent(actor.caseId, "task_claimed", { role: actor.role }); // KPI G4
   refresh();
 }
 
@@ -200,17 +208,18 @@ export async function updateTask(a: Auth, taskId: string, patch: { title: string
   const actor = await resolve(a);
   const title = patch.title.trim().slice(0, 100);
   if (!title) throw new Error("할 일 내용을 입력해주세요");
-  const { data: cur } = await db.from("tasks").select("due_date").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
+  const { data: cur } = await db.from("tasks").select("due_date,assignee_id").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
   if (!cur) throw new Error("할 일을 찾을 수 없어요");
   if (patch.assigneeId) {
     const { data: m } = await db.from("members").select("id").eq("id", patch.assigneeId).eq("case_id", actor.caseId).maybeSingle();
     if (!m) throw new Error("가족을 찾을 수 없어요");
   }
   const due = isDate(patch.dueDate) ? patch.dueDate : null;
+  if ((cur.assignee_id ?? null) !== (patch.assigneeId || null)) await assignTask(a, taskId, patch.assigneeId || null); // 담당이 바뀌면 가족에게 알린다
   await db.from("tasks").update({
     title, due_date: due, due_time: due && isTime(patch.dueTime) ? patch.dueTime : null,
     repeat: due && (patch.repeat === "daily" || patch.repeat === "weekly") ? patch.repeat : null, // 날짜가 있어야 반복할 수 있다
-    assignee_id: patch.assigneeId || null, memo: patch.memo.trim().slice(0, 500) || null,
+    memo: patch.memo.trim().slice(0, 500) || null,
     // 날짜를 직접 바꾸면 그때부터 퇴원일 변경을 따라가지 않는다
     ...(due !== cur.due_date ? { rel_day: null } : {}),
   }).eq("id", taskId).eq("case_id", actor.caseId);

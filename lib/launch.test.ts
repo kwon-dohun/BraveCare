@@ -5,7 +5,7 @@ import { nextDue } from "./timeline.ts";
 import { taskIcs, fold } from "./ics.ts";
 import { krTime } from "./format.ts";
 
-const task = (o: object) => ({ id: "t1", title: "첫 외래", due_date: "2026-11-27", due_time: null, done: false, assignee_id: "me", ...o });
+const task = (o: object) => ({ id: "t1", title: "첫 외래", kind: "schedule", source: "manual", rel_day: null, due_date: "2026-11-27", due_time: null, done: false, assignee_id: "me", ...o });
 const now = Date.parse("2026-11-20T12:00:00+09:00");
 const base = { results: [], status: {}, meId: "me", now };
 
@@ -27,6 +27,13 @@ test("알림: 다른 가족이 맡은 일·끝난 일·지난 시각은 빼고, 
   ] });
   assert.deepEqual(r.map((x) => x.id), ["d:eve", "d:day"]);
   assert.match(r[0].body, /담당자 없음/);
+});
+
+test("알림: 급하지 않은 담당 없는 일과 지원 신청 할 일은 개별 알림을 만들지 않는다", () => {
+  const r = buildReminders({ ...base, tasks: [
+    task({ id: "p", kind: "prep", rel_day: -3, assignee_id: null }), task({ id: "b", kind: "admin", source: "benefit", assignee_id: null }),
+  ] });
+  assert.deepEqual(r, []);
 });
 
 test("알림: 신청하지 않은 지원만 마감 3일 전과 당일", () => {
@@ -65,4 +72,37 @@ test("캘린더 파일: 75바이트 넘는 줄은 접고, 펼치면 원래 글�
   assert.equal(lines.map((l, i) => (i ? l.slice(1) : l)).join(""), long);
   const ics = taskIcs({ id: "t1", title: "외래", due_date: "2026-11-27", memo: "메모 ".repeat(40), kind: "custom" }, "서울병원");
   assert.ok(ics.split("\r\n").every((l) => new TextEncoder().encode(l).length <= 75));
+});
+
+import { priorityOf, sortTasks, badgeFor, openDeadlines } from "./priority.ts";
+
+const pt = (o: object) => ({ id: "x", title: "준비 일", kind: "prep", source: "template", rel_day: -3, due_date: "2026-11-25", assignee_id: null, ...o });
+const dl = new Map([["긴급복지 의료지원", 3]]);
+
+test("우선순위: 마감 있는 지원 0, 병원 일정·퇴원 당일 1, 일반 2, 30일 이후 3, 질문은 2", () => {
+  assert.equal(priorityOf(pt({ title: "긴급복지 의료지원 신청 알아보기", source: "benefit", kind: "admin" }), dl), 0);
+  assert.equal(priorityOf(pt({ title: "마감 없는 지원 신청 알아보기", source: "benefit", kind: "admin" }), dl), 2);
+  assert.equal(priorityOf(pt({ kind: "schedule", rel_day: null }), dl), 1);
+  assert.equal(priorityOf(pt({ rel_day: 0, kind: "admin" }), dl), 1);
+  assert.equal(priorityOf(pt({ rel_day: 30 }), dl), 3);
+  assert.equal(priorityOf(pt({ kind: "question", rel_day: 0 }), dl), 2);
+});
+
+test("정렬: 같은 우선순위에서는 밀린 일이 먼저, 그다음 날짜순", () => {
+  const a = pt({ id: "a", due_date: "2026-11-25" }), b = pt({ id: "b", due_date: "2026-11-18" }), c = pt({ id: "c", due_date: "2026-11-10" });
+  const hi = pt({ id: "hi", title: "긴급복지 의료지원 신청 알아보기", source: "benefit", kind: "admin", due_date: "2026-11-30" });
+  assert.deepEqual(sortTasks([a, b, c, hi], dl, "2026-11-20").map((t) => t.id), ["hi", "c", "b", "a"]);
+});
+
+test("배지: 마감 D-n, 담당 없는 병원 일정만 '같이 할 사람', 담당이 있으면 없음", () => {
+  assert.equal(badgeFor(pt({ title: "긴급복지 의료지원 신청 알아보기", source: "benefit", kind: "admin" }), dl, "2026-11-20"), "마감 D-3");
+  assert.equal(badgeFor(pt({ kind: "schedule" }), dl, "2026-11-20"), "같이 할 사람이 필요해요");
+  assert.equal(badgeFor(pt({ kind: "schedule", assignee_id: "m1" }), dl, "2026-11-20"), null);
+  assert.equal(badgeFor(pt({ kind: "schedule", due_date: "2026-11-10" }), dl, "2026-11-20"), null);
+});
+
+test("마감이 남은 지원만 모은다", () => {
+  const r = (name: string, state: string, daysLeft?: number) => ({ verdict: "high", benefit: { name }, deadline: { state, daysLeft } });
+  const m = openDeadlines([r("가", "open", 2), r("나", "closed"), r("다", "unknown")] as never);
+  assert.deepEqual([...m], [["가", 2]]);
 });

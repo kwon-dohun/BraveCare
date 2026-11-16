@@ -57,6 +57,7 @@ export default function TaskForm({ auth, back, members, task }: Props) {
           <option value="">담당자 없음</option>
           {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
+        <p className="mt-1 text-sm text-muted">다른 가족의 일도 바꿀 수 있어요. 바꾸면 가족에게 알려줘요.</p>
       </div>
       <div>
         <label htmlFor="tm" className="font-semibold">메모</label>

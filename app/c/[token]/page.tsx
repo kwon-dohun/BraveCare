@@ -40,7 +40,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const cheer = timeContextCheer(stage, checkedToday, kstHour);
   const weekendWarning = weekendDischargeWarning(input.dischargeDate, today);
   const mood = stage === "recovery" && checkedToday ? "cheer" : "idle";
-  const list = { members, auth, meId: actor.memberId, canAssign: true, today, detailBase: `${base}/tasks` };
+  const list = { members, auth, meId: actor.memberId, today, detailBase: `${base}/tasks` };
   // 이번 주 띠와 다가오는 일정(할 일 중 병원 일정 + 퇴원일 + 지원 마감)
   const events = buildEvents(data);
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i));
