@@ -72,28 +72,32 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
     <>
       {/* 상단 통합 세그먼트 스위처: [달력] (메인) | [할 일 목록] */}
       <div className="flex items-center justify-between">
-        <div className="inline-flex rounded-2xl bg-card p-1 shadow-card border border-line">
+        <div className="inline-flex items-center rounded-full bg-card p-1 shadow-card border border-line">
           <Link
             href={`${base}/tasks`}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${!isList ? "bg-accent-soft text-accent" : "text-muted hover:text-ink"}`}
+            className={`flex h-8 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors ${
+              !isList ? "bg-accent-soft text-accent shadow-xs" : "text-muted hover:text-ink"
+            }`}
           >
             달력
           </Link>
           <Link
             href={`${base}/tasks?view=list`}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${isList ? "bg-accent-soft text-accent" : "text-muted hover:text-ink"}`}
+            className={`flex h-8 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors ${
+              isList ? "bg-accent-soft text-accent shadow-xs" : "text-muted hover:text-ink"
+            }`}
           >
             할 일 목록
           </Link>
         </div>
 
         {!isList ? (
-          <Link href={calHref(`d=${today}`)} className="flex min-h-0 items-center rounded-full bg-card px-3.5 py-1.5 text-xs font-semibold shadow-card text-ink">
+          <Link href={calHref(`d=${today}`)} className="flex h-8 items-center justify-center rounded-full bg-card px-3.5 text-xs font-semibold shadow-card text-ink border border-line">
             오늘
           </Link>
         ) : (
           <details className="relative">
-            <summary className="flex min-h-0 cursor-pointer items-center gap-1 rounded-full bg-card px-3.5 py-1.5 text-xs font-semibold shadow-card text-ink">
+            <summary className="flex h-8 cursor-pointer items-center justify-center gap-1 rounded-full bg-card px-3.5 text-xs font-semibold shadow-card text-ink border border-line">
               <Icon name="plus" size={14} />추가
             </summary>
             <div className="absolute right-0 top-9 z-20 w-80 rounded-2xl bg-card p-4 shadow-xl border border-line">
