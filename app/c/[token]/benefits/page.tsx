@@ -26,8 +26,8 @@ export default async function Benefits(props: PageProps<"/c/[token]/benefits">) 
     <>
       <div className="flex items-start justify-between gap-3">
         <h1 className="text-title font-display leading-snug">우리 가족이 받을 수 있는<br />지원 <span className="text-accent tabular-nums">{high.length}개</span></h1>
-        <Link href={`${base}/benefits/saved`} className="flex shrink-0 flex-col items-center gap-0.5 rounded-2xl bg-card px-3 py-2 text-caption font-semibold text-muted shadow-card">
-          <Icon name="like" size={22} className={saved.length ? "fill-current text-[#e0517a]" : ""} />
+        <Link href={`${base}/benefits/saved`} className="flex h-11 shrink-0 items-center gap-1 rounded-full bg-card px-3.5 text-sm font-semibold text-muted shadow-card">
+          <Icon name="like" size={18} className={saved.length ? "fill-current text-[#e0517a]" : ""} />
           찜 <span className="tabular-nums">{saved.length}</span>
         </Link>
       </div>
