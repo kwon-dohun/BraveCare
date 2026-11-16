@@ -55,11 +55,13 @@ test("지역 제도: 다른 지역이면 해당 없음, 상병수당은 시범 �
   assert.equal(by(evaluate(worker, T), "sickness_benefit").verdict, "no");
 });
 
-test("창원시 등 상병수당 시범지역 시·군·구 맞춤 판정", () => {
-  const changwon = { ...worker, sido: "경남", sigungu: "창원시" };
-  const res = by(evaluate(changwon, T), "sickness_benefit");
-  assert.equal(res.verdict, "check");
-  assert.match(res.reason, /상병수당 시범지역/);
+test("상병수당: 2026 시범지역 8곳만, 시·도까지 맞아야 대상", () => {
+  const at = (sido: string, sigungu: string) => by(evaluate({ ...worker, sido, sigungu }, T), "sickness_benefit");
+  assert.match(at("경기", "안양시").reason, /시범지역에 해당/);
+  assert.match(at("대구", "달서구").reason, /시범지역에 해당/);
+  assert.equal(at("경남", "창원시").verdict, "no"); // 2022년 1단계 지역이라 지금은 아님
+  assert.equal(at("서울", "중구").verdict, "no"); // 이름이 같은 다른 지역이 걸리지 않음
+  assert.doesNotMatch(at("경기", "수원시").reason, /시범지역에 해당/); // 같은 도의 다른 시는 확인 필요로만
 });
 
 test("마감: 긴급복지는 퇴원 전까지, 재난적의료비는 퇴원 후 180일, 미정이면 unknown", () => {
