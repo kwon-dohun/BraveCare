@@ -44,3 +44,62 @@ export function taskIcs(t: { id: string; title: string; due_date: string; due_ti
     "END:VCALENDAR",
   ].map(fold).join("\r\n") + "\r\n";
 }
+
+export function feedIcs(
+  tasks: { id: string; title: string; due_date: string; due_time?: string | null; memo: string | null; kind: string; done?: boolean }[],
+  options: { calName?: string; hospital?: string; dischargeDate?: string | null }
+): string {
+  const events: string[] = [];
+
+  if (options.dischargeDate) {
+    events.push(
+      [
+        "BEGIN:VEVENT",
+        `UID:discharge-${ymd(options.dischargeDate)}@bravecare`,
+        `DTSTAMP:${ymd(options.dischargeDate)}T000000Z`,
+        `DTSTART;VALUE=DATE:${ymd(options.dischargeDate)}`,
+        `DTEND;VALUE=DATE:${ymd(nextDay(options.dischargeDate))}`,
+        `SUMMARY:${esc("[씩씩케어] 퇴원하는 날")}`,
+        "DESCRIPTION:퇴원 수속 및 약 수령, 안전 귀가",
+        "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${esc("내일 퇴원하는 날입니다")}`, "TRIGGER:-PT4H", "END:VALARM",
+        "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${esc("오늘 퇴원하는 날입니다")}`, "TRIGGER:PT8H30M", "END:VALARM",
+        "END:VEVENT",
+      ].map(fold).join("\r\n")
+    );
+  }
+
+  for (const t of tasks) {
+    const time = t.due_time?.slice(0, 5);
+    const memo = [options.hospital && `병원: ${options.hospital}`, t.memo, t.kind === "schedule" && !t.memo ? VISIT_HINT : ""].filter(Boolean).join("\n");
+    events.push(
+      [
+        "BEGIN:VEVENT",
+        `UID:${t.id}@bravecare`,
+        `DTSTAMP:${ymd(t.due_date)}T000000Z`,
+        ...(time
+          ? [`DTSTART:${utc(t.due_date, time)}`, "DURATION:PT1H"]
+          : [`DTSTART;VALUE=DATE:${ymd(t.due_date)}`, `DTEND;VALUE=DATE:${ymd(nextDay(t.due_date))}`]),
+        `SUMMARY:${esc(`[씩씩케어] ${t.title}${t.done ? " (완료)" : ""}`)}`,
+        ...(memo ? [`DESCRIPTION:${esc(memo)}`] : []),
+        "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${esc(`내일: ${t.title}`)}`, time ? "TRIGGER:-P1D" : "TRIGGER:-PT4H", "END:VALARM",
+        "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${esc(`오늘: ${t.title}`)}`, time ? "TRIGGER:-PT1H" : "TRIGGER:PT8H30M", "END:VALARM",
+        "END:VEVENT",
+      ].map(fold).join("\r\n")
+    );
+  }
+
+  const calName = esc(options.calName || "씩씩케어 돌봄 일정");
+  const header = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//BraveCare//KO",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    `X-WR-CALNAME:${calName}`,
+    "X-WR-TIMEZONE:Asia/Seoul",
+    "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
+    "X-PUBLISHED-TTL:PT1H",
+  ].map(fold).join("\r\n");
+
+  return [header, ...events, "END:VCALENDAR"].join("\r\n") + "\r\n";
+}

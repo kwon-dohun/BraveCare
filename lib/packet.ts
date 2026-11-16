@@ -7,3 +7,21 @@ export const PACKET = [
 ] as const;
 
 export const SILSON24_URL = "https://www.silson24.or.kr";
+
+// 복지 제도 필요 서류 문구(docText)가 원무과 서류 4종 중 어떤 항목과 연결되는지 판별
+export function matchPacketDoc(docText: string): (typeof PACKET)[number] | null {
+  const norm = docText.replace(/\s+/g, "");
+  if (norm.includes("입퇴원확인서") || norm.includes("퇴원확인서") || norm.includes("입퇴원")) {
+    return PACKET.find((p) => p.id === "admission") ?? null;
+  }
+  if (norm.includes("영수증") || norm.includes("계산서") || norm.includes("진료비영수증")) {
+    return PACKET.find((p) => p.id === "receipt") ?? null;
+  }
+  if (norm.includes("세부내역서") || norm.includes("진료비세부")) {
+    return PACKET.find((p) => p.id === "detail") ?? null;
+  }
+  if (norm.includes("장애인증명서") || norm.includes("장애인공제")) {
+    return PACKET.find((p) => p.id === "disabled_cert") ?? null;
+  }
+  return null;
+}

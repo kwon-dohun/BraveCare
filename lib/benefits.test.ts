@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { evaluate, sortResults, validateInput, normalizeInput, BENEFITS, type CaseInput } from "./benefits.ts";
+import { matchPacketDoc } from "./packet.ts";
 
 // 72세, 서울, 낮에도 가족이 있음, 일반 가구
 const senior: CaseInput = { dischargeDate: "2026-11-20", birthYear: 1954, sido: "서울", sigungu: "마포구", reason: "ortho", living: "home", income: "general" };
@@ -85,4 +86,12 @@ test("구버전 케이스 값은 지금 분류로 옮긴다", () => {
 test("정렬: 높음 → 확인 필요 → 해당 없음", () => {
   const order = sortResults(evaluate(worker, T)).map((r) => r.verdict);
   assert.deepEqual(order, [...order].sort((a, b) => "hcn".indexOf(a[0]) - "hcn".indexOf(b[0])));
+});
+
+test("서류 매칭: 복지 서류 문구와 원무과 4종 서류 매핑", () => {
+  assert.equal(matchPacketDoc("입퇴원확인서(병원 발급)")?.id, "admission");
+  assert.equal(matchPacketDoc("진료비 영수증 사본")?.id, "receipt");
+  assert.equal(matchPacketDoc("진료비 세부내역서")?.id, "detail");
+  assert.equal(matchPacketDoc("원무과 장애인증명서")?.id, "disabled_cert");
+  assert.equal(matchPacketDoc("신분증"), null);
 });

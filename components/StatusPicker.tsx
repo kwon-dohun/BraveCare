@@ -47,7 +47,24 @@ export function StatusPicker({ auth, benefitId, current }: { auth: Auth; benefit
   );
 }
 
-export function DocsChecklist({ auth, benefitId, docs, checked }: { auth: Auth; benefitId: string; docs: string[]; checked: string[] }) {
+import Link from "next/link";
+import { matchPacketDoc } from "@/lib/packet";
+
+export function DocsChecklist({
+  auth,
+  benefitId,
+  docs,
+  checked,
+  packetChecked = [],
+  docsHref,
+}: {
+  auth: Auth;
+  benefitId: string;
+  docs: string[];
+  checked: string[];
+  packetChecked?: string[];
+  docsHref?: string;
+}) {
   const [sel, setSel] = useState(checked);
   const { run, err } = useAct();
   const toggle = (d: string) => {
@@ -55,20 +72,41 @@ export function DocsChecklist({ auth, benefitId, docs, checked }: { auth: Auth; 
     setSel(next);
     run(() => setDocsChecked(auth, benefitId, next));
   };
+
+  const hasHospitalDoc = docs.some((d) => matchPacketDoc(d) !== null);
+
   return (
     <>
       <ul className="mt-2 divide-y divide-line rounded-xl bg-card shadow-card">
-        {docs.map((d) => (
-          <li key={d}>
-            <label className="flex items-center gap-3 px-4 py-3">
-              <input type="checkbox" checked={sel.includes(d)} onChange={() => toggle(d)} className="h-5 w-5 shrink-0" />
-              <span className={sel.includes(d) ? "text-muted line-through" : ""}>{d}</span>
-            </label>
-          </li>
-        ))}
+        {docs.map((d) => {
+          const matched = matchPacketDoc(d);
+          const isPacketReady = matched ? packetChecked.includes(matched.id) : false;
+          return (
+            <li key={d}>
+              <label className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer">
+                <div className="flex items-center gap-3 min-w-0">
+                  <input type="checkbox" checked={sel.includes(d)} onChange={() => toggle(d)} className="h-5 w-5 shrink-0 accent-primary" />
+                  <span className={`text-sm ${sel.includes(d) ? "text-muted line-through" : ""}`}>{d}</span>
+                </div>
+                {matched && (
+                  <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${isPacketReady ? "bg-accent-soft text-accent" : "bg-[#fff4cc] text-[#7a5a00]"}`}>
+                    {isPacketReady ? "원무과 서류 챙김" : "퇴원 시 발급 필요"}
+                  </span>
+                )}
+              </label>
+            </li>
+          );
+        })}
       </ul>
-      <p className="mt-1 text-sm text-muted">{sel.length}/{docs.length} 준비됨 · 체크는 가족과 함께 봐요</p>
-      {err && <p role="alert" className="text-warn">{err}</p>}
+      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+        <span>{sel.length}/{docs.length} 준비됨 · 체크는 가족과 함께 봐요</span>
+        {hasHospitalDoc && docsHref && (
+          <Link href={docsHref} className="font-semibold text-accent hover:underline">
+            원무과 서류 4종 관리로 이동 ↗
+          </Link>
+        )}
+      </div>
+      {err && <p role="alert" className="mt-1 text-sm text-warn">{err}</p>}
     </>
   );
 }

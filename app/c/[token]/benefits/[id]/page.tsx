@@ -60,7 +60,22 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
 
       <section className="mt-6">
         <h2 className="font-semibold">필요 서류</h2>
-        {active ? <DocsChecklist auth={auth} benefitId={b.id} docs={b.docs} checked={data.docsChecked[b.id] ?? []} /> : <ul className="mt-1 list-disc pl-5">{b.docs.map((x) => <li key={x}>{x}</li>)}</ul>}
+        {active ? (
+          <DocsChecklist
+            auth={auth}
+            benefitId={b.id}
+            docs={b.docs}
+            checked={data.docsChecked[b.id] ?? []}
+            packetChecked={data.packet}
+            docsHref={`${base}/docs`}
+          />
+        ) : (
+          <ul className="mt-1 list-disc pl-5">
+            {b.docs.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <p className="mt-6 text-sm text-muted">

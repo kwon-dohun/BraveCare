@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { taskIcs } from "./ics.ts";
+import { taskIcs, feedIcs } from "./ics.ts";
 import { summarize, type Daily } from "./report.ts";
 import { isEmergency, verifyAnswer, parseChatJson, chips } from "./chat.ts";
 import { itemsFromText, maskIds } from "./extract.ts";
@@ -16,6 +16,20 @@ test("ics: 종일 일정에 전날 저녁·당일 아침 알람 두 개, 특수�
   assert.ok(ics.includes(String.raw`DESCRIPTION:병원: 서울병원\n신분증\n예약증`));
   assert.equal(ics.match(/BEGIN:VALARM/g)!.length, 2);
   assert.ok(ics.includes("TRIGGER:-PT4H") && ics.includes("TRIGGER:PT8H30M"));
+});
+
+test("ics: 전체 일정 feedIcs 생성 - 퇴원일 및 여러 VEVENT가 올바르게 합쳐진다", () => {
+  const tasks = [
+    { id: "t1", title: "원무과 서류 받기", due_date: "2026-11-20", memo: null, kind: "admin" },
+    { id: "t2", title: "정형외과 외래", due_date: "2026-11-27", due_time: "14:00", memo: "신분증", kind: "schedule" },
+  ];
+  const feed = feedIcs(tasks, { calName: "홍길동 가족", hospital: "아산병원", dischargeDate: "2026-11-20" });
+  assert.match(feed, /X-WR-CALNAME:홍길동 가족/);
+  assert.match(feed, /X-WR-TIMEZONE:Asia\/Seoul/);
+  assert.ok(feed.includes("[씩씩케어] 퇴원하는 날"));
+  assert.ok(feed.includes("[씩씩케어] 원무과 서류 받기"));
+  assert.ok(feed.includes("[씩씩케어] 정형외과 외래"));
+  assert.equal(feed.match(/BEGIN:VEVENT/g)!.length, 3);
 });
 
 test("리포트: 복약률은 기록한 날 기준, 기록률을 같이 낸다", () => {

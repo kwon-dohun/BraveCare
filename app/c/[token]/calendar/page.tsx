@@ -109,6 +109,22 @@ export default async function Calendar(props: PageProps<"/c/[token]/calendar">) 
           <div className="px-4 pb-4"><AddTask auth={auth} defaultDate={sel} plain /></div>
         </details>
       </section>
+
+      {/* 스마트폰 캘린더 전체 일정 연동 (Webcal / iCalendar Feed) */}
+      <section className="mt-8 rounded-2xl bg-card p-4 shadow-card" aria-labelledby="h-cal-sync">
+        <h3 id="h-cal-sync" className="text-sm font-semibold text-ink">스마트폰 캘린더에 전체 일정 넣기</h3>
+        <p className="mt-1 text-xs text-muted">
+          애플, 구글, 삼성 캘린더에 우리 집 전체 일정을 한 번에 등록하고, 전날 저녁과 당일 아침 알람을 받을 수 있어요.
+        </p>
+        <a
+          href={`/ics/${auth.k}/${auth.v}/feed`}
+          download="bravecare-schedule.ics"
+          className="mt-3 flex items-center justify-center gap-1.5 rounded-xl bg-accent-soft px-4 py-2.5 text-xs font-semibold text-accent hover:opacity-90"
+        >
+          <Icon name="calendar" size={16} />
+          <span>전체 일정 캘린더 파일 내려받기 (.ics)</span>
+        </a>
+      </section>
     </>
   );
 }
