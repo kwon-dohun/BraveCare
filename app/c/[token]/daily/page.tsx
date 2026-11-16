@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BackLink } from "@/components/Icon";
+import Icon, { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
 import { TEMP_LABEL, PAIN_WORD } from "@/lib/report";
@@ -13,6 +13,7 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
   const { actor, data, auth, base } = await adminPage(token);
   const checks = await loadDaily(actor.caseId);
   const today = checks.find((c) => c.check_date === data.today) ?? null;
+  const qLeft = data.tasks.filter((t) => t.kind === "question" && !t.done).length;
   const link = "flex flex-1 items-center justify-center rounded-full bg-card px-3 py-2.5 text-center text-sm font-medium shadow-card";
 
   return (
@@ -30,6 +31,10 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
         <Link href={`${base}/chat`} className={link}>서류 내용 물어보기</Link>
       </div>
       <DailyForm key={today ? "saved" : "new"} auth={auth} today={today} />
+      <Link href={`${base}/questions`} className="mt-3 flex items-center justify-between rounded-xl bg-card px-4 py-3 text-sm shadow-card">
+        <span>기록하다 의료진에게 물어볼 게 떠올랐나요?<span className="block text-xs text-muted">{qLeft ? `적어 둔 질문 ${qLeft}개 · 외래 리포트에도 나와요` : "적어 두면 외래 리포트에도 나와요"}</span></span>
+        <Icon name="right" size={18} className="text-muted" />
+      </Link>
 
       <section className="mt-8" aria-labelledby="dh">
         <h2 id="dh" className="font-semibold">지난 기록 ({checks.length}일)</h2>

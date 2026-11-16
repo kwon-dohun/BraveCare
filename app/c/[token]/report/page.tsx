@@ -19,6 +19,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
   const first = checks.at(-1)?.check_date;
   const s = summarize(checks, data.input.dischargeDate && first && data.input.dischargeDate < first ? data.input.dischargeDate : first ?? data.today, data.today);
   const asked = data.tasks.filter((t) => t.kind === "question" && !t.done);
+  const allAsked = asked.length;
   const questions = [...asked.filter((t) => t.source === "manual"), ...asked.filter((t) => t.source !== "manual" && (t.rel_day ?? 0) > 0)].slice(0, 3);
 
   // 통증 추이: 0~10점을 그대로 찍는다
@@ -42,10 +43,22 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
         </p>
 
         {s.days === 0 ? (
+          <>
           <div className="mt-6 rounded-xl border border-line p-5">
             <p>아직 기록이 없어요. 저녁 안부 체크를 하루만 남겨도 이 리포트가 만들어져요.</p>
             <Link href={`${base}/daily`} className="mt-4 flex items-center justify-center rounded-xl bg-primary px-5 py-3 font-semibold text-ink">오늘 기록 남기기</Link>
           </div>
+          <div className="mt-4 grid gap-4 landscape:grid-cols-2">
+            <section className={box} aria-labelledby="r4">
+              <h2 id="r4" className="font-semibold">여쭤보고 싶은 것</h2>
+              {questions.length
+                ? <ol className="mt-1 list-decimal space-y-1 pl-6">{questions.map((q) => <li key={q.id}>{q.title}</li>)}</ol>
+                : <p className="mt-1 text-base text-muted">아직 적어둔 질문이 없어요.</p>}
+              <AddQuestion auth={auth} />
+              <Link href={`${base}/questions`} className="mt-2 inline-block text-base text-muted underline print:hidden landscape:hidden">전체 질문 보기{allAsked > questions.length ? ` (${allAsked}개)` : ""}</Link>
+            </section>
+          </div>
+          </>
         ) : (
           <div className="mt-4 grid gap-4 landscape:grid-cols-2">
             <section className={box} aria-labelledby="r1">
@@ -89,6 +102,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
                 ? <ol className="mt-1 list-decimal space-y-1 pl-6">{questions.map((q) => <li key={q.id}>{q.title}</li>)}</ol>
                 : <p className="mt-1 text-base text-muted">아직 적어둔 질문이 없어요.</p>}
               <AddQuestion auth={auth} />
+              <Link href={`${base}/questions`} className="mt-2 inline-block text-base text-muted underline print:hidden landscape:hidden">전체 질문 보기{allAsked > questions.length ? ` (${allAsked}개)` : ""}</Link>
             </section>
           </div>
         )}
