@@ -4,19 +4,24 @@ import { usePathname } from "next/navigation";
 import Icon, { type IconName } from "./Icon";
 import Mascot from "./Mascot";
 
-// 하단 탭 5개: 오늘 → 언제 → 물어보기 → 무엇을 → 나머지 전부. 씩씩이는 가운데에 크게.
+// 하단 탭 5개: 홈 → 지원 → 씩씩이 → 일정·할 일 → 전체. 씩씩이는 가운데에 크게.
 const SIDE: [string, string, IconName][] = [
   ["", "홈", "home"],
-  ["/calendar", "일정", "calendar"],
-  ["/tasks", "할 일", "tasks"],
+  ["/benefits", "지원", "gift"],
+  ["/tasks", "일정·할 일", "tasks"],
   ["/more", "전체", "grid"],
 ];
-// '전체' 아래에 있는 화면들
-const UNDER_MORE = /\/(more|benefits|family|daily|report|questions|docs|scan|settings|glossary|help)(\/|$)/;
+// '전체' 아래에 있는 화면들 ('지원'은 1depth 탭으로 승격)
+const UNDER_MORE = /\/(more|family|daily|report|questions|docs|scan|settings|glossary|help)(\/|$)/;
 
 export default function Nav({ base }: { base: string }) {
   const path = usePathname();
-  const isActive = (p: string) => (p === "" ? path === base : p === "/more" ? UNDER_MORE.test(path) : path.startsWith(base + p));
+  const isActive = (p: string) => {
+    if (p === "") return path === base;
+    if (p === "/more") return UNDER_MORE.test(path);
+    if (p === "/tasks") return path.startsWith(base + "/tasks") || path.startsWith(base + "/calendar");
+    return path.startsWith(base + p);
+  };
   const tab = ([p, label, icon]: (typeof SIDE)[number]) => {
     const on = isActive(p);
     return (

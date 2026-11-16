@@ -33,7 +33,7 @@ export default function WeekStrip({
           <h2 id="h-week" className="font-display text-headline">이번 주 일정</h2>
           <p className="text-xs text-muted">날짜를 누르면 홈에서 바로 일정을 확인할 수 있어요</p>
         </div>
-        <Link href={`${calendarBase}?d=${selected}`} className="flex items-center text-sm font-medium text-accent">
+        <Link href={calendarBase.includes("?") ? `${calendarBase}&d=${selected}` : `${calendarBase}?d=${selected}`} className="flex items-center text-sm font-medium text-accent">
           달력 전체 보기
         </Link>
       </div>

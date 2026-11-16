@@ -190,7 +190,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         today={today}
         dischargeDate={input.dischargeDate}
         eventsData={[...events.entries()]}
-        calendarBase={`${base}/calendar`}
+        calendarBase={`${base}/tasks?view=calendar`}
       />
 
       {noOwnerVisits > 0 && (
