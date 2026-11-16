@@ -9,19 +9,19 @@ export interface DocItem extends RawItem {
 
 export const norm = (s: string) => s.replace(/\s+/g, " ").trim();
 
-export type DocType = "receipt" | "medication" | "guide" | "message" | "other";
-export const DOC_TYPES: DocType[] = ["receipt", "medication", "guide", "message", "other"];
-export const DOC_TYPE_LABEL: Record<DocType, string> = { receipt: "영수증", medication: "약봉투·처방전", guide: "퇴원 안내문", message: "병원 문자", other: "기타 서류" };
+export type DocType = "receipt" | "medication" | "guide" | "certificate" | "message" | "other";
+export const DOC_TYPES: DocType[] = ["receipt", "medication", "guide", "certificate", "message", "other"];
+export const DOC_TYPE_LABEL: Record<DocType, string> = { receipt: "영수증", medication: "약봉투·처방전", guide: "퇴원 안내문", certificate: "진단서·확인서", message: "병원 문자", other: "기타 서류" };
 
 // 주민등록번호 뒷자리는 저장하지 않는다
 export const maskIds = (s: string) => s.replace(/(\d{6})\s*-\s*[1-8]\d{6}/g, "$1-*******");
 
-export const EXTRACT_PROMPT = `너는 병원에서 받은 서류(퇴원 안내문, 약봉투·처방전, 영수증) 사진을 글자 그대로 옮겨 적는 도구야. 의료 판단·해석·요약·보충 설명은 절대 하지 마.
-1) transcript: 사진에 보이는 글자를 있는 그대로 옮겨 적어. 읽기 어려운 부분은 지어내지 말고 건너뛰어.
-2) items: transcript 안의 문장 중 할 일이 될 만한 것을 골라. 각 항목은
-   - kind: "schedule"(외래·검사 등 일정) | "medication"(복약) | "caution"(주의사항) | "contact"(문의처·전화번호)
+export const EXTRACT_PROMPT = `너는 병원에서 받은 서류(진단서·소견서·입퇴원확인서, 퇴원 안내문, 약봉투·처방전, 영수증) 사진을 글자 그대로 옮겨 적는 도구야. 의료 판단·해석·요약·보충 설명은 절대 하지 마.
+1) transcript: 사진에 보이는 글자를 있는 그대로 옮겨 적어. 진단명, 질병분류기호(질병코드), 입원·퇴원·진단 날짜, 의사 소견, 복약 방법, 검사/외래 일정, 비용 내역 등을 빠짐없이 적어. 사진이 흐리거나 글자가 없는 사물/얼굴 사진이면 빈 문자열("")로 둬.
+2) items: transcript 안의 문장 중 가족 캘린더 일정이나 할 일이 될 만한 것을 골라. (진단서나 영수증처럼 외래/검사 일정이 없으면 items는 빈 배열 []로 둬). 각 항목은:
+   - kind: "schedule"(외래·검사 등 방문 일정) | "medication"(복약) | "caution"(주의사항) | "contact"(문의처·전화번호)
    - text: transcript에 있는 문장을 한 글자도 바꾸지 않고 그대로 복사한 것. 숫자(복용량, 날짜, 전화번호)도 원문 그대로.
-3) docType: "receipt"(진료비 영수증·세부내역서) | "medication"(약봉투·처방전·복약안내) | "guide"(퇴원 안내문·예약증) | "other"
+3) docType: "certificate"(진단서·소견서·입퇴원확인서) | "guide"(퇴원 안내문·외래예약증) | "medication"(약봉투·처방전·복약안내) | "receipt"(진료비 영수증·세부내역서) | "other"
 JSON만 출력해: {"docType": "...", "transcript": "...", "items": [{"kind": "...", "text": "..."}]}
 병원 서류가 아니거나 글자를 읽을 수 없으면 {"docType": "other", "transcript": "", "items": []}.`;
 

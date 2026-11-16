@@ -14,7 +14,7 @@ export default async function Scan(props: PageProps<"/c/[token]/scan">) {
   const { actor, auth, base } = await adminPage(token);
   const { data } = await db.from("documents").select("id,doc_type,transcript,created_at").eq("case_id", actor.caseId).order("created_at", { ascending: false }).limit(20);
   const docs = (data ?? []).map((d) => ({
-    id: d.id as string, label: DOC_TYPE_LABEL[d.doc_type as DocType], preview: (d.transcript as string).slice(0, 60),
+    id: d.id as string, label: DOC_TYPE_LABEL[d.doc_type as DocType] ?? "기타 서류", preview: (d.transcript as string).slice(0, 60),
     date: new Date(d.created_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric" }),
     cautions: extractCautionTags((d.transcript as string) ?? ""),
   }));
@@ -22,15 +22,8 @@ export default async function Scan(props: PageProps<"/c/[token]/scan">) {
     <>
       <BackLink href={`${base}/more`}>전체</BackLink>
       <h1 className="mt-2 text-title font-display">서류 찍어서 정리</h1>
-      <p className="mb-5 mt-1 text-muted">외래·검사 날짜는 가족 달력에 넣고, 약봉투·영수증·안내문 글자는 보관함에 저장해요. 서류에 적힌 내용만 그대로 옮겨요.</p>
-      <ScanFlow auth={auth} base={base} />
-      {docs.length > 0 && (
-        <section className="mt-8" aria-labelledby="kp">
-          <h2 id="kp" className="font-semibold">보관한 서류 글자 ({docs.length})</h2>
-          <p className="text-sm text-muted">&lsquo;서류 내용 물어보기&rsquo;가 이 글자만 근거로 답해요. 지우면 바로 사라져요.</p>
-          <Kept auth={auth} docs={docs} />
-        </section>
-      )}
+      <p className="mb-5 mt-1 text-muted">외래·검사 날짜는 가족 달력에 넣고, 약봉투·영수증·진단서 글자는 보관함에 저장해요. 서류에 적힌 내용만 그대로 옮겨요.</p>
+      <ScanFlow auth={auth} base={base} initialDocs={docs} />
     </>
   );
 }

@@ -226,6 +226,17 @@ export async function claimTask(a: Auth, taskId: string) {
   refresh();
 }
 
+// 내가 맡은 할 일을 다시 취소하여 담당자 없는 상태로 되돌린다.
+export async function unclaimTask(a: Auth, taskId: string) {
+  const actor = await resolve(a);
+  const { data: t } = await db.from("tasks").select("title,assignee_id").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
+  if (!t) throw new Error("할 일을 찾을 수 없어요");
+  await db.from("tasks").update({ assignee_id: null }).eq("id", taskId).eq("case_id", actor.caseId);
+  await act(actor.caseId, `${actor.name}님이 담당을 취소했어요: ${t.title}`, actor.memberId);
+  await logEvent(actor.caseId, "task_unclaimed", { role: actor.role });
+  refresh();
+}
+
 // schedule은 병원 방문 일정(그날 홈에 외래 리포트가 먼저 나온다), question은 외래 때 의료진에게 물어볼 것.
 export async function addTask(a: Auth, title: string, dueDate: string | null, kind: "custom" | "schedule" | "question" = "custom", dueTime: string | null = null) {
   const actor = await resolve(a);

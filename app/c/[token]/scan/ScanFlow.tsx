@@ -7,32 +7,70 @@ import Link from "next/link";
 import { DOC_TYPE_LABEL, type DocItem, type DocType } from "@/lib/extract";
 import { toApp, useInApp } from "@/lib/app";
 import Mascot from "@/components/Mascot";
+import Kept from "./Kept";
 
 const KIND: Record<DocItem["kind"], string> = { schedule: "일정", medication: "복약", caution: "주의사항", contact: "문의처" };
 const MAX = 3; // 한 번에 읽는 사진 수
 
-interface Row extends DocItem { quote: string; include: boolean }
-
-// 서버 업로드 한도와 속도를 위해 긴 변 1600px JPEG로 줄인다
-async function toJpegBase64(file: Blob): Promise<string> {
-  const bmp = await createImageBitmap(file);
-  const s = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
-  const c = document.createElement("canvas");
-  c.width = Math.round(bmp.width * s);
-  c.height = Math.round(bmp.height * s);
-  c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
-  return c.toDataURL("image/jpeg", 0.82).split(",")[1];
+export interface SavedDoc {
+  id: string;
+  label: string;
+  preview: string;
+  date: string;
+  cautions?: string[];
 }
 
-export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
+interface Row extends DocItem { quote: string; include: boolean }
+
+// 고화질 서류의 작은 글자도 식별할 수 있도록 1800px 캔버스로 변환하며, 브라우저 호환성을 위해 Image fallback 지원
+async function toJpegBase64(file: Blob): Promise<string> {
+  const drawAndExport = (source: CanvasImageSource, width: number, height: number): string => {
+    const s = Math.min(1, 1800 / Math.max(width, height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(width * s);
+    c.height = Math.round(height * s);
+    const ctx = c.getContext("2d");
+    if (!ctx) throw new Error("캔버스를 초기화하지 못했어요");
+    ctx.drawImage(source, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.88).split(",")[1];
+  };
+
+  try {
+    const bmp = await createImageBitmap(file);
+    return drawAndExport(bmp, bmp.width, bmp.height);
+  } catch {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        try {
+          resolve(drawAndExport(img, img.naturalWidth, img.naturalHeight));
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("사진 이미지를 불러오지 못했어요. 다시 촬영해 주세요"));
+      };
+      img.src = url;
+    });
+  }
+}
+
+export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth; base: string; initialDocs?: SavedDoc[] }) {
   const router = useRouter();
+  const [docs, setDocs] = useState<SavedDoc[]>(initialDocs);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [found, setFound] = useState<DocType[]>([]);
   const [cautions, setCautions] = useState<string[]>([]);
+  const [scannedDocs, setScannedDocs] = useState<{ docType: DocType; transcript: string; itemsCount: number }[]>([]);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState("");
   const [paste, setPaste] = useState("");
   const [pending, start] = useTransition();
+
   // 날짜가 있는 일정만 기본으로 넣는다. 약·주의사항·문의처는 보관함에 글자로 남기고, 할 일로 만들지는 사용자가 고른다
   const toRows = (items: DocItem[]) => items.map((i) => ({ ...i, quote: i.text, include: i.kind === "schedule" && !i.needsCheck }));
 
@@ -41,25 +79,44 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
   const onFiles = async (list: FileList | Blob[] | null) => {
     const files = [...(list ?? [])].slice(0, MAX);
     if (!files.length) return;
-    setErr(""); setRows(null); setFound([]); setCautions([]);
+    setErr(""); setRows(null); setFound([]); setCautions([]); setScannedDocs([]);
     const all: Row[] = [];
     const types: DocType[] = [];
     const allCautions: string[] = [];
+    const newScanned: { docType: DocType; transcript: string; itemsCount: number }[] = [];
     let failed = 0;
+
     for (const [i, f] of files.entries()) {
       setBusy(`${files.length}장 중 ${i + 1}장째 읽는 중… (장당 10초쯤 걸려요)`);
       try {
-        const r = await extractFromImage(auth, await toJpegBase64(f));
+        const b64 = await toJpegBase64(f);
+        const r = await extractFromImage(auth, b64);
         types.push(r.docType);
         all.push(...toRows(r.items));
         if (r.cautions?.length) allCautions.push(...r.cautions);
+        newScanned.push({ docType: r.docType, transcript: r.transcript, itemsCount: r.items.length });
+        if (r.docId && r.transcript) {
+          setDocs((prev) => [
+            {
+              id: r.docId!,
+              label: DOC_TYPE_LABEL[r.docType] ?? "기타 서류",
+              preview: r.transcript.slice(0, 60),
+              date: "방금",
+              cautions: r.cautions,
+            },
+            ...prev,
+          ]);
+        }
       } catch (e) {
         failed++;
         setErr(e instanceof Error ? e.message : "읽지 못했어요. 다시 촬영해주세요");
       }
     }
-    setBusy(""); setFound([...new Set(types)]); setCautions([...new Set(allCautions)]);
-    if (failed < files.length) {
+    setBusy("");
+    if (types.length > 0) {
+      setFound([...new Set(types)]);
+      setCautions([...new Set(allCautions)]);
+      setScannedDocs(newScanned);
       setRows(all);
       router.refresh();
     }
@@ -76,10 +133,23 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
   });
 
   const onPaste = async () => {
-    setErr(""); setRows(null); setFound([]); setBusy("읽는 중…");
+    setErr(""); setRows(null); setFound([]); setScannedDocs([]); setBusy("읽는 중…");
     try {
-      setRows(toRows((await extractFromPaste(auth, paste)).items));
+      const res = await extractFromPaste(auth, paste);
+      setRows(toRows(res.items));
       setFound(["message"]);
+      setScannedDocs([{ docType: "message", transcript: res.transcript, itemsCount: res.items.length }]);
+      if (res.docId) {
+        setDocs((prev) => [
+          {
+            id: res.docId!,
+            label: "병원 문자",
+            preview: res.transcript.slice(0, 60),
+            date: "방금",
+          },
+          ...prev,
+        ]);
+      }
       router.refresh();
     }
     catch (e) { setErr(e instanceof Error ? e.message : "읽지 못했어요"); }
@@ -133,7 +203,7 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
         {app ? "사진첩에서 고르기" : busy ? "읽는 중…" : rows ? "다시 촬영하기" : "촬영하거나 사진 고르기"}
         <input type="file" accept="image/*" multiple className="sr-only" disabled={!!busy} onChange={(e) => { onFiles(e.target.files); e.target.value = ""; }} />
       </label>
-      <p className="mt-2 text-sm text-muted">퇴원 안내문, 약봉투, 영수증을 한 번에 {MAX}장까지 고를 수 있어요. 종이 전체가 보이게 밝은 곳에서 찍어주세요. 사진은 글자를 읽은 뒤 저장하지 않고, 읽은 글자만 보관해요.</p>
+      <p className="mt-2 text-sm text-muted">진단서·확인서, 퇴원 안내문, 약봉투, 영수증을 한 번에 {MAX}장까지 고를 수 있어요. 종이 전체가 보이게 밝은 곳에서 찍어주세요. 사진은 글자를 읽은 뒤 저장하지 않고, 읽은 글자만 보관해요.</p>
 
       <details className="mt-4 rounded-xl bg-card shadow-card p-4">
         <summary className="cursor-pointer font-semibold">병원 문자·알림톡 붙여넣기</summary>
@@ -147,7 +217,7 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
       {busy ? (
         <ScanningCard busyText={busy} />
       ) : null}
-      {err && <p role="alert" className="mt-3 text-warn">{err}</p>}
+      {err && <p role="alert" className="mt-3 text-warn font-medium leading-relaxed">{err}</p>}
       {found.length > 0 && (
         <section role="status" className="mt-4 rounded-xl bg-accent-soft p-4 text-sm text-accent">
           <p className="font-semibold text-ink">✅ 서류 분석 완료: {found.map((t) => DOC_TYPE_LABEL[t]).join(", ")}</p>
@@ -155,7 +225,7 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
             사진 원본은 개인정보 보호를 위해 저장하지 않고, <strong>읽어낸 글자만 서류 보관함에 안전하게 저장했어요.</strong>
           </p>
           <p className="mt-1 text-xs text-muted">
-            화면 아래 &lsquo;보관한 서류 글자&rsquo;에서 확인하실 수 있고, 씩씩이에게 질문할 때 답변 근거로 쓰여요.
+            화면 아래 &lsquo;보관한 서류 글자&rsquo;에서 언제든 확인하실 수 있고, 씩씩이에게 질문할 때 답변 근거로 쓰여요.
           </p>
           {found.includes("medication") && (
             <p className="mt-2 text-xs text-ink/80">약봉투는 데일리 체크에서 복약 여부를 챙겨드리므로 별도 할 일로 등록하지 않아요.</p>
@@ -165,6 +235,28 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
           )}
         </section>
       )}
+
+      {scannedDocs.length > 0 && (
+        <div className="mt-3 space-y-3">
+          {scannedDocs.map((s, idx) => (
+            <div key={idx} className="rounded-xl border border-line bg-card p-4 shadow-sm text-xs">
+              <div className="flex items-center justify-between font-semibold text-ink">
+                <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-accent">{DOC_TYPE_LABEL[s.docType]}</span>
+                <span className="text-[11px] font-normal text-muted">보관함에 저장 완료</span>
+              </div>
+              <p className="mt-2 text-ink/80 bg-background p-2.5 rounded-lg line-clamp-4 font-mono whitespace-pre-wrap leading-relaxed">
+                {s.transcript}
+              </p>
+              {s.itemsCount === 0 && (
+                <p className="mt-2 text-xs text-muted">
+                  ℹ️ 서류 글자가 보관함에 안전하게 저장되었어요. 외래 방문 일정이 적힌 서류가 아니라서 캘린더에 추가할 일정은 없습니다. 씩씩이에게 이 서류 내용을 물어보시면 즉시 답변해 드려요!
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {cautions.length > 0 && (
         <aside className="mt-3 rounded-xl bg-[#fff4cc] p-3.5 text-sm text-[#7a5a00]" aria-label="약 보관 및 복약 주의사항">
           <p className="text-xs font-semibold">약 보관 및 복약 주의사항</p>
@@ -197,6 +289,22 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
           {pending ? "넣는 중…" : chosen.length ? `선택한 ${chosen.length}개 넣기` : "넣을 일정이 없어요 (글자는 저장됨)"}
         </button>
       )}
+
+      <section className="mt-8" aria-labelledby="kp">
+        <h2 id="kp" className="font-semibold">보관한 서류 글자 ({docs.length})</h2>
+        <p className="text-sm text-muted">&lsquo;서류 내용 물어보기&rsquo;가 이 글자만 근거로 답해요. 지우면 바로 사라져요.</p>
+        {docs.length > 0 ? (
+          <Kept
+            auth={auth}
+            docs={docs}
+            onDelete={(id) => setDocs((prev) => prev.filter((d) => d.id !== id))}
+          />
+        ) : (
+          <div className="mt-3 rounded-xl bg-card p-4 text-center text-xs text-muted shadow-card">
+            아직 보관한 서류가 없어요. 위에서 서류를 촬영하거나 병원 문자를 붙여넣어 보세요.
+          </div>
+        )}
+      </section>
     </>
   );
 }

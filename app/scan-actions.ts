@@ -24,7 +24,14 @@ async function limit(caseId: string, event: string, max: number, msg: string) {
 const keep = (caseId: string, docType: DocType, transcript: string) =>
   db.from("documents").insert({ case_id: caseId, doc_type: docType, transcript: maskIds(transcript).slice(0, 6000) });
 
-export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{ items: DocItem[]; docType: DocType; empty: boolean; cautions: string[] }> {
+export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{
+  items: DocItem[];
+  docType: DocType;
+  empty: boolean;
+  cautions: string[];
+  transcript: string;
+  docId: string | null;
+}> {
   const actor = await resolve(a);
   if (!hasModel()) throw new Error("서류 인식 설정이 아직 안 됐어요. 할 일을 직접 추가해주세요");
   if (!/^[A-Za-z0-9+/=]+$/.test(jpegBase64) || jpegBase64.length > 3_500_000) throw new Error("사진 크기가 너무 커요. 다시 촬영해주세요");
@@ -33,22 +40,45 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{ i
   const raw = await askJson(EXTRACT_PROMPT, [{ type: "image_url", image_url: { url: `data:image/jpeg;base64,${jpegBase64}`, detail: "high" } }]);
   if (raw === null) throw new Error("지금은 서류 인식이 어려워요. 병원 문자를 복사해 ‘병원 문자·알림톡 붙여넣기’에 넣으면 바로 일정을 만들 수 있어요. 아니면 잠시 뒤 다시 시도하거나 할 일을 직접 추가해 주세요");
   const parsed = parseModelJson(raw);
+
+  // 글자가 전혀 인식되지 않았거나 병원 서류가 아닌 경우 (얼굴 사진, 사물, 빈 종이 등)
+  const trimmed = parsed.transcript.trim();
+  if (trimmed.length < 5) {
+    throw new Error("사진에서 병원 서류 글자를 읽지 못했어요. 얼굴이나 사물이 아닌 진단서, 퇴원 안내문, 약봉투, 영수증 등 병원 서류를 밝은 곳에서 글자가 잘 보이게 찍어주세요.");
+  }
+
   // 원문에 없는 항목은 여기서 버린다
   const items = toDocItems(verifyItems(parsed.transcript, parsed.items), todaySeoul());
   const cautions = extractCautionTags(parsed.transcript);
-  if (parsed.transcript.trim()) await keep(actor.caseId, parsed.docType, parsed.transcript);
+  const { data: inserted } = await db.from("documents").insert({
+    case_id: actor.caseId,
+    doc_type: parsed.docType,
+    transcript: maskIds(parsed.transcript).slice(0, 6000),
+  }).select("id").maybeSingle();
+
   revalidatePath("/c/[token]", "layout");
-  return { items, docType: parsed.docType, empty: items.length === 0, cautions };
+  return {
+    items,
+    docType: parsed.docType,
+    empty: items.length === 0,
+    cautions,
+    transcript: parsed.transcript,
+    docId: inserted?.id ?? null,
+  };
 }
 
 // 병원 문자·알림톡 붙여넣기. AI 없이 날짜가 있는 줄만 일정 후보로 뽑는다.
-export async function extractFromPaste(a: Auth, text: string): Promise<{ items: DocItem[] }> {
+export async function extractFromPaste(a: Auth, text: string): Promise<{ items: DocItem[]; docId: string | null; transcript: string }> {
   const actor = await resolve(a);
   const t = text.trim().slice(0, 2000);
   if (t.length < 5) throw new Error("병원에서 받은 문자를 붙여넣어 주세요");
-  await keep(actor.caseId, "message", t);
+  const { data: inserted } = await db.from("documents").insert({
+    case_id: actor.caseId,
+    doc_type: "message",
+    transcript: maskIds(t),
+  }).select("id").maybeSingle();
   revalidatePath("/c/[token]", "layout");
-  return { items: itemsFromText(t, todaySeoul()) };
+  return { items: itemsFromText(t, todaySeoul()), docId: inserted?.id ?? null, transcript: t };
 }
 
 const KIND_MAP = { schedule: "schedule", medication: "prep", caution: "prep", contact: "custom" } as const;

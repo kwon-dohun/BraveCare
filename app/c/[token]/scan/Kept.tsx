@@ -3,8 +3,24 @@ import { deleteDocument } from "@/app/scan-actions";
 import type { Auth } from "@/lib/db";
 import { useAct } from "@/components/useAct";
 
-export default function Kept({ auth, docs }: { auth: Auth; docs: { id: string; label: string; preview: string; date: string; cautions?: string[] }[] }) {
+export default function Kept({
+  auth,
+  docs,
+  onDelete,
+}: {
+  auth: Auth;
+  docs: { id: string; label: string; preview: string; date: string; cautions?: string[] }[];
+  onDelete?: (id: string) => void;
+}) {
   const { run, pending, err } = useAct();
+
+  const handleDelete = (id: string) => {
+    run(async () => {
+      await deleteDocument(auth, id);
+      onDelete?.(id);
+    });
+  };
+
   return (
     <>
       {err && <p role="alert" className="text-warn">{err}</p>}
@@ -24,7 +40,14 @@ export default function Kept({ auth, docs }: { auth: Auth; docs: { id: string; l
                 </div>
               )}
             </div>
-            <button disabled={pending} onClick={() => run(() => deleteDocument(auth, d.id))} className="px-2 text-sm text-muted underline" aria-label={`${d.label} ${d.date} 지우기`}>지우기</button>
+            <button
+              disabled={pending}
+              onClick={() => handleDelete(d.id)}
+              className="px-2 text-sm text-muted underline hover:text-warn"
+              aria-label={`${d.label} ${d.date} 지우기`}
+            >
+              지우기
+            </button>
           </li>
         ))}
       </ul>
