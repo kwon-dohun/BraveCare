@@ -23,10 +23,10 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
     <>
       <BackLink href={`${base}/more`}>전체</BackLink>
       {data.input.dailyCompleted && (
-        <div className="mt-3 flex items-center justify-between rounded-2xl bg-[#dff7ec] p-3.5 text-[#0b7a57] border border-[#b2eccd]">
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-accent-soft p-3.5 text-accent">
           <div>
-            <p className="font-bold text-sm">회복 완료 상태</p>
-            <p className="text-xs opacity-90 mt-0.5">데일리 체크가 공식 종료되었어요. 필요 시 아래에서 다시 기록하실 수 있어요.</p>
+            <p className="text-sm font-semibold">회복 완료 상태</p>
+            <p className="text-xs opacity-90 mt-0.5">데일리 체크를 마쳤어요. 다시 기록하려면 오른쪽을 눌러주세요.</p>
           </div>
           <DailyCompleteToggle auth={auth} completed={true} variant="card" />
         </div>

@@ -3,8 +3,8 @@ import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
 import { unreadCount } from "@/lib/load";
 import { PACKET } from "@/lib/packet";
-import { dischargeLabel, dateLabel, dday, heroLabel, krDate, timeContextCheer, weekendDischargeWarning } from "@/lib/format";
-import { buildEvents, weekday, EVENT_STYLE } from "@/lib/calendar";
+import { dischargeLabel, dateLabel, dday, heroLabel, timeContextCheer, weekendDischargeWarning } from "@/lib/format";
+import { buildEvents } from "@/lib/calendar";
 import { addDays } from "@/lib/timeline";
 import { dayDiff } from "@/lib/benefits";
 import TaskList from "@/components/TaskList";
@@ -48,8 +48,6 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   // 이번 주 띠와 다가오는 일정(할 일 중 병원 일정 + 퇴원일 + 지원 마감)
   const events = buildEvents(data);
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i));
-  const upcoming = [...events].filter(([d]) => d >= today).sort(([a], [b]) => a.localeCompare(b))
-    .flatMap(([d, es]) => es.filter((e) => !e.done && (e.kind === "visit" || e.kind === "discharge" || e.kind === "deadline")).map((e) => [d, e] as const)).slice(0, 3);
   const topBenefits = [...open].sort((a, b) => (a.deadline.state === "open" ? a.deadline.daysLeft! : 9999) - (b.deadline.state === "open" ? b.deadline.daysLeft! : 9999)).filter((r) => r.verdict === "high").slice(0, 3);
   const cta = "mt-3 flex items-center justify-center rounded-xl bg-primary px-4 py-3 font-semibold text-ink";
   const card = "mt-4 rounded-xl bg-card shadow-card p-4";
@@ -72,11 +70,11 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       {/* 히어로: 큰 D-day 숫자 + 씩씩이 한마디 */}
       <section className="relative mt-4 overflow-hidden rounded-3xl bg-accent-soft p-5" aria-label="퇴원 일정">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 pl-3 pt-2.5 pb-1">
-            <h1 aria-label={dischargeLabel(input.dischargeDate, today)} className="text-display font-display tracking-tight text-ink tabular-nums">{hero.big}</h1>
+          <div className="min-w-0 flex-1 pl-1 pt-2">
+            <h1 aria-label={dischargeLabel(input.dischargeDate, today)} className="whitespace-nowrap text-display font-display tracking-tight text-ink tabular-nums">{hero.big}</h1>
             <p className="mt-2 text-sm font-medium text-accent">{hero.sub}</p>
           </div>
-          <div className="flex shrink-0 flex-col items-end">
+          <div className="flex w-32 shrink-0 flex-col items-end">
             <span className="rounded-2xl rounded-br-sm bg-card px-3 py-1.5 text-xs font-medium text-ink shadow-card">{cheer}</span>
             <Mascot size={76} mood={mood} className="mascot-bob -mb-2 mt-1" />
           </div>
@@ -145,17 +143,17 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         </section>
       )}
       {stage === "recovery" && input.dailyCompleted ? (
-        <section className="mt-4 rounded-2xl bg-[#dff7ec] p-4 text-[#0b7a57] shadow-card border border-[#b2eccd]" aria-labelledby="h-stage-done">
+        <section className="mt-4 rounded-2xl bg-accent-soft p-4 text-accent" aria-labelledby="h-stage-done">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-caption font-bold text-[#0b7a57]">회복 완료</span>
-              <h2 id="h-stage-done" className="mt-1 font-semibold text-ink text-base">건강한 일상으로 복귀하셨어요!</h2>
-              <p className="mt-0.5 text-xs text-[#0b7a57]/90">데일리 체크가 완료되었어요. 그동안 정성껏 기록해주셔서 고마워요.</p>
+              <span className="rounded-full bg-card px-2.5 py-0.5 text-caption font-semibold">회복 완료</span>
+              <h2 id="h-stage-done" className="mt-1 font-semibold text-ink">건강한 일상으로 복귀하셨어요!</h2>
+              <p className="mt-0.5 text-xs">데일리 체크가 완료되었어요. 그동안 정성껏 기록해주셔서 고마워요.</p>
             </div>
             <Mascot size={48} mood="cheer" />
           </div>
-          <div className="mt-3 flex items-center justify-between border-t border-[#b2eccd] pt-2.5 text-xs">
-            <Link href={`${base}/report`} className="font-semibold text-[#0b7a57] underline">누적 외래 리포트 보기</Link>
+          <div className="mt-3 flex items-center justify-between border-t border-accent/15 pt-2.5 text-xs">
+            <Link href={`${base}/report`} className="font-semibold underline">누적 외래 리포트 보기</Link>
             <DailyCompleteToggle auth={auth} completed={true} variant="card" />
           </div>
         </section>
@@ -178,14 +176,11 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           ) : (
             <Link href={`${base}/daily`} className={cta}>오늘 데일리 체크 남기기</Link>
           )}
-          <div className="mt-2.5 text-right">
-            <DailyCompleteToggle auth={auth} completed={false} variant="card" />
-          </div>
         </section>
       ) : null}
 
       {noOwnerVisits > 0 && (
-        <Link href={`${base}/tasks?f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={18} /></Link>
+        <Link href={`${base}/tasks?view=list&f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={18} /></Link>
       )}
 
       {/* 오늘 할 일: 놓친 일 먼저, 최대 4개 */}
@@ -213,7 +208,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       />
 
       {noOwnerVisits > 0 && (
-        <Link href={`${base}/tasks?f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={16} /></Link>
+        <Link href={`${base}/tasks?view=list&f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={16} /></Link>
       )}
 
       {/* 받을 수 있는 지원: 이름과 마감만 짧게 */}

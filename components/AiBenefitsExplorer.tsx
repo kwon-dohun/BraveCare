@@ -17,9 +17,9 @@ const EXTRA_TAGS = [
 ];
 
 const CATEGORY_STYLE: Record<AiBenefitItem["category"], string> = {
-  "상담 창구": "bg-[#f3e8ff] text-[#7e22ce] border border-[#d8b4fe]",
-  공익재단: "bg-[#ffedd5] text-[#c2410c] border border-[#fed7aa]",
-  "공적 제도": "bg-[#dbeafe] text-[#1d4ed8] border border-[#bfdbfe]",
+  "상담 창구": "bg-accent-soft text-accent",
+  공익재단: "bg-[#ffe9dc] text-[#9a3f12]",
+  "공적 제도": "bg-[#e3f0ff] text-[#1f5aa6]",
 };
 
 export default function AiBenefitsExplorer({
@@ -71,7 +71,7 @@ export default function AiBenefitsExplorer({
   };
 
   return (
-    <div className="mt-4 rounded-2xl border border-[#b2e2d0] bg-[#f0faf5] p-4 shadow-sm transition-all">
+    <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
       {/* 배너 헤더 */}
       <div className="flex items-start gap-3">
         <Mascot size={44} mood={items ? "cheer" : "idle"} className="mt-0.5 shrink-0" />
@@ -87,7 +87,7 @@ export default function AiBenefitsExplorer({
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="mt-3 flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-ink shadow-sm hover:opacity-90"
+              className="mt-3 flex items-center gap-1.5 rounded-full bg-accent-soft px-4 py-2 text-xs font-semibold text-accent hover:opacity-90"
             >
               더 알아볼 곳 보기
             </button>
@@ -97,16 +97,16 @@ export default function AiBenefitsExplorer({
 
       {/* 인라인 확장 패널 */}
       {open && (
-        <div className="mt-4 border-t border-[#c6ecd9] pt-4">
+        <div className="mt-4 border-t border-line pt-4">
           {/* 1단계: 조건 확인 및 추가 상황 선택 */}
           {!items && !loading && (
             <div>
               <div className="flex items-center gap-1 text-xs text-muted mb-2">
                 <span>자동 반영 조건:</span>
-                <span className="rounded-md bg-white px-2 py-0.5 font-semibold text-ink border border-line">
+                <span className="rounded-md bg-background px-2 py-0.5 font-semibold text-ink">
                   {region || "전국"}
                 </span>
-                <span className="rounded-md bg-white px-2 py-0.5 font-semibold text-ink border border-line">
+                <span className="rounded-md bg-background px-2 py-0.5 font-semibold text-ink">
                   {reasonLabel}
                 </span>
               </div>
@@ -126,7 +126,7 @@ export default function AiBenefitsExplorer({
                       className={`rounded-full px-3 py-1 text-xs transition-colors ${
                         on
                           ? "bg-accent-soft font-semibold text-accent ring-1.5 ring-accent"
-                          : "bg-white text-muted border border-line hover:border-ink/30"
+                          : "bg-card text-muted border border-line hover:border-ink/30"
                       }`}
                     >
                       {tag}
@@ -147,7 +147,7 @@ export default function AiBenefitsExplorer({
                     value={customKeyword}
                     onChange={(e) => setCustomKeyword(e.target.value)}
                     placeholder="예: 휠체어 대여, 간병인 비용, 인공관절, 보청기 등"
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-xs placeholder:text-muted focus:border-accent focus:outline-none shadow-xs"
+                    className="w-full rounded-xl border border-line bg-card px-3.5 py-2.5 text-xs placeholder:text-muted focus:border-accent focus:outline-none"
                   />
                   {customKeyword && (
                     <button
@@ -165,14 +165,14 @@ export default function AiBenefitsExplorer({
                 <button
                   type="button"
                   onClick={handleSearch}
-                  className="flex-1 flex items-center justify-center rounded-xl bg-primary py-2.5 text-xs font-semibold text-ink shadow-sm hover:opacity-95"
+                  className="flex-1 flex items-center justify-center rounded-xl bg-primary py-2.5 text-xs font-semibold text-ink hover:opacity-95"
                 >
                   우리 조건으로 찾기
                 </button>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs text-muted"
+                  className="rounded-xl border border-line bg-card px-3 py-2.5 text-xs text-muted"
                 >
                   닫기
                 </button>
@@ -197,7 +197,7 @@ export default function AiBenefitsExplorer({
               <button
                 type="button"
                 onClick={handleSearch}
-                className="mt-2 inline-block rounded-md bg-white px-2.5 py-1 text-caption font-semibold text-warn border border-warn/30"
+                className="mt-2 inline-block rounded-md bg-card px-2.5 py-1 text-caption font-semibold text-warn border border-warn/30"
               >
                 다시 시도하기
               </button>
@@ -208,7 +208,7 @@ export default function AiBenefitsExplorer({
           {items && !loading && (
             <div className="space-y-3">
               {/* 상단 신뢰 안내 배너 */}
-              <div className="rounded-xl bg-[#fff8eb] p-3 text-xs text-[#8a5300] border border-[#f5dfb8]">
+              <div className="rounded-xl bg-warn-soft p-3 text-xs text-warn">
                 <p className="font-semibold">실제로 있는 기관·제도만 보여드려요</p>
                 <p className="mt-0.5 opacity-90 leading-relaxed">
                   대상이 되는지, 얼마를 받는지는 각 기관의 심사로 정해져요. 내용이 해마다 바뀔 수 있으니 신청 전에 꼭 문의하세요.
@@ -216,7 +216,7 @@ export default function AiBenefitsExplorer({
               </div>
 
               {result && result.basics.length > 0 && (
-                <div className="rounded-xl bg-card p-3 text-xs border border-line">
+                <div className="rounded-xl bg-background p-3 text-xs">
                   <p className="font-semibold text-ink">‘{result.keyword}’ 관련 지원은 기본 목록에 이미 있어요</p>
                   <ul className="mt-1.5 space-y-1">
                     {result.basics.map((b) => (
@@ -228,7 +228,7 @@ export default function AiBenefitsExplorer({
                 </div>
               )}
               {result && result.keyword && result.basics.length === 0 && !result.keywordHit && (
-                <p className="rounded-xl bg-card p-3 text-xs text-muted border border-line leading-relaxed">
+                <p className="rounded-xl bg-background p-3 text-xs leading-relaxed text-muted">
                   ‘{result.keyword}’에 맞는 확인된 기관·제도는 목록에 없어요. 아래 주민센터·129 상담으로 우리 지역에 있는지 물어보세요.
                 </p>
               )}
@@ -243,7 +243,7 @@ export default function AiBenefitsExplorer({
                   const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(it.searchQuery)}`;
 
                   return (
-                    <div key={it.id} className="rounded-xl bg-card p-4 shadow-card border border-line">
+                    <div key={it.id} className="rounded-xl bg-background p-4">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <span className={`inline-block rounded-full px-2 py-0.5 text-caption font-semibold ${badge}`}>
@@ -296,7 +296,7 @@ export default function AiBenefitsExplorer({
               )}
 
               {/* 병원 사회사업실 연계 가이드 */}
-              <div className="rounded-xl bg-card/80 p-3 text-caption text-muted border border-line leading-relaxed">
+              <div className="rounded-xl bg-background p-3 text-caption leading-relaxed text-muted">
                 <p className="font-semibold text-ink">퇴원 전에 병원 의료사회복지팀에 이 화면을 보여주며 상담해 보세요</p>
                 <p className="mt-0.5">
                   민간 재단의 의료비 지원은 병원 의료사회복지팀을 거쳐 신청하는 경우가 많아요.

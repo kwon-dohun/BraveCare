@@ -92,7 +92,7 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
     start(async () => {
       try {
         await confirmDocItems(auth, chosen.map((r) => ({ kind: r.kind, text: r.text, quote: r.quote, date: r.date })));
-        router.push(`${base}/tasks`);
+        router.push(`${base}/tasks?view=list`);
       } catch (e) {
         setErr(e instanceof Error ? e.message : "추가하지 못했어요");
       }
@@ -126,11 +126,11 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
       {err && <p role="alert" className="mt-3 text-warn">{err}</p>}
       {found.length > 0 && <p role="status" className="mt-3 text-sm text-accent">읽은 서류: {found.join(", ")}</p>}
       {cautions.length > 0 && (
-        <aside className="mt-3 rounded-xl bg-[#fff9db] p-3.5 text-sm text-[#73510d] border border-[#f5e6a3]" aria-label="약 보관 및 복약 주의사항">
+        <aside className="mt-3 rounded-xl bg-[#fff4cc] p-3.5 text-sm text-[#7a5a00]" aria-label="약 보관 및 복약 주의사항">
           <p className="font-semibold text-xs tracking-wide uppercase">약 보관 및 복약 주의사항</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {cautions.map((c) => (
-              <span key={c} className="rounded-md bg-[#ffe066] px-2 py-0.5 text-xs font-bold text-[#5c4000]">
+              <span key={c} className="rounded-md bg-card px-2 py-0.5 text-xs font-semibold text-[#7a5a00]">
                 {c}
               </span>
             ))}

@@ -94,7 +94,7 @@ export function DeleteCase({ auth, stats }: { auth: Auth; stats?: { doneTasks: n
         </div>
       )}
 
-      <aside className="mb-4 rounded-xl bg-[#fff4cc] p-3.5 text-xs text-[#7a5a00] leading-relaxed border border-[#f5e6a3]" aria-label="삭제 전 확인사항">
+      <aside className="mb-4 rounded-xl bg-[#fff4cc] p-3.5 text-xs text-[#7a5a00] leading-relaxed" aria-label="삭제 전 확인사항">
         <p className="font-bold uppercase tracking-wide">삭제 전 마지막 확인</p>
         <ul className="mt-1 list-disc pl-4 space-y-0.5">
           <li>내년에 쓸 <b>연말정산 장애인증명서</b>와 <b>실손보험 청구 서류</b>는 모두 내려받으셨나요?</li>

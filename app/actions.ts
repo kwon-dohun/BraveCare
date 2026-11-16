@@ -68,6 +68,7 @@ export async function updateCase(a: Auth, raw: CaseInput) {
   const input = validateInput(raw, todaySeoul());
   if (!input) throw new Error("입력값을 확인해주세요. 퇴원일은 오늘 기준 1년 전부터 1년 뒤까지 넣을 수 있어요");
   const { data: prev } = await db.from("cases").select("input").eq("id", actor.caseId).single();
+  input.dailyCompleted = !!(prev?.input as CaseInput | undefined)?.dailyCompleted; // 설정 저장이 '회복 완료'를 풀지 않게
   await db.from("cases").update({ input }).eq("id", actor.caseId);
 
   // 퇴원일이 바뀌면 상대 일정(D±n)만 다시 계산한다. 사용자가 날짜를 직접 정한 할 일(rel_day 없음)은 그대로.

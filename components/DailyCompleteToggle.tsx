@@ -2,16 +2,15 @@
 import { setDailyCompleted } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import { useAct } from "./useAct";
-import Icon from "./Icon";
 
 export default function DailyCompleteToggle({
   auth,
   completed,
-  variant = "button",
+  variant,
 }: {
   auth: Auth;
   completed: boolean;
-  variant?: "button" | "card" | "setting";
+  variant: "card" | "setting";
 }) {
   const { run, pending } = useAct();
 
@@ -42,28 +41,14 @@ export default function DailyCompleteToggle({
     );
   }
 
-  if (variant === "card") {
-    return (
-      <button
-        type="button"
-        disabled={pending}
-        onClick={() => run(() => setDailyCompleted(auth, !completed))}
-        className="inline-flex items-center gap-1 text-xs text-muted hover:text-accent underline underline-offset-2"
-      >
-        {completed ? "데일리 체크 다시 시작하기" : "몸이 완전히 회복되셨나요? 데일리 체크 종료하기"}
-      </button>
-    );
-  }
-
   return (
     <button
       type="button"
       disabled={pending}
       onClick={() => run(() => setDailyCompleted(auth, !completed))}
-      className="inline-flex items-center gap-1 text-caption text-muted hover:text-ink"
+      className="inline-flex min-h-11 items-center gap-1 text-xs text-muted underline underline-offset-2 hover:text-accent"
     >
-      <Icon name="check" size={14} />
-      {completed ? "데일리 체크 다시 켜기" : "회복 완료로 종료하기"}
+      {completed ? "데일리 체크 다시 시작하기" : "몸이 완전히 회복되셨나요? 데일리 체크 종료하기"}
     </button>
   );
 }

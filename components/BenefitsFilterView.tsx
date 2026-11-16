@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
-import type { Result } from "@/lib/benefits";
+import { deadlineScore, type Result } from "@/lib/benefits";
 import BenefitCard from "./BenefitCard";
 import Icon from "./Icon";
 import Mascot from "./Mascot";
@@ -65,22 +65,12 @@ export default function BenefitsFilterView({
     });
   }, [tabFiltered, search]);
 
-  // 3차: 마감 임박순 vs 가능성순 정렬
-  const deadlineScore = (r: Result) => {
-    if (r.deadline.state === "open") return r.deadline.daysLeft ?? 0;
-    if (r.deadline.state === "unknown") return 100_000;
-    return 200_000; // closed
-  };
-  const verdictRank = { high: 0, check: 1, no: 2 } as const;
-
-  const sortedList = useMemo(() => {
-    return [...searchFiltered].sort((a, b) => {
-      if (sortBy === "deadline") {
-        return deadlineScore(a) - deadlineScore(b) || verdictRank[a.verdict] - verdictRank[b.verdict];
-      }
-      return verdictRank[a.verdict] - verdictRank[b.verdict] || deadlineScore(a) - deadlineScore(b);
-    });
-  }, [searchFiltered, sortBy]);
+  // 3차: 가능성순은 서버가 준 순서(sortResults) 그대로, 마감 임박순만 다시 정렬
+  // '해당 없음'은 마감이 가까워도 맨 뒤로: 대상이 아닌 제도가 위에 뜨면 헷갈린다
+  const sortedList = useMemo(
+    () => sortBy === "verdict" ? searchFiltered : [...searchFiltered].sort((a, b) => Number(a.verdict === "no") - Number(b.verdict === "no") || deadlineScore(a) - deadlineScore(b)),
+    [searchFiltered, sortBy],
+  );
 
   const card = (r: Result) => (
     <li key={r.benefit.id}>
@@ -127,7 +117,7 @@ export default function BenefitsFilterView({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="필요한 키워드로 찾기 (예: 휠체어, 간병, 긴급, 식사)"
-          className="w-full rounded-2xl border border-line bg-card py-2.5 pl-10 pr-12 text-sm placeholder:text-muted focus:border-accent focus:outline-none shadow-sm"
+          className="w-full rounded-2xl border border-line bg-card py-2.5 pl-10 pr-12 text-sm placeholder:text-muted focus:border-accent focus:outline-none shadow-card"
         />
         {search && (
           <button

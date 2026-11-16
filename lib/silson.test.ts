@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { searchSilsonHospitals, normalizeHospitalName, KNOWN_PARTICIPATING_HOSPITALS } from "./silson.ts";
+import { searchSilsonHospitals, normalizeHospitalName } from "./silson.ts";
 
 test("실손24: 병원명 정규화 - 띄어쓰기 및 법인 접두사 제거", () => {
   assert.equal(normalizeHospitalName("  서울 아산 병원 "), "서울아산병원");

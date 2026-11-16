@@ -1,19 +1,18 @@
 import "server-only";
 
-const DEFAULT_MODEL = process.env.GPT_MODEL ?? "gpt-4o-mini"; // 기본 경량·고속 모델
+const MODEL = process.env.GPT_MODEL ?? "gpt-4o"; // 이 모델이 계정에서 안 되면 .env.local에 GPT_MODEL로 바꾼다
 export const hasModel = () => !!process.env.GPT_API_KEY;
 
 type Part = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string; detail: "high" } };
 
-// JSON 응답을 강제한 한 번의 호출. 모델을 지정하지 않으면 gpt-4o-mini 기본.
-export async function askJson(system: string, user: Part[], modelOverride?: string): Promise<string | null> {
+// JSON 응답을 강제한 한 번의 호출. 실패하면 null. 키·이미지·질문 내용은 로그에 남기지 않는다.
+export async function askJson(system: string, user: Part[]): Promise<string | null> {
   try {
-    const model = modelOverride ?? DEFAULT_MODEL;
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GPT_API_KEY}` },
       body: JSON.stringify({
-        model, temperature: 0, response_format: { type: "json_object" },
+        model: MODEL, temperature: 0, response_format: { type: "json_object" },
         messages: [{ role: "system", content: system }, { role: "user", content: user }],
       }),
       signal: AbortSignal.timeout(40_000),

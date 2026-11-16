@@ -34,7 +34,7 @@ export default function CalSyncLink({
         <span>{label}</span>
       </a>
       {isKakao && (
-        <p className="mt-2 rounded-xl bg-[#fff4cc] p-2.5 text-xs text-[#7a5a00] leading-relaxed border border-[#f5e6a3]">
+        <p className="mt-2 rounded-xl bg-[#fff4cc] p-2.5 text-xs text-[#7a5a00] leading-relaxed">
           카카오톡 안에서는 캘린더 저장이 제한될 수 있어요. 화면 오른쪽 아래 <b>[···]</b> 버튼을 누른 뒤 <b>[다른 브라우저로 열기]</b>를 누르면 폰 캘린더에 바로 등록돼요.
         </p>
       )}
