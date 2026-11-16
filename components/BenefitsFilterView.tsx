@@ -159,6 +159,8 @@ export default function BenefitsFilterView({
         </div>
       </div>
 
+      {/* 필터·정렬을 바꾸면 목록이 살짝 떠오르며 바뀐다 (검색은 글자마다 흔들리지 않게 제외) */}
+      <div key={filter + sortBy} className="view-in">
       {/* 검색 결과가 없을 때 */}
       {sortedList.length === 0 ? (
         <div className="mt-6 flex flex-col items-center justify-center rounded-2xl bg-card p-6 text-center shadow-card">
@@ -216,6 +218,7 @@ export default function BenefitsFilterView({
 
         </>
       )}
+      </div>
     </div>
   );
 }

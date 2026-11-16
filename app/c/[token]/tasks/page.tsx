@@ -204,7 +204,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
           </section>
 
           {/* 고른 날의 일정 및 할 일 (우선순위: 내가 할 일 -> 배정 대기 -> 다른 가족 순) */}
-          <section className="mt-6" aria-labelledby="h-day">
+          <section key={sel} className="view-in mt-6" aria-labelledby="h-day">
             <div className="flex items-baseline justify-between gap-2">
               <div className="flex items-baseline gap-2">
                 <h2 id="h-day" className="font-display text-headline">{krDate(sel)} ({weekday(sel)})</h2>

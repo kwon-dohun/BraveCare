@@ -82,7 +82,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                   onClick={() => run(() => toggleTask(auth, t.id, !t.done))}
                   className="group flex h-11 w-11 shrink-0 items-center justify-center"
                 >
-                  <span className={`flex h-7 w-7 items-center justify-center rounded-full border-2 transition-colors ${t.done ? "border-primary bg-primary text-ink" : "border-[#9fb8ac] bg-card group-hover:border-accent"}`}>
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-full border-2 transition-[color,background-color,border-color,transform] duration-150 group-active:scale-90 ${t.done ? "border-primary bg-primary text-ink" : "border-[#9fb8ac] bg-card group-hover:border-accent"}`}>
                     {t.done && <Icon name="check" size={16} />}
                   </span>
                 </button>

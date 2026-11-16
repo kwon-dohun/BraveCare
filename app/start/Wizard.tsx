@@ -89,7 +89,7 @@ export default function Wizard() {
         <span className="text-sm text-muted">{step < SUMMARY ? `${step + 1}/${SUMMARY}` : "확인"}</span>
       </div>
 
-      <div className="mt-6 flex-1">
+      <div key={step} className="view-in mt-6 flex-1">
         <Mascot size={56} mood={step === SUMMARY ? "cheer" : "idle"} className="mb-3" />
         {step === 0 && (
           <>

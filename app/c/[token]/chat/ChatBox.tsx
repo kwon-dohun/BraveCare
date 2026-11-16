@@ -94,7 +94,7 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
         </Bot>
 
         {turns.map((t, i) => (
-          <div key={i} className="space-y-3">
+          <div key={i} className="view-in space-y-3">
             <p className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-callout text-ink">{t.q}</p>
             {t.a ? (
               <Bot>
