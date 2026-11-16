@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { taskIcs, feedIcs } from "./ics.ts";
 import { summarize, type Daily } from "./report.ts";
+import { timeContextCheer, weekendDischargeWarning } from "./format.ts";
+import { searchGlossary } from "./glossary.ts";
 import { isEmergency, verifyAnswer, parseChatJson, chips } from "./chat.ts";
 import { itemsFromText, maskIds } from "./extract.ts";
 import { phaseOf, seedTasks } from "./timeline.ts";
@@ -140,4 +142,40 @@ test("달력: 일요일 시작 격자, 퇴원일·할 일·미신청 지원 마�
   assert.ok(deadlines.length > 0);
   const applied = Object.fromEntries(deadlines.map((e) => [e.benefitId!, "applied"]));
   assert.equal([...buildEvents({ input, results, status: applied, tasks: [] }).values()].flat().filter((e) => e.kind === "deadline").length, 0);
+});
+
+test("시간대별 씩씩이 멘트: 새벽, 오전, 저녁 맞춤", () => {
+  assert.equal(timeContextCheer("recovery", false, 3), "늦은 밤 간병 힘내세요. 응급 시엔 119");
+  assert.equal(timeContextCheer("visit", false, 9), "오늘 외래 진료! 신분증 챙기기");
+  assert.equal(timeContextCheer("pre", false, 9), "오늘 챙길 서류와 질문 확인하기");
+  assert.equal(timeContextCheer("recovery", false, 20), "10초 저녁 안부 체크를 남겨보세요");
+  assert.equal(timeContextCheer("recovery", true, 20), "오늘 안부 기록 완료! 푹 쉬세요");
+});
+
+test("주말 퇴원 보정: 월요일 퇴원 시 주말 원무과 휴무 사전 경고", () => {
+  // 2026-11-23은 월요일. 2026-11-21(토요일)은 D-2
+  const warn = weekendDischargeWarning("2026-11-23", "2026-11-21");
+  assert.ok(warn);
+  assert.match(warn, /일요일이라 원무과와 주민센터가 쉬어요/);
+
+  // 화요일 퇴원(2026-11-24)은 D-1이 평일이므로 주말 경고 없음
+  assert.equal(weekendDischargeWarning("2026-11-24", "2026-11-22"), null);
+});
+
+test("쉬운 용어 사전: 띄어쓰기·공백 무관 검색", () => {
+  // "실손 24" -> "실손24" 매칭
+  const r1 = searchGlossary("실손 24");
+  assert.ok(r1.some((t) => t.word === "실손24"));
+
+  // "산정 특례" -> "산정특례" 매칭
+  const r2 = searchGlossary("산정 특례");
+  assert.ok(r2.some((t) => t.word === "산정특례"));
+
+  // "발사" -> "실밥 제거(발사)" 매칭
+  const r3 = searchGlossary("발사");
+  assert.ok(r3.some((t) => t.word === "실밥 제거(발사)"));
+
+  // 없는 단어 -> 빈 배열
+  const r4 = searchGlossary("외계인방문");
+  assert.equal(r4.length, 0);
 });

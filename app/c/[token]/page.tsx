@@ -3,7 +3,7 @@ import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
 import { unreadCount } from "@/lib/load";
 import { PACKET } from "@/lib/packet";
-import { dischargeLabel, dateLabel, dday, heroLabel, krDate } from "@/lib/format";
+import { dischargeLabel, dateLabel, dday, heroLabel, krDate, timeContextCheer, weekendDischargeWarning } from "@/lib/format";
 import { buildEvents, weekday, EVENT_STYLE } from "@/lib/calendar";
 import { addDays } from "@/lib/timeline";
 import TaskList from "@/components/TaskList";
@@ -35,8 +35,10 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const highCount = results.filter((r) => r.verdict === "high").length;
   // 히어로는 큰 숫자 하나 + 설명 한 줄로 나눈다
   const hero = heroLabel(input.dischargeDate, today);
-  // 씩씩이 한마디: 지금 시점에 맞춰 짧게
-  const cheer = stage === "visit" ? "오늘 병원 가는 날!" : stage === "pre" ? "퇴원 준비, 같이 해요" : checkedToday ? "오늘 기록 완료!" : "오늘도 씩씩하게";
+  // 씩씩이 감성 한마디: 한국 시간 기준 시간대(새벽/오전/오후/저녁)와 회복 단계에 맞춤
+  const kstHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", hour: "numeric", hour12: false }).format(new Date()));
+  const cheer = timeContextCheer(stage, checkedToday, kstHour);
+  const weekendWarning = weekendDischargeWarning(input.dischargeDate, today);
   const mood = stage === "recovery" && checkedToday ? "cheer" : "idle";
   const list = { members, auth, meId: actor.memberId, canAssign: true, today, detailBase: `${base}/tasks` };
   // 이번 주 띠와 다가오는 일정(할 일 중 병원 일정 + 퇴원일 + 지원 마감)
@@ -83,6 +85,14 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           <Link href={`${base}/settings`} className="mt-3 flex items-center justify-center rounded-full bg-card px-4 py-2.5 text-sm font-semibold text-ink shadow-card">퇴원일 확정하기</Link>
         )}
       </section>
+
+      {/* 주말·공휴일 원무과/주민센터 휴무 사전 경고 (D-1 주말 보정) */}
+      {weekendWarning && (
+        <aside className="mt-3 rounded-2xl bg-[#fff4cc] p-4 shadow-card text-[#7a5a00] border border-[#f5e6a3]" aria-label="주말 원무과 휴무 사전 안내">
+          <p className="text-xs font-bold tracking-wide uppercase">행정 일정 사전 안내</p>
+          <p className="mt-1 text-sm font-semibold">{weekendWarning}</p>
+        </aside>
+      )}
 
       {/* 씩씩이 질문창: 자바스크립트 없이도 동작하는 GET 폼 */}
       <section className="mt-3 rounded-xl bg-card p-3 shadow-card" aria-label="씩씩이에게 물어보기">

@@ -25,3 +25,14 @@ export const GLOSSARY: Term[] = [
 
 // 챗봇이 근거로 읽는 글자
 export const glossaryText = () => GLOSSARY.map((t) => `${t.word}: ${t.plain}`).join("\n");
+
+// 띄어쓰기·오타에 유연한 용어 검색 (예: "실손 24" -> "실손24", "산정 특례" -> "산정특례")
+export function searchGlossary(query: string, terms: Term[] = GLOSSARY): Term[] {
+  const q = query.replace(/\s+/g, "").toLowerCase();
+  if (!q) return terms;
+  return terms.filter(
+    (t) =>
+      t.word.replace(/\s+/g, "").toLowerCase().includes(q) ||
+      t.plain.replace(/\s+/g, "").toLowerCase().includes(q)
+  );
+}
