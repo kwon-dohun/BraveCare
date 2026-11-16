@@ -14,7 +14,8 @@
 </p>
 
 - 웹 서비스 링크: [https://bravecare-kr.vercel.app](https://bravecare-kr.vercel.app)
-- 안드로이드 앱 다운로드: [GitHub Releases (v1.0.0 APK)](https://github.com/kwon-dohun/bravecare/releases/tag/v1.0.0)
+- 안드로이드 앱 다운로드: [GitHub Releases (APK)](https://github.com/kwon-dohun/bravecare/releases/latest)
+- iOS 앱: 출시 준비 중입니다. 앱스토어 등록 전까지는 웹 서비스를 이용해 주세요.
 - 기획 문서 (PRD v3.6): [BraveCare PRD Notion](https://app.notion.com/p/BraveCare-419575b2d5528070b2dcd256a85e373c)
 - 모바일 앱 프로젝트: `mobile/` (React Native Expo 앱 셸, Android·iOS)
 

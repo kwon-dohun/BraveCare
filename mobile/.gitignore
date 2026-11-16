@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Firebase 설정·서비스 계정 키: 깃허브에 올리지 않는다 (EAS에 따로 올린다)
+google-services.json
+*-firebase-adminsdk-*.json
