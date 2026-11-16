@@ -4,6 +4,7 @@ import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
 import { TEMP_LABEL, PAIN_WORD } from "@/lib/report";
 import DailyForm from "@/components/DailyForm";
+import DailyCompleteToggle from "@/components/DailyCompleteToggle";
 import Mascot from "@/components/Mascot";
 
 export const metadata = { title: "데일리 체크 · 씩씩케어" };
@@ -21,6 +22,15 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
   return (
     <>
       <BackLink href={`${base}/more`}>전체</BackLink>
+      {data.input.dailyCompleted && (
+        <div className="mt-3 flex items-center justify-between rounded-2xl bg-[#dff7ec] p-3.5 text-[#0b7a57] border border-[#b2eccd]">
+          <div>
+            <p className="font-bold text-sm">회복 완료 상태</p>
+            <p className="text-xs opacity-90 mt-0.5">데일리 체크가 공식 종료되었어요. 필요 시 아래에서 다시 기록하실 수 있어요.</p>
+          </div>
+          <DailyCompleteToggle auth={auth} completed={true} variant="card" />
+        </div>
+      )}
       <div className="mt-2 flex items-center gap-3">
         <Mascot size={60} mood={today ? "cheer" : "idle"} />
         <div>
@@ -41,6 +51,11 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
         <Link href={`${base}/chat`} className={link}>서류 내용 물어보기</Link>
       </div>
       <DailyForm key={today ? "saved" : "new"} auth={auth} today={today} yesterday={prev} />
+      {!data.input.dailyCompleted && (
+        <div className="mt-2 text-center">
+          <DailyCompleteToggle auth={auth} completed={false} variant="card" />
+        </div>
+      )}
       <Link href={`${base}/questions`} className="mt-3 flex items-center justify-between rounded-xl bg-card px-4 py-3 text-sm shadow-card">
         <span>기록하다 의료진에게 물어볼 게 떠올랐나요?<span className="block text-xs text-muted">{qLeft ? `적어 둔 질문 ${qLeft}개 · 외래 리포트에도 나와요` : "적어 두면 외래 리포트에도 나와요"}</span></span>
         <Icon name="right" size={18} className="text-muted" />

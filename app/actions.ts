@@ -80,6 +80,23 @@ export async function updateCase(a: Auth, raw: CaseInput) {
   refresh();
 }
 
+export async function setDailyCompleted(a: Auth, completed: boolean) {
+  const actor = await resolve(a);
+  const { data: c } = await db.from("cases").select("input").eq("id", actor.caseId).single();
+  const prevInput = (c?.input as CaseInput) || {};
+  const input = { ...prevInput, dailyCompleted: !!completed };
+  await db.from("cases").update({ input }).eq("id", actor.caseId);
+  await act(
+    actor.caseId,
+    completed
+      ? "환자분의 회복이 안정되어 데일리 체크를 마쳤어요. 건강한 일상 복귀를 응원해요!"
+      : "데일리 체크를 다시 시작했어요",
+    actor.memberId,
+  );
+  await logEvent(actor.caseId, completed ? "daily_check_ended" : "daily_check_resumed");
+  refresh();
+}
+
 export async function deleteCase(a: Auth) {
   const actor = await resolve(a);
   if (actor.role !== "admin") throw new Error("전체 삭제는 처음 만든 가족만 할 수 있어요"); // 되돌릴 수 없는 일이라 한 사람에게만

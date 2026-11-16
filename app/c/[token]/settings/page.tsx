@@ -3,6 +3,7 @@ import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
 import { db } from "@/lib/db";
 import { CaseForm, KeyLink, DeleteCase, FontSize, LeaveCase, UnlinkKakao } from "./SettingsForms";
+import DailyCompleteToggle from "@/components/DailyCompleteToggle";
 
 export const metadata = { title: "설정 · 씩씩케어" };
 
@@ -36,6 +37,12 @@ export default async function Settings(props: PageProps<"/c/[token]/settings">) 
         <h2 id="s1" className="font-semibold">퇴원 정보</h2>
         <p className="text-sm text-muted">퇴원일을 바꾸면 퇴원일 기준 할 일 날짜와 지원 마감이 다시 계산돼요. 직접 날짜를 정한 할 일은 그대로 둬요.</p>
         <CaseForm auth={auth} input={data.input} />
+      </section>
+
+      <section className="mt-8" aria-labelledby="s1-daily">
+        <h2 id="s1-daily" className="font-semibold">데일리 체크 및 회복 상태</h2>
+        <p className="text-sm text-muted mb-2">환자 상태가 안정되어 더 이상 매일 상태 기록이 필요 없을 때 종료할 수 있어요.</p>
+        <DailyCompleteToggle auth={auth} completed={!!data.input.dailyCompleted} variant="setting" />
       </section>
 
       <section className="mt-8" aria-labelledby="s2">

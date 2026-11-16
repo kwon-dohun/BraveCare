@@ -12,6 +12,7 @@ import Remember from "@/components/Remember";
 import WeekStrip from "@/components/WeekStrip";
 import Icon from "@/components/Icon";
 import Mascot, { Logo } from "@/components/Mascot";
+import DailyCompleteToggle from "@/components/DailyCompleteToggle";
 
 export default async function Home(props: PageProps<"/c/[token]">) {
   const { token } = await props.params;
@@ -143,7 +144,22 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           )}
         </section>
       )}
-      {stage === "recovery" && (
+      {stage === "recovery" && input.dailyCompleted ? (
+        <section className="mt-4 rounded-2xl bg-[#dff7ec] p-4 text-[#0b7a57] shadow-card border border-[#b2eccd]" aria-labelledby="h-stage-done">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-caption font-bold text-[#0b7a57]">회복 완료</span>
+              <h2 id="h-stage-done" className="mt-1 font-semibold text-ink text-base">건강한 일상으로 복귀하셨어요!</h2>
+              <p className="mt-0.5 text-xs text-[#0b7a57]/90">데일리 체크가 완료되었어요. 그동안 정성껏 기록해주셔서 고마워요.</p>
+            </div>
+            <Mascot size={48} mood="cheer" />
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-[#b2eccd] pt-2.5 text-xs">
+            <Link href={`${base}/report`} className="font-semibold text-[#0b7a57] underline">누적 외래 리포트 보기</Link>
+            <DailyCompleteToggle auth={auth} completed={true} variant="card" />
+          </div>
+        </section>
+      ) : stage === "recovery" ? (
         <section className={card} aria-labelledby="h-stage">
           <div className="flex items-center justify-between">
             <h2 id="h-stage" className="font-semibold">데일리 체크</h2>
@@ -162,8 +178,11 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           ) : (
             <Link href={`${base}/daily`} className={cta}>오늘 데일리 체크 남기기</Link>
           )}
+          <div className="mt-2.5 text-right">
+            <DailyCompleteToggle auth={auth} completed={false} variant="card" />
+          </div>
         </section>
-      )}
+      ) : null}
 
       {noOwnerVisits > 0 && (
         <Link href={`${base}/tasks?f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={18} /></Link>
