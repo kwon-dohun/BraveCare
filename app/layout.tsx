@@ -2,8 +2,10 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://bravecare-kr.vercel.app"), // 카톡 미리보기 이미지가 절대 주소여야 뜬다
   title: "씩씩케어",
   description: "퇴원 전부터 정기 외래까지, 공공 지원과 서류, 가족 분담을 한곳에서 정리해요",
+  openGraph: { siteName: "씩씩케어", type: "website", locale: "ko_KR" },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#f4faf7" }; // 모바일 브라우저 상단 막대도 바탕색과 같게

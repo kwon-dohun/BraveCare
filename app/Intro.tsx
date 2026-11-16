@@ -62,7 +62,10 @@ export default function Intro({ deleted }: { deleted: boolean }) {
           </label>
         ))}
       </fieldset>
-      <p className="mt-2 text-sm text-muted">진단명·처방 내용은 묻지 않아요. 언제든 설정에서 전체 삭제할 수 있어요.</p>
+      <p className="mt-2 text-sm text-muted">
+        진단명·처방 내용은 묻지 않아요. 언제든 설정에서 전체 삭제할 수 있어요.{" "}
+        <Link href="/privacy" className="font-medium text-accent underline">개인정보처리방침</Link> · <Link href="/terms" className="font-medium text-accent underline">이용약관</Link>
+      </p>
 
       <button onClick={start} disabled={!all} className="mt-6 flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">
         {last ? "새 씩씩케어 만들기" : "시작하기"}

@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { db, actorFromAdminToken, actorFromMemberId } from "@/lib/db";
 import { taskIcs } from "@/lib/ics";
 
-// 할 일 하나를 캘린더 파일로 내려준다. 주소 속 토큰이 권한이다(관리자 c, 가족 m).
+// 할 일 하나를 캘린더 파일로 내려준다. 주소 속 토큰이 권한이다(케이스 토큰 c, 구성원 ID m).
 export async function GET(_req: NextRequest, ctx: RouteContext<"/ics/[k]/[v]/[taskId]">) {
   const { k, v, taskId } = await ctx.params;
   const actor = k === "c" ? await actorFromAdminToken(v) : k === "m" ? await actorFromMemberId(v) : null;

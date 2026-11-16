@@ -13,7 +13,7 @@ const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 export default async function Family(props: PageProps<"/c/[token]/family">) {
   const { token } = await props.params;
   const tab = (await props.searchParams).tab === "schedule" ? "schedule" : "members";
-  const { data, auth, base } = await adminPage(token);
+  const { actor, data, auth, base } = await adminPage(token);
   const { members, tasks, today } = data;
   const mine = (id: string) => tasks.filter((t) => t.assignee_id === id);
   const expired = data.shareExpired;
@@ -42,18 +42,18 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
                   <div className="flex min-w-0 items-center gap-3">
                     <Avatar name={m.name} />
                     <div className="min-w-0">
-                      <p className="font-medium">{m.name}{m.role === "admin" && <span className="ml-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-caption font-semibold text-accent">나 · 관리자</span>}</p>
+                      <p className="font-medium">{m.name}{m.id === actor.memberId && <span className="ml-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-caption font-semibold text-accent">나</span>}</p>
                       <p className="text-xs text-muted tabular-nums">맡은 일 {all.length}개 · 완료 {all.filter((t) => t.done).length}개</p>
                     </div>
                   </div>
-                  {m.role !== "admin" && <RemoveMember auth={auth} memberId={m.id} name={m.name} />}
+                  {m.role !== "admin" && m.id !== actor.memberId && <RemoveMember auth={auth} memberId={m.id} name={m.name} />}
                 </li>
               );
             })}
           </ul>
           {members.length < 2 && <p className="mt-3 text-muted">아직 혼자예요. 가족을 초대하면 할 일을 나눠 맡길 수 있어요.</p>}
           <div className="mt-5"><Invite auth={auth} path={`/j/${data.shareToken}`} expiresAt={data.shareExpiresAt} expired={expired} /></div>
-          <p className="mt-3 text-sm text-muted">초대받은 가족은 앱 설치 없이 이름만 입력하고 참여해요. 자기 담당 할 일을 보고 완료 체크와 메모를 할 수 있고, 퇴원 정보는 바꿀 수 없어요.</p>
+          <p className="mt-3 text-sm text-muted">초대받은 가족은 이름만 입력하고 참여해요. 참여한 가족은 모두 똑같이 할 일을 맡고, 체크하고, 퇴원 정보를 고칠 수 있어요.</p>
         </>
       ) : (
         <>

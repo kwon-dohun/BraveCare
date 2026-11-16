@@ -2,7 +2,7 @@
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { db, resolve, logEvent, type Auth, type Actor } from "@/lib/db";
+import { db, resolve, logEvent, type Auth } from "@/lib/db";
 import { todaySeoul } from "@/lib/load";
 import { evaluate, validateInput, BENEFITS, STATUS_LABEL, type CaseInput } from "@/lib/benefits";
 import { seedTasks, addDays } from "@/lib/timeline";
@@ -18,11 +18,6 @@ const shareExpiry = () => new Date(Date.now() + SHARE_DAYS * 86_400_000).toISOSt
 function refresh() {
   revalidatePath("/c/[token]", "layout");
   revalidatePath("/m/[id]", "layout");
-}
-async function admin(a: Auth): Promise<Actor> {
-  const actor = await resolve(a);
-  if (actor.role !== "admin") throw new Error("관리자만 할 수 있어요");
-  return actor;
 }
 const act = (caseId: string, text: string) => db.from("activity").insert({ case_id: caseId, text });
 
@@ -60,7 +55,7 @@ export async function createCase(raw: CaseInput, adminName: string, consented: b
 }
 
 export async function updateCase(a: Auth, raw: CaseInput) {
-  const actor = await admin(a);
+  const actor = await resolve(a);
   const input = validateInput(raw, todaySeoul());
   if (!input) throw new Error("입력값을 확인해주세요. 퇴원일은 오늘 기준 1년 전부터 1년 뒤까지 넣을 수 있어요");
   const { data: prev } = await db.from("cases").select("input").eq("id", actor.caseId).single();
@@ -77,7 +72,7 @@ export async function updateCase(a: Auth, raw: CaseInput) {
 }
 
 export async function deleteCase(a: Auth) {
-  const actor = await admin(a);
+  const actor = await resolve(a);
   await db.from("cases").delete().eq("id", actor.caseId); // members·tasks·상태·활동은 FK cascade로 함께 삭제
   await logEvent(null, "case_deleted");
   redirect("/?deleted=1");
@@ -96,22 +91,23 @@ export async function joinCase(shareToken: string, name: string) {
   if (error) throw new Error("참여하지 못했어요. 다시 시도해주세요");
   await act(c.id, `${n}님이 가족으로 참여했어요`);
   await logEvent(c.id, "member_joined");
-  redirect(`/m/${m.id}`);
+  redirect(`/c/${m.id}`);
 }
 
 // 링크가 새어 나갔을 때를 대비해 초대 링크를 새로 만든다. 이전 링크는 즉시 무효.
 export async function renewShareLink(a: Auth) {
-  const actor = await admin(a);
+  const actor = await resolve(a);
   await db.from("cases").update({ share_token: token(), share_expires_at: shareExpiry() }).eq("id", actor.caseId);
   await logEvent(actor.caseId, "invite_link_created");
   refresh();
 }
 
 export async function removeMember(a: Auth, memberId: string) {
-  const actor = await admin(a);
-  if (memberId === actor.memberId) throw new Error("관리자는 내보낼 수 없어요");
-  const { data: m } = await db.from("members").select("name").eq("id", memberId).eq("case_id", actor.caseId).maybeSingle();
+  const actor = await resolve(a);
+  if (memberId === actor.memberId) throw new Error("나 자신은 내보낼 수 없어요");
+  const { data: m } = await db.from("members").select("name,role").eq("id", memberId).eq("case_id", actor.caseId).maybeSingle();
   if (!m) throw new Error("가족을 찾을 수 없어요");
+  if (m.role === "admin") throw new Error("처음 만든 가족은 내보낼 수 없어요"); // 이 사람의 주소가 케이스 토큰이라 지우면 그 주소가 끊긴다
   await db.from("members").delete().eq("id", memberId).eq("case_id", actor.caseId); // 담당 할 일은 FK set null로 '담당자 없음'이 된다
   await act(actor.caseId, `${m.name}님이 가족에서 빠졌어요`);
   refresh();
@@ -123,8 +119,6 @@ export async function toggleTask(a: Auth, taskId: string, done: boolean) {
   const actor = await resolve(a);
   const { data: t } = await db.from("tasks").select("title,assignee_id").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
   if (!t) throw new Error("할 일을 찾을 수 없어요");
-  // 가족 참여자는 자기 담당 할 일만 완료할 수 있다
-  if (actor.role === "member" && t.assignee_id !== actor.memberId) throw new Error("내 담당 할 일만 체크할 수 있어요");
   await db.from("tasks").update({ done: !!done, done_at: done ? new Date().toISOString() : null, done_by: done ? actor.name : null }).eq("id", taskId);
   if (done) {
     await act(actor.caseId, `${actor.name}님이 완료했어요: ${t.title}`);
@@ -134,7 +128,7 @@ export async function toggleTask(a: Auth, taskId: string, done: boolean) {
 }
 
 export async function assignTask(a: Auth, taskId: string, memberId: string | null) {
-  const actor = await admin(a);
+  const actor = await resolve(a);
   const { data: t } = await db.from("tasks").select("title").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
   if (!t) throw new Error("할 일을 찾을 수 없어요");
   if (memberId) {
@@ -146,7 +140,7 @@ export async function assignTask(a: Auth, taskId: string, memberId: string | nul
   refresh();
 }
 
-// 가족 참여자가 담당자 없는 할 일을 스스로 맡는다("내가 할게"). 이미 담당자가 있으면 바꾸지 못한다.
+// 담당자 없는 할 일을 스스로 맡는다("내가 할게"). 이미 담당자가 있으면 바꾸지 못한다.
 export async function claimTask(a: Auth, taskId: string) {
   const actor = await resolve(a);
   const { data: t } = await db.from("tasks").update({ assignee_id: actor.memberId })
@@ -159,7 +153,7 @@ export async function claimTask(a: Auth, taskId: string) {
 
 // schedule은 병원 방문 일정(그날 홈에 외래 리포트가 먼저 나온다), question은 외래 때 의료진에게 물어볼 것.
 export async function addTask(a: Auth, title: string, dueDate: string | null, kind: "custom" | "schedule" | "question" = "custom") {
-  const actor = await admin(a);
+  const actor = await resolve(a);
   const t = title.trim().slice(0, 100);
   if (!t) throw new Error("내용을 입력해주세요");
   if (!["custom", "schedule", "question"].includes(kind)) throw new Error("잘못된 요청이에요");
@@ -169,7 +163,7 @@ export async function addTask(a: Auth, title: string, dueDate: string | null, ki
 }
 
 export async function updateTask(a: Auth, taskId: string, patch: { title: string; dueDate: string | null; assigneeId: string | null; memo: string }) {
-  const actor = await admin(a);
+  const actor = await resolve(a);
   const title = patch.title.trim().slice(0, 100);
   if (!title) throw new Error("할 일 내용을 입력해주세요");
   const { data: cur } = await db.from("tasks").select("due_date").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
@@ -187,18 +181,17 @@ export async function updateTask(a: Auth, taskId: string, patch: { title: string
   refresh();
 }
 
-// 참여자도 자기 담당 할 일에는 메모를 남길 수 있다
+// 할 일 메모
 export async function setTaskMemo(a: Auth, taskId: string, memo: string) {
   const actor = await resolve(a);
   const { data: t } = await db.from("tasks").select("assignee_id").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
   if (!t) throw new Error("할 일을 찾을 수 없어요");
-  if (actor.role === "member" && t.assignee_id !== actor.memberId) throw new Error("내 담당 할 일에만 메모할 수 있어요");
   await db.from("tasks").update({ memo: memo.trim().slice(0, 500) || null }).eq("id", taskId);
   refresh();
 }
 
 export async function deleteTask(a: Auth, taskId: string) {
-  const actor = await admin(a);
+  const actor = await resolve(a);
   await db.from("tasks").delete().eq("id", taskId).eq("case_id", actor.caseId);
   refresh();
 }
@@ -229,7 +222,7 @@ export async function setDocsChecked(a: Auth, benefitId: string, checked: string
 // ---- 보험 청구 서류 ----
 
 export async function savePacket(a: Auth, hospital: string, silson24: string | null, checked: string[]) {
-  const actor = await admin(a);
+  const actor = await resolve(a);
   const docs = (Array.isArray(checked) ? checked : []).filter((d) => PACKET.some((p) => p.id === d));
   await db.from("cases").update({
     hospital: hospital.trim().slice(0, 40) || null, silson24: silson24 === "yes" || silson24 === "no" ? silson24 : null, docs_checked: docs,

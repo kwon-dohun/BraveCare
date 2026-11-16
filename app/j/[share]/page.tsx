@@ -1,15 +1,30 @@
+import { cache } from "react";
+import type { ResolvingMetadata } from "next";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import JoinForm from "./JoinForm";
 import { Logo } from "@/components/Mascot";
 
-export const metadata = { title: "가족으로 참여하기 · 씩씩케어", robots: { index: false } }; // 주소가 곧 열쇠라 검색에 남기지 않는다
+// 미리보기와 화면이 같은 조회를 쓴다
+const lookup = cache(async (share: string) => {
+  const { data: c } = await db.from("cases").select("id,share_expires_at").eq("share_token", share).maybeSingle();
+  if (!c) return null;
+  const { data: admin } = await db.from("members").select("name").eq("case_id", c.id).eq("role", "admin").limit(1).single();
+  return { c, admin };
+});
+
+// 카톡으로 초대 링크를 보냈을 때 뜨는 제목. 주소가 곧 열쇠라 검색에는 남기지 않는다.
+export async function generateMetadata(props: PageProps<"/j/[share]">, parent: ResolvingMetadata) {
+  const found = await lookup((await props.params).share);
+  const title = found?.admin?.name ? `${found.admin.name}님이 씩씩케어로 초대했어요` : "씩씩케어 가족 초대";
+  return { title, robots: { index: false }, openGraph: { ...(await parent).openGraph, title, description: "링크를 열고 이름만 입력하면 퇴원 준비를 가족과 같이 나눠서 할 수 있어요." } };
+}
 
 export default async function Join(props: PageProps<"/j/[share]">) {
   const { share } = await props.params;
-  const { data: c } = await db.from("cases").select("id,share_expires_at").eq("share_token", share).maybeSingle();
-  if (!c) notFound();
-  const { data: admin } = await db.from("members").select("name").eq("case_id", c.id).eq("role", "admin").limit(1).single();
+  const found = await lookup(share);
+  if (!found) notFound();
+  const { c, admin } = found;
   const expired = new Date(c.share_expires_at) < new Date();
 
   return (
@@ -23,7 +38,7 @@ export default async function Join(props: PageProps<"/j/[share]">) {
       ) : (
         <>
           <h1 className="mt-6 text-[1.75rem] font-display leading-tight">{admin?.name}님이 가족 퇴원 준비를 같이 하자고 초대했어요</h1>
-          <p className="mt-3 text-muted">이름만 입력하면 내가 맡은 할 일을 보고 완료 체크할 수 있어요. 앱 설치도 회원가입도 필요 없어요.</p>
+          <p className="mt-3 text-muted">이름만 입력하면 바로 같이 쓸 수 있어요. 할 일 나누기, 일정, 지원, 씩씩이 물어보기까지 모두 똑같이 쓸 수 있어요.</p>
           <JoinForm share={share} />
         </>
       )}

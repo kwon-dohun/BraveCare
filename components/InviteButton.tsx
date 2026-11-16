@@ -6,7 +6,7 @@ import Sheet from "./Sheet";
 import { useAct } from "./useAct";
 import Icon from "@/components/Icon";
 
-const TEXT = "가족 퇴원 준비를 같이 나눠서 해요. 링크로 들어와 이름만 입력하면 돼요. 앱 설치는 필요 없어요.";
+const TEXT = "가족 퇴원 준비를 씩씩케어에서 같이 나눠서 해요. 링크로 들어와 이름만 입력하면 돼요.";
 
 export function Invite({ auth, path, expiresAt, expired }: { auth: Auth; path: string; expiresAt: string; expired: boolean }) {
   const [open, setOpen] = useState(false);

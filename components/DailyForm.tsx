@@ -9,7 +9,7 @@ type V = Omit<Daily, "check_date">;
 const GOOD: V = { med_morning: true, med_lunch: true, med_dinner: true, side_effect: false, temp: "normal", wound_issue: false, pain: 0, bowel: "good" };
 const EMPTY: V = { ...GOOD, med_morning: false, med_lunch: false, med_dinner: false };
 
-// 저녁에 환자와 통화하거나 마주 앉아 10초 만에 남기는 기록. 관리자와 가족(환자 본인 포함) 모두 쓴다.
+// 저녁에 환자와 통화하거나 마주 앉아 10초 만에 남기는 기록. 가족 모두(환자 본인 포함) 쓴다.
 export default function DailyForm({ auth, today }: { auth: Auth; today: Daily | null }) {
   const [v, setV] = useState<V>(today ?? EMPTY);
   const [saved, setSaved] = useState(false);

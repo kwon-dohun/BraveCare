@@ -50,6 +50,10 @@ export default async function More(props: PageProps<"/c/[token]/more">) {
           </ul>
         </section>
       ))}
+      <p className="mt-8 flex justify-center gap-3 text-xs text-muted">
+        <Link href="/privacy" className="flex min-h-0 items-center py-2 underline">개인정보처리방침</Link>
+        <Link href="/terms" className="flex min-h-0 items-center py-2 underline">이용약관</Link>
+      </p>
     </>
   );
 }

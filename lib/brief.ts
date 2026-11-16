@@ -19,7 +19,7 @@ export function caseBrief(d: {
   const dc = d.input.dischargeDate;
   out.push(dc ? `퇴원일: ${krDate(dc)} (${dayDiff(dc, d.today) > 0 ? `${dayDiff(dc, d.today)}일 남음` : dayDiff(dc, d.today) === 0 ? "오늘" : `퇴원 ${-dayDiff(dc, d.today)}일째`})` : "퇴원일: 아직 정해지지 않았어요");
   out.push(`오늘: ${krDate(d.today)}`);
-  out.push(`가족: ${d.members.map((m) => `${m.name}${m.role === "admin" ? "(관리자)" : ""}`).join(", ")}`);
+  out.push(`가족: ${d.members.map((m) => m.name).join(", ")}`);
 
   const today = open.filter((t) => t.due_date === d.today);
   out.push(today.length ? `오늘 할 일 ${today.length}개:` : "오늘 할 일: 없어요");

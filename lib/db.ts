@@ -13,7 +13,7 @@ export interface Actor {
   role: "admin" | "member";
 }
 
-// URL 속 추측 불가능한 토큰이 곧 권한이다. 관리자 링크(/c/<token>)와 가족 링크(/m/<memberId>) 두 가지.
+// URL 속 추측 불가능한 토큰이 곧 권한이다. 처음 만든 사람은 케이스 토큰, 참여한 가족은 구성원 ID로 /c/<값>에 들어온다. 권한은 모두 같다.
 export async function actorFromAdminToken(token: string): Promise<Actor | null> {
   const { data: c } = await db.from("cases").select("id").eq("admin_token", token).maybeSingle();
   if (!c) return null;
@@ -27,7 +27,7 @@ export async function actorFromMemberId(memberId: string): Promise<Actor | null>
   return m ? { caseId: m.case_id, memberId: m.id, name: m.name, role: "member" } : null;
 }
 
-// 화면이 들고 있는 권한: 관리자 링크 토큰("c") 또는 가족 멤버 ID("m")
+// 화면이 들고 있는 열쇠: 케이스 토큰("c") 또는 구성원 ID("m")
 export type Auth = { k: "c" | "m"; v: string };
 export async function resolve(a: Auth): Promise<Actor> {
   const actor = a.k === "c" ? await actorFromAdminToken(a.v) : await actorFromMemberId(a.v);
