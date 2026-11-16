@@ -187,7 +187,12 @@ export async function claimTask(a: Auth, taskId: string) {
   const actor = await resolve(a);
   const { data: t } = await db.from("tasks").update({ assignee_id: actor.memberId })
     .eq("id", taskId).eq("case_id", actor.caseId).is("assignee_id", null).select("title").maybeSingle();
-  if (!t) throw new Error("이미 다른 가족이 맡았거나 없는 할 일이에요");
+  if (!t) {
+    // 0.1초 차이로 먼저 맡은 가족이 있으면 이름을 알려준다
+    const { data: cur } = await db.from("tasks").select("assignee_id").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
+    const { data: who } = cur?.assignee_id ? await db.from("members").select("name").eq("id", cur.assignee_id).maybeSingle() : { data: null };
+    throw new Error(who ? `방금 ${who.name}님이 먼저 맡았어요` : "없어진 할 일이에요");
+  }
   await act(actor.caseId, `${actor.name}님이 맡았어요: ${t.title}`, actor.memberId);
   await logEvent(actor.caseId, "task_claimed", { role: actor.role });
   refresh();

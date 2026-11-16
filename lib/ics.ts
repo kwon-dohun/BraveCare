@@ -1,6 +1,8 @@
 // 가족이 맡은 할 일을 휴대폰 기본 캘린더에 넣는 .ics. 전화번호를 받지 않고도 알림이 울리게 알람(VALARM)을 같이 넣는다.
 
 const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/([,;])/g, "\\$1").replace(/\r?\n/g, "\\n");
+// 만든 시각(UTC). 같은 UID를 다시 내려받으면 캘린더가 더 새로운 DTSTAMP를 갱신으로 본다
+const stamp = () => new Date().toISOString().replace(/[-:]|\.\d{3}/g, "");
 const ymd = (d: string) => d.replaceAll("-", "");
 const nextDay = (d: string) => new Date(Date.parse(d) + 86_400_000).toISOString().slice(0, 10);
 
@@ -31,7 +33,7 @@ export function taskIcs(t: { id: string; title: string; due_date: string; due_ti
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
     `UID:${t.id}@bravecare`,
-    `DTSTAMP:${ymd(t.due_date)}T000000Z`,
+    `DTSTAMP:${stamp()}`,
     ...(time
       ? [`DTSTART:${utc(t.due_date, time)}`, "DURATION:PT1H"]
       : [`DTSTART;VALUE=DATE:${ymd(t.due_date)}`, `DTEND;VALUE=DATE:${ymd(nextDay(t.due_date))}`]),
@@ -56,7 +58,7 @@ export function feedIcs(
       [
         "BEGIN:VEVENT",
         `UID:discharge-${ymd(options.dischargeDate)}@bravecare`,
-        `DTSTAMP:${ymd(options.dischargeDate)}T000000Z`,
+        `DTSTAMP:${stamp()}`,
         `DTSTART;VALUE=DATE:${ymd(options.dischargeDate)}`,
         `DTEND;VALUE=DATE:${ymd(nextDay(options.dischargeDate))}`,
         `SUMMARY:${esc("[씩씩케어] 퇴원하는 날")}`,
@@ -75,7 +77,7 @@ export function feedIcs(
       [
         "BEGIN:VEVENT",
         `UID:${t.id}@bravecare`,
-        `DTSTAMP:${ymd(t.due_date)}T000000Z`,
+        `DTSTAMP:${stamp()}`,
         ...(time
           ? [`DTSTART:${utc(t.due_date, time)}`, "DURATION:PT1H"]
           : [`DTSTART;VALUE=DATE:${ymd(t.due_date)}`, `DTEND;VALUE=DATE:${ymd(nextDay(t.due_date))}`]),

@@ -106,3 +106,12 @@ test("마감이 남은 지원만 모은다", () => {
   const m = openDeadlines([r("가", "open", 2), r("나", "closed"), r("다", "unknown")] as never);
   assert.deepEqual([...m], [["가", 2]]);
 });
+
+test("캘린더 파일: 같은 할 일은 같은 UID, DTSTAMP는 일정 날짜가 아니라 만든 시각", () => {
+  const t = { id: "t1", title: "외래", due_date: "2026-11-27", memo: null, kind: "schedule" };
+  const a = taskIcs(t, ""), b = taskIcs(t, "");
+  assert.match(a, /UID:t1@bravecare/);
+  assert.match(a.match(/DTSTAMP:(\S+)/)![1], /^\d{8}T\d{6}Z$/);
+  assert.notEqual(a.match(/DTSTAMP:(\S+)/)![1], "20261127T000000Z");
+  assert.equal(a.match(/UID:\S+/)![0], b.match(/UID:\S+/)![0]);
+});

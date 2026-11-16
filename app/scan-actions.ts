@@ -31,7 +31,7 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{ i
   await limit(actor.caseId, "doc_scan_started", 20, "오늘은 서류 인식 횟수를 다 썼어요. 내일 다시 시도하거나 할 일을 직접 추가해주세요");
 
   const raw = await askJson(EXTRACT_PROMPT, [{ type: "image_url", image_url: { url: `data:image/jpeg;base64,${jpegBase64}`, detail: "high" } }]);
-  if (raw === null) throw new Error("서류를 읽지 못했어요. 잠시 후 다시 시도하거나 할 일을 직접 추가해주세요");
+  if (raw === null) throw new Error("지금은 서류 인식이 어려워요. 병원 문자를 복사해 ‘병원 문자·알림톡 붙여넣기’에 넣으면 바로 일정을 만들 수 있어요. 아니면 잠시 뒤 다시 시도하거나 할 일을 직접 추가해 주세요");
   const parsed = parseModelJson(raw);
   // 원문에 없는 항목은 여기서 버린다
   const items = toDocItems(verifyItems(parsed.transcript, parsed.items), todaySeoul());
@@ -60,8 +60,8 @@ export async function confirmDocItems(a: Auth, items: { kind: DocItem["kind"]; t
     .filter((i) => i.text.trim() && i.kind in KIND_MAP)
     .slice(0, 30)
     .map((i) => ({
-      case_id: actor.caseId, title: i.text.trim().slice(0, 200), kind: KIND_MAP[i.kind], source: "doc",
-      source_quote: i.quote.slice(0, 300), due_date: i.date && /^\d{4}-\d{2}-\d{2}$/.test(i.date) ? i.date : null,
+      case_id: actor.caseId, title: maskIds(i.text.trim()).slice(0, 200), kind: KIND_MAP[i.kind], source: "doc",
+      source_quote: maskIds(i.quote).slice(0, 300), due_date: i.date && /^\d{4}-\d{2}-\d{2}$/.test(i.date) ? i.date : null,
     }));
   if (!rows.length) return;
 
