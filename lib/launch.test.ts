@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { buildReminders } from "./reminders.ts";
 import { nextDue } from "./timeline.ts";
-import { taskIcs } from "./ics.ts";
+import { taskIcs, fold } from "./ics.ts";
 import { krTime } from "./format.ts";
 
 const task = (o: object) => ({ id: "t1", title: "첫 외래", due_date: "2026-11-27", due_time: null, done: false, assignee_id: "me", ...o });
@@ -54,4 +54,15 @@ test("시간을 쉬운 말로", () => {
   assert.equal(krTime("14:00"), "오후 2시");
   assert.equal(krTime("09:30"), "오전 9시 30분");
   assert.equal(krTime("00:05"), "오전 12시 5분");
+});
+
+test("캘린더 파일: 75바이트 넘는 줄은 접고, 펼치면 원래 글과 같고, 한글을 자르지 않는다", () => {
+  const long = "DESCRIPTION:" + "병원 신분증을 챙기세요. ".repeat(8);
+  const lines = fold(long).split("\r\n");
+  assert.ok(lines.length > 1);
+  assert.ok(lines.every((l) => new TextEncoder().encode(l).length <= 75));
+  assert.ok(lines.slice(1).every((l) => l.startsWith(" ")));
+  assert.equal(lines.map((l, i) => (i ? l.slice(1) : l)).join(""), long);
+  const ics = taskIcs({ id: "t1", title: "외래", due_date: "2026-11-27", memo: "메모 ".repeat(40), kind: "custom" }, "서울병원");
+  assert.ok(ics.split("\r\n").every((l) => new TextEncoder().encode(l).length <= 75));
 });

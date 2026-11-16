@@ -6,6 +6,8 @@ import { DOC_TYPE_LABEL, type DocType } from "@/lib/extract";
 import Icon from "@/components/Icon";
 import ChatBox from "./ChatBox";
 
+export const maxDuration = 60; // 씩씩이 답변도 AI 호출
+
 export const metadata = { title: "씩씩이에게 물어보기 · 씩씩케어" };
 
 export default async function Chat(props: PageProps<"/c/[token]/chat">) {

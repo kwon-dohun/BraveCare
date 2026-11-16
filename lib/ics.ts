@@ -4,6 +4,18 @@ const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/([,;])/g, "\\$1").r
 const ymd = (d: string) => d.replaceAll("-", "");
 const nextDay = (d: string) => new Date(Date.parse(d) + 86_400_000).toISOString().slice(0, 10);
 
+// RFC 5545: 한 줄은 75바이트까지, 넘으면 줄바꿈 + 공백으로 이어 쓴다. 한글은 3바이트라 글자 중간에서 자르지 않는다.
+export function fold(line: string) {
+  const enc = new TextEncoder();
+  const out: string[] = [];
+  let cur = "", bytes = 0;
+  for (const ch of line) {
+    const n = enc.encode(ch).length;
+    if (bytes + n > 75) { out.push(cur); cur = " " + ch; bytes = 1 + n; } else { cur += ch; bytes += n; }
+  }
+  return [...out, cur].join("\r\n");
+}
+
 export const VISIT_HINT = "환자 신분증과 같이 가는 사람의 신분증을 챙기세요.";
 
 const utc = (date: string, time: string) => new Date(`${date}T${time}:00+09:00`).toISOString().replace(/[-:]|\.\d{3}/g, ""); // 한국 시간 → 20261127T050000Z
@@ -11,7 +23,6 @@ const utc = (date: string, time: string) => new Date(`${date}T${time}:00+09:00`)
 export function taskIcs(t: { id: string; title: string; due_date: string; due_time?: string | null; memo: string | null; kind: string }, hospital: string): string {
   const time = t.due_time?.slice(0, 5);
   const memo = [hospital && `병원: ${hospital}`, t.memo, t.kind === "schedule" && !t.memo ? VISIT_HINT : ""].filter(Boolean).join("\n");
-  // shortcut: 75바이트 줄 접기를 하지 않는다. 주요 캘린더 앱은 긴 줄도 읽는다. 못 읽는 앱이 나오면 접기를 넣는다.
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -31,5 +42,5 @@ export function taskIcs(t: { id: string; title: string; due_date: string; due_ti
     "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${esc(`오늘: ${t.title}`)}`, time ? "TRIGGER:-PT1H" : "TRIGGER:PT8H30M", "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR",
-  ].join("\r\n") + "\r\n";
+  ].map(fold).join("\r\n") + "\r\n";
 }

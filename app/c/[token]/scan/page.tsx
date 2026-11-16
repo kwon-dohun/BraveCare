@@ -5,6 +5,8 @@ import { DOC_TYPE_LABEL, type DocType } from "@/lib/extract";
 import ScanFlow from "./ScanFlow";
 import Kept from "./Kept";
 
+export const maxDuration = 60; // 사진 읽기는 AI 호출이라 10초를 넘길 수 있다. 서버 액션은 이 화면의 값을 따른다
+
 export const metadata = { title: "서류 촬영 · 씩씩케어" };
 
 export default async function Scan(props: PageProps<"/c/[token]/scan">) {
