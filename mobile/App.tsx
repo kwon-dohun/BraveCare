@@ -40,6 +40,7 @@ async function sync() {
   if ((await Notifications.getPermissionsAsync()).status !== 'granted') return;
   const path = await AsyncStorage.getItem(KEY);
   let reminders: { title: string; body: string; at: string; path: string }[] = [];
+  let daily = true;
   if (path) {
     let pushToken: string | undefined;
     try { pushToken = (await Notifications.getExpoPushTokenAsync()).data; } catch {} // 푸시 설정(FCM·APNs) 전이면 예약 알림만 쓴다
@@ -48,9 +49,10 @@ async function sync() {
     }).then((x) => x.json()).catch(() => null);
     if (!r?.ok) return; // 인터넷이 없으면 잡아 둔 알림을 그대로 둔다
     reminders = r.reminders;
+    daily = r.daily !== false; // 예전 서버는 이 값을 안 보내므로 없으면 켠다
   }
   await Notifications.cancelAllScheduledNotificationsAsync(); // 매번 다시 잡아 중복을 막는다
-  await Notifications.scheduleNotificationAsync({
+  if (daily) await Notifications.scheduleNotificationAsync({
     content: { title: '씩씩케어', body: '오늘 하루는 어땠나요? 데일리 체크를 남겨주세요.', categoryIdentifier: 'daily' },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: 20, minute: 0, channelId: 'daily' },
   });

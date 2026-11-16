@@ -11,5 +11,6 @@ export async function POST(req: Request) {
     await db.from("members").update({ push_token: body.pushToken }).eq("id", actor.memberId);
   }
   const data = await loadCase(actor.caseId);
-  return Response.json({ ok: true, reminders: buildReminders({ ...data, meId: actor.memberId, now: Date.now() }) });
+  // daily: 회복 완료로 데일리 체크를 마쳤으면 저녁 8시 안부 알림을 잡지 않게 한다
+  return Response.json({ ok: true, daily: !data.input.dailyCompleted, reminders: buildReminders({ ...data, meId: actor.memberId, now: Date.now() }) });
 }
