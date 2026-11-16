@@ -255,6 +255,10 @@ export function evaluate(input: CaseInput, today: string): Result[] {
 // 정렬: 높음 → 확인 필요 → 해당 없음, 같은 그룹 안에서는 마감 임박 순
 export function sortResults(rs: Result[]): Result[] {
   const rank = { high: 0, check: 1, no: 2 } as const;
-  const left = (r: Result) => (r.deadline.state === "open" ? r.deadline.daysLeft! : Infinity);
-  return [...rs].sort((a, b) => rank[a.verdict] - rank[b.verdict] || left(a) - left(b));
+  const deadlineScore = (r: Result) => {
+    if (r.deadline.state === "open") return r.deadline.daysLeft ?? 0;
+    if (r.deadline.state === "unknown") return 100_000;
+    return 200_000;
+  };
+  return [...rs].sort((a, b) => rank[a.verdict] - rank[b.verdict] || deadlineScore(a) - deadlineScore(b));
 }

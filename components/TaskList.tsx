@@ -76,7 +76,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
           return (
             <li key={t.id} className="flex items-stretch">
               <span className="w-1 shrink-0" style={{ background: EVENT_STYLE[KIND[t.kind]].dot, opacity: t.done ? 0.35 : 1 }} aria-hidden />
-              <div className="flex min-w-0 flex-1 items-center gap-1 py-1 pl-1 pr-3">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5 py-2 pl-1.5 pr-3">
                 <button
                   aria-label={`${t.title} ${t.done ? "완료 취소" : "완료로 표시"}`}
                   onClick={() => run(() => toggleTask(auth, t.id, !t.done))}
@@ -86,7 +86,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                     {t.done && <Icon name="check" size={16} />}
                   </span>
                 </button>
-                <div className="min-w-0 flex-1 py-1.5">
+                <div className="min-w-0 flex-1 py-1">
                   {detailBase ? <Link href={`${detailBase}/${t.id}`} className={`block min-h-0 ${title}`}>{t.title}</Link> : <p className={title}>{t.title}</p>}
                   <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
                     <span className={late ? "font-medium text-warn" : isUrgent ? "font-semibold text-accent" : "text-muted"}>
@@ -96,7 +96,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                       <button
                         type="button"
                         onClick={() => run(() => rescheduleTaskToToday(auth, t.id, today))}
-                        className="rounded bg-accent-soft px-1.5 py-0.5 text-caption font-semibold text-accent hover:opacity-80"
+                        className="text-caption font-semibold text-accent underline underline-offset-2 hover:opacity-80"
                         title="마감일을 오늘로 변경합니다"
                       >
                         오늘 하기
@@ -108,12 +108,12 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                 </div>
                 {showOwner && !t.done && (
                   t.assignee_id ? (
-                    <div className="flex w-20 shrink-0 flex-col items-center justify-center self-center gap-0.5" title={`담당: ${owner ?? ""}`}>
+                    <div className="flex w-20 shrink-0 flex-col items-center justify-center self-center gap-0.5 my-auto" title={`담당: ${owner ?? ""}`}>
                       <Avatar name={owner ?? "?"} size={28} />
                       <span className={`max-w-16 truncate text-caption leading-none ${t.assignee_id === meId ? "font-semibold text-accent" : "text-muted"}`}>{t.assignee_id === meId ? "나" : owner}</span>
                     </div>
                   ) : (
-                    <div className="flex w-20 shrink-0 flex-col items-center justify-center self-center gap-1">
+                    <div className="flex w-20 shrink-0 flex-col items-center justify-center self-center gap-1 my-auto pt-1">
                       <button onClick={() => run(() => claimTask(auth, t.id))} className="flex h-8 w-full items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent transition-colors hover:opacity-90">
                         내가 할게
                       </button>

@@ -72,9 +72,9 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       {/* 히어로: 큰 D-day 숫자 + 씩씩이 한마디 */}
       <section className="relative mt-4 overflow-hidden rounded-3xl bg-accent-soft p-5" aria-label="퇴원 일정">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+          <div className="min-w-0 pl-3 pt-2.5 pb-1">
             <h1 aria-label={dischargeLabel(input.dischargeDate, today)} className="text-display font-display tracking-tight text-ink tabular-nums">{hero.big}</h1>
-            <p className="mt-2.5 text-sm font-medium text-accent">{hero.sub}</p>
+            <p className="mt-2 text-sm font-medium text-accent">{hero.sub}</p>
           </div>
           <div className="flex shrink-0 flex-col items-end">
             <span className="rounded-2xl rounded-br-sm bg-card px-3 py-1.5 text-xs font-medium text-ink shadow-card">{cheer}</span>

@@ -25,6 +25,7 @@ export default function BenefitsFilterView({
 }) {
   const [filter, setFilter] = useState<string>(initialFilter);
   const [search, setSearch] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"deadline" | "verdict">("deadline");
 
   const highCount = results.filter((r) => r.verdict === "high").length;
   const checkCount = results.filter((r) => r.verdict === "check").length;
@@ -63,6 +64,23 @@ export default function BenefitsFilterView({
       return words.every((w) => target.includes(w));
     });
   }, [tabFiltered, search]);
+
+  // 3차: 마감 임박순 vs 가능성순 정렬
+  const deadlineScore = (r: Result) => {
+    if (r.deadline.state === "open") return r.deadline.daysLeft ?? 0;
+    if (r.deadline.state === "unknown") return 100_000;
+    return 200_000; // closed
+  };
+  const verdictRank = { high: 0, check: 1, no: 2 } as const;
+
+  const sortedList = useMemo(() => {
+    return [...searchFiltered].sort((a, b) => {
+      if (sortBy === "deadline") {
+        return deadlineScore(a) - deadlineScore(b) || verdictRank[a.verdict] - verdictRank[b.verdict];
+      }
+      return verdictRank[a.verdict] - verdictRank[b.verdict] || deadlineScore(a) - deadlineScore(b);
+    });
+  }, [searchFiltered, sortBy]);
 
   const card = (r: Result) => (
     <li key={r.benefit.id}>
@@ -122,18 +140,43 @@ export default function BenefitsFilterView({
         )}
       </div>
 
-      {/* 검색 결과 상태 안내 */}
-      {search.trim() && (
-        <div className="mt-2.5 flex items-center justify-between text-xs text-muted">
-          <span>‘{search.trim()}’ 검색 결과 <strong className="text-ink tabular-nums">{searchFiltered.length}개</strong></span>
-          <button type="button" onClick={() => setSearch("")} className="underline">
-            전체 목록 보기
+      {/* 정렬 및 검색 안내 바 */}
+      <div className="mt-3 flex items-center justify-between px-1">
+        <span className="text-xs text-muted">
+          {search.trim() ? (
+            <>‘{search.trim()}’ 검색 결과 <strong className="text-ink tabular-nums">{sortedList.length}개</strong></>
+          ) : (
+            <>총 <strong className="text-ink tabular-nums">{sortedList.length}개</strong> 지원 제도</>
+          )}
+        </span>
+        <div className="flex items-center gap-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setSortBy("deadline")}
+            className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
+              sortBy === "deadline"
+                ? "bg-foreground font-semibold text-white"
+                : "border border-line bg-card text-muted hover:text-ink"
+            }`}
+          >
+            마감 임박순
+          </button>
+          <button
+            type="button"
+            onClick={() => setSortBy("verdict")}
+            className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
+              sortBy === "verdict"
+                ? "bg-foreground font-semibold text-white"
+                : "border border-line bg-card text-muted hover:text-ink"
+            }`}
+          >
+            가능성순
           </button>
         </div>
-      )}
+      </div>
 
       {/* 검색 결과가 없을 때 */}
-      {searchFiltered.length === 0 ? (
+      {sortedList.length === 0 ? (
         <div className="mt-6 flex flex-col items-center justify-center rounded-2xl bg-card p-6 text-center shadow-card">
           <Mascot size={48} mood="rest" />
           <p className="mt-3 font-semibold text-ink">일치하는 지원 제도가 없어요</p>
@@ -150,28 +193,40 @@ export default function BenefitsFilterView({
             </button>
           )}
         </div>
-      ) : search.trim() ? (
-        /* 검색 중일 때: 검색된 결과 플랫 리스트 */
-        <ul className="mt-4 space-y-3">
-          {searchFiltered.map(card)}
-        </ul>
-      ) : filter === "high" || filter === "check" ? (
-        /* 단일 탭 선택 상태 */
-        <ul className="mt-5 space-y-3">
-          {searchFiltered.map(card)}
-        </ul>
       ) : filter === "no" ? (
-        <ul className="mt-5 divide-y divide-line rounded-xl bg-card shadow-card">
-          {searchFiltered.map(noRow)}
+        <ul className="mt-4 divide-y divide-line rounded-xl bg-card shadow-card">
+          {sortedList.map(noRow)}
+        </ul>
+      ) : sortBy === "deadline" ? (
+        /* 마감 임박순: 기한이 급한 지원부터 최우선 노출 */
+        <>
+          <ul className="mt-4 space-y-3">
+            {filter === "" && !search.trim()
+              ? sortedList.filter((r) => r.verdict !== "no").map(card)
+              : sortedList.map(card)}
+          </ul>
+          {filter === "" && !search.trim() && noCount > 0 && (
+            <details className="mt-6 rounded-xl bg-card shadow-card">
+              <summary className="cursor-pointer p-4 font-semibold text-sm text-muted">해당 없음 ({noCount})</summary>
+              <ul className="divide-y divide-line border-t border-line">
+                {results.filter((r) => r.verdict === "no").map(noRow)}
+              </ul>
+            </details>
+          )}
+        </>
+      ) : filter === "high" || filter === "check" || search.trim() ? (
+        /* 가능성순 단일 탭 / 검색 플랫 리스트 */
+        <ul className="mt-4 space-y-3">
+          {sortedList.map(card)}
         </ul>
       ) : (
-        /* 전체 탭: 섹션별 묶음 표시 */
+        /* 전체 탭 & 가능성순: 섹션별 묶음 표시 */
         <>
           <section className="mt-5">
             <h2 className="mb-2 font-semibold text-sm text-accent">대상 가능성 높음 ({highCount})</h2>
             <ul className="space-y-3">
-              {results.filter((r) => r.verdict === "high").length ? (
-                results.filter((r) => r.verdict === "high").map(card)
+              {sortedList.filter((r) => r.verdict === "high").length ? (
+                sortedList.filter((r) => r.verdict === "high").map(card)
               ) : (
                 <li className="rounded-xl bg-card p-4 text-sm text-muted shadow-card">아직 없어요</li>
               )}
@@ -181,8 +236,8 @@ export default function BenefitsFilterView({
           <section className="mt-6">
             <h2 className="mb-2 font-semibold text-sm text-warn">확인 필요 ({checkCount})</h2>
             <ul className="space-y-3">
-              {results.filter((r) => r.verdict === "check").length ? (
-                results.filter((r) => r.verdict === "check").map(card)
+              {sortedList.filter((r) => r.verdict === "check").length ? (
+                sortedList.filter((r) => r.verdict === "check").map(card)
               ) : (
                 <li className="rounded-xl bg-card p-4 text-sm text-muted shadow-card">없어요</li>
               )}
