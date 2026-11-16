@@ -27,6 +27,7 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
   const router = useRouter();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [found, setFound] = useState<string[]>([]);
+  const [cautions, setCautions] = useState<string[]>([]);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState("");
   const [paste, setPaste] = useState("");
@@ -38,9 +39,10 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
   const onFiles = async (list: FileList | Blob[] | null) => {
     const files = [...(list ?? [])].slice(0, MAX);
     if (!files.length) return;
-    setErr(""); setRows(null); setFound([]);
+    setErr(""); setRows(null); setFound([]); setCautions([]);
     const all: Row[] = [];
     const types: string[] = [];
+    const allCautions: string[] = [];
     let failed = 0;
     for (const [i, f] of files.entries()) {
       setBusy(`${files.length}장 중 ${i + 1}장째 읽는 중… (장당 10초쯤 걸려요)`);
@@ -48,12 +50,13 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
         const r = await extractFromImage(auth, await toJpegBase64(f));
         types.push(DOC_TYPE_LABEL[r.docType]);
         all.push(...toRows(r.items));
+        if (r.cautions?.length) allCautions.push(...r.cautions);
       } catch (e) {
         failed++;
         setErr(e instanceof Error ? e.message : "읽지 못했어요. 다시 촬영해주세요");
       }
     }
-    setBusy(""); setFound(types);
+    setBusy(""); setFound(types); setCautions([...new Set(allCautions)]);
     if (failed < files.length) {
       setRows(all);
       if (!all.length) setErr("글자는 보관했지만 할 일로 만들 항목은 찾지 못했어요. 글자가 흐리면 밝은 곳에서 다시 촬영하거나, 할 일을 직접 추가해주세요.");
@@ -122,6 +125,18 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
       ) : null}
       {err && <p role="alert" className="mt-3 text-warn">{err}</p>}
       {found.length > 0 && <p role="status" className="mt-3 text-sm text-accent">읽은 서류: {found.join(", ")}</p>}
+      {cautions.length > 0 && (
+        <aside className="mt-3 rounded-xl bg-[#fff9db] p-3.5 text-sm text-[#73510d] border border-[#f5e6a3]" aria-label="약 보관 및 복약 주의사항">
+          <p className="font-semibold text-xs tracking-wide uppercase">약 보관 및 복약 주의사항</p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {cautions.map((c) => (
+              <span key={c} className="rounded-md bg-[#ffe066] px-2 py-0.5 text-xs font-bold text-[#5c4000]">
+                {c}
+              </span>
+            ))}
+          </div>
+        </aside>
+      )}
 
       {rows && rows.length > 0 && (
         <section className="mt-5" aria-labelledby="rv">

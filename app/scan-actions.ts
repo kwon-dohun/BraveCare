@@ -4,7 +4,7 @@ import { db, resolve, logEvent, type Auth } from "@/lib/db";
 import { act } from "@/lib/push";
 import { todaySeoul } from "@/lib/load";
 import { askJson, hasModel } from "@/lib/openai";
-import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, type DocItem, type DocType } from "@/lib/extract";
+import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, extractCautionTags, type DocItem, type DocType } from "@/lib/extract";
 import { CHAT_PROMPT, parseChatJson, verifyAnswer, type ChatAnswer, type Source } from "@/lib/chat";
 import { DOC_TYPE_LABEL } from "@/lib/extract";
 import { loadCase } from "@/lib/load";
@@ -24,7 +24,7 @@ async function limit(caseId: string, event: string, max: number, msg: string) {
 const keep = (caseId: string, docType: DocType, transcript: string) =>
   db.from("documents").insert({ case_id: caseId, doc_type: docType, transcript: maskIds(transcript).slice(0, 6000) });
 
-export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{ items: DocItem[]; docType: DocType; empty: boolean }> {
+export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{ items: DocItem[]; docType: DocType; empty: boolean; cautions: string[] }> {
   const actor = await resolve(a);
   if (!hasModel()) throw new Error("서류 인식 설정이 아직 안 됐어요. 할 일을 직접 추가해주세요");
   if (!/^[A-Za-z0-9+/=]+$/.test(jpegBase64) || jpegBase64.length > 3_500_000) throw new Error("사진 크기가 너무 커요. 다시 촬영해주세요");
@@ -35,9 +35,10 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{ i
   const parsed = parseModelJson(raw);
   // 원문에 없는 항목은 여기서 버린다
   const items = toDocItems(verifyItems(parsed.transcript, parsed.items), todaySeoul());
+  const cautions = extractCautionTags(parsed.transcript);
   if (parsed.transcript.trim()) await keep(actor.caseId, parsed.docType, parsed.transcript);
   revalidatePath("/c/[token]", "layout");
-  return { items, docType: parsed.docType, empty: items.length === 0 };
+  return { items, docType: parsed.docType, empty: items.length === 0, cautions };
 }
 
 // 병원 문자·알림톡 붙여넣기. AI 없이 날짜가 있는 줄만 일정 후보로 뽑는다.

@@ -1,7 +1,7 @@
 import { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
 import { db } from "@/lib/db";
-import { DOC_TYPE_LABEL, type DocType } from "@/lib/extract";
+import { DOC_TYPE_LABEL, extractCautionTags, type DocType } from "@/lib/extract";
 import ScanFlow from "./ScanFlow";
 import Kept from "./Kept";
 
@@ -16,6 +16,7 @@ export default async function Scan(props: PageProps<"/c/[token]/scan">) {
   const docs = (data ?? []).map((d) => ({
     id: d.id as string, label: DOC_TYPE_LABEL[d.doc_type as DocType], preview: (d.transcript as string).slice(0, 60),
     date: new Date(d.created_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric" }),
+    cautions: extractCautionTags((d.transcript as string) ?? ""),
   }));
   return (
     <>

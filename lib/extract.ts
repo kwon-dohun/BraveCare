@@ -84,3 +84,18 @@ export function toDocItems(items: RawItem[], today: string): DocItem[] {
     return { ...i, date, needsCheck: i.kind === "schedule" && !date };
   });
 }
+
+// 약봉투·처방전·퇴원 안내문에서 보관 방법 및 핵심 복약 주의 키워드 자동 추출
+export function extractCautionTags(text: string): string[] {
+  const tags: string[] = [];
+  const t = text.replace(/\s+/g, "");
+  if (/냉장(보관)?|실온X|2~8도|2-8도/.test(t)) tags.push("냉장 보관");
+  if (/차광(보관)?|직사광선/.test(t)) tags.push("차광 보관");
+  if (/실온보관|상온보관|1~30도|1-30도/.test(t) && !/실온X/.test(t)) tags.push("실온 보관");
+  if (/식후30분|식후즉시|식사직후/.test(t)) tags.push("식후 복용");
+  if (/식전|공복/.test(t)) tags.push("식전(공복) 복용");
+  if (/졸음|운전주의|기계조작/.test(t)) tags.push("졸음·운전 주의");
+  if (/끝까지|임의중단|남김없이|항생제/.test(t) && /복용|투약|먹/.test(t)) tags.push("끝까지 복용(임의 중단 금지)");
+  return [...new Set(tags)];
+}
+

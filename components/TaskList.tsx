@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import { toggleTask, claimTask } from "@/app/actions";
 import type { Auth } from "@/lib/db";
@@ -20,7 +21,19 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
   showOwner?: boolean; badges?: Record<string, string>;
 }) {
   const { run, pending, err } = useAct();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const nameOf = (id: string | null) => members.find((m) => m.id === id)?.name;
+
+  const copyHelp = async (t: T) => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const dStr = t.due_date ? ` (${dateLabel(t.due_date, t.rel_day, today)})` : "";
+    const text = `[${t.title}]${dStr} 아직 담당 가족이 없어요. 시간 되시는 분이 맡아주세요.\n${url}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(t.id);
+      setTimeout(() => setCopiedId(null), 2500);
+    } catch {}
+  };
 
   if (!tasks.length) return (
     <p className="flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card">
@@ -68,7 +81,12 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                       <span className={`max-w-14 truncate text-caption leading-none ${t.assignee_id === meId ? "font-semibold text-accent" : "text-muted"}`}>{t.assignee_id === meId ? "나" : owner}</span>
                     </span>
                   ) : (
-                    <button onClick={() => run(() => claimTask(auth, t.id))} className="h-9 min-h-0 shrink-0 rounded-full bg-accent-soft px-3 text-xs font-semibold text-accent">내가 할게</button>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <button onClick={() => run(() => claimTask(auth, t.id))} className="h-9 min-h-0 shrink-0 rounded-full bg-accent-soft px-3 text-xs font-semibold text-accent">내가 할게</button>
+                      <button type="button" onClick={() => copyHelp(t)} className="text-caption text-muted underline hover:text-ink">
+                        {copiedId === t.id ? "복사됨" : "도움 요청"}
+                      </button>
+                    </div>
                   )
                 )}
               </div>

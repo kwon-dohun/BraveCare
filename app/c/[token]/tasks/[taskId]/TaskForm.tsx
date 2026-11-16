@@ -19,7 +19,19 @@ export default function TaskForm({ auth, back, members, task }: Props) {
   const [assignee, setAssignee] = useState(task.assignee_id ?? "");
   const [memo, setMemo] = useState(task.memo ?? "");
   const [confirmDel, setConfirmDel] = useState(false);
+  const [copiedHelp, setCopiedHelp] = useState(false);
   const { run, pending, err } = useAct();
+
+  const copyHelp = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const dStr = date ? ` [${date}]` : "";
+    const text = `[${title}]${dStr} 아직 담당 가족이 없어요. 시간 되시는 분이 맡아주세요.\n${url}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedHelp(true);
+      setTimeout(() => setCopiedHelp(false), 2500);
+    } catch {}
+  };
   const done = () => router.push(back);
   const field = "mt-1 w-full rounded-xl border border-line bg-card px-4 py-3";
 
@@ -58,6 +70,15 @@ export default function TaskForm({ auth, back, members, task }: Props) {
           {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
         <p className="mt-1 text-sm text-muted">다른 가족의 일도 바꿀 수 있어요. 바꾸면 가족에게 알려줘요.</p>
+        {!assignee && (
+          <button
+            type="button"
+            onClick={copyHelp}
+            className="mt-2 text-xs text-muted underline hover:text-ink"
+          >
+            {copiedHelp ? "도움 요청 문구가 복사되었어요" : "가족에게 도움 요청 문구 복사하기"}
+          </button>
+        )}
       </div>
       <div>
         <label htmlFor="tm" className="font-semibold">메모</label>
