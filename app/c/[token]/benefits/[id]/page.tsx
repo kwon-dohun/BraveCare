@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { BackLink } from "@/components/Icon";
+import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
 import { loadSaved } from "@/lib/load";
 import SaveButton from "@/components/SaveButton";

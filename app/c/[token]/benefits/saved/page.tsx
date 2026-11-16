@@ -1,4 +1,5 @@
-import Icon, { BackLink } from "@/components/Icon";
+import Icon from "@/components/Icon";
+import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
 import { loadSaved } from "@/lib/load";
 import { extraById } from "@/lib/ai-benefits";

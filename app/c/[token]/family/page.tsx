@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BackLink } from "@/components/Icon";
+import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
 import { Invite, RemoveMember } from "@/components/InviteButton";
 import { addDays } from "@/lib/timeline";

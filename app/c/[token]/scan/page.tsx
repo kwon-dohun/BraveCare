@@ -1,4 +1,4 @@
-import { BackLink } from "@/components/Icon";
+import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
 import { db } from "@/lib/db";
 import { DOC_TYPE_LABEL, extractCautionTags, type DocType } from "@/lib/extract";
@@ -7,7 +7,7 @@ import Kept from "./Kept";
 
 export const maxDuration = 60; // 사진 읽기는 AI 호출이라 10초를 넘길 수 있다. 서버 액션은 이 화면의 값을 따른다
 
-export const metadata = { title: "서류 촬영 · 씩씩케어" };
+export const metadata = { title: "서류 정리 · 씩씩케어" };
 
 export default async function Scan(props: PageProps<"/c/[token]/scan">) {
   const { token } = await props.params;
@@ -21,8 +21,8 @@ export default async function Scan(props: PageProps<"/c/[token]/scan">) {
   return (
     <>
       <BackLink href={`${base}/more`}>전체</BackLink>
-      <h1 className="mt-2 text-title font-display">서류로 할 일 만들기</h1>
-      <p className="mb-5 mt-1 text-muted">서류에 적힌 내용만 그대로 옮겨요. 요약하거나 설명을 덧붙이지 않아요.</p>
+      <h1 className="mt-2 text-title font-display">서류 찍어서 정리</h1>
+      <p className="mb-5 mt-1 text-muted">외래·검사 날짜는 가족 달력에 넣고, 약봉투·영수증·안내문 글자는 보관함에 저장해요. 서류에 적힌 내용만 그대로 옮겨요.</p>
       <ScanFlow auth={auth} base={base} />
       {docs.length > 0 && (
         <section className="mt-8" aria-labelledby="kp">

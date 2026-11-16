@@ -26,9 +26,9 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
   const nameOf = (id: string | null) => members.find((m) => m.id === id)?.name;
 
   const copyHelp = async (t: T) => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
+    // 주소는 넣지 않는다: 지금 주소가 곧 내 열쇠라, 단톡방에 붙이면 누구나 내 화면으로 들어올 수 있다
     const dStr = t.due_date ? ` (${krDate(t.due_date)}까지)` : "";
-    const text = `[${t.title}]${dStr} 아직 담당 가족이 없어요. 시간 되시는 분이 맡아주세요.\n${url}`;
+    const text = `[${t.title}]${dStr} 아직 담당 가족이 없어요. 시간 되시는 분이 씩씩케어에서 ‘내가 할게’를 눌러 주세요.`;
     try {
       await navigator.clipboard.writeText(text);
       setCopiedId(t.id);

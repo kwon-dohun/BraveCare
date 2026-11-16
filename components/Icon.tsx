@@ -1,4 +1,3 @@
-import Link from "next/link";
 
 // 아이콘은 한 벌로: 24 그리드, 선 1.75px, 둥근 끝. 경로는 Lucide(ISC 라이선스)에서 가져왔다.
 const PATHS = {
@@ -34,14 +33,5 @@ export default function Icon({ name, size = 20, className = "" }: { name: IconNa
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`shrink-0 ${className}`}>
       {PATHS[name]}
     </svg>
-  );
-}
-
-// 화면 위쪽 '돌아가기' 링크. 모든 하위 화면이 같은 모양을 쓴다.
-export function BackLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link href={href} className="-ml-1 inline-flex items-center gap-0.5 pr-2 text-muted">
-      <Icon name="left" size={20} />{children}
-    </Link>
   );
 }

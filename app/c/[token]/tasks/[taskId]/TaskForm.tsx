@@ -1,4 +1,5 @@
 "use client";
+import { cameFromApp } from "@/components/BackLink";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateTask, deleteTask } from "@/app/actions";
@@ -23,16 +24,17 @@ export default function TaskForm({ auth, back, members, task }: Props) {
   const { run, pending, err } = useAct();
 
   const copyHelp = async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
+    // 주소는 넣지 않는다: 지금 주소가 곧 내 열쇠라, 단톡방에 붙이면 누구나 내 화면으로 들어올 수 있다
     const dStr = date ? ` [${date}]` : "";
-    const text = `[${title}]${dStr} 아직 담당 가족이 없어요. 시간 되시는 분이 맡아주세요.\n${url}`;
+    const text = `[${title}]${dStr} 아직 담당 가족이 없어요. 시간 되시는 분이 씩씩케어에서 ‘내가 할게’를 눌러 주세요.`;
     try {
       await navigator.clipboard.writeText(text);
       setCopiedHelp(true);
       setTimeout(() => setCopiedHelp(false), 2500);
     } catch {}
   };
-  const done = () => router.push(back);
+  // 저장·삭제 뒤에는 이 화면을 연 곳(홈·일정 등)으로 돌아간다. 바로 열어서 온 곳이 없으면 일정으로
+  const done = () => (cameFromApp() ? router.back() : router.push(back));
   const field = "mt-1 w-full rounded-xl border border-line bg-card px-4 py-3";
 
   return (

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import Icon, { BackLink } from "@/components/Icon";
+import Icon from "@/components/Icon";
+import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
 import { TEMP_LABEL, PAIN_WORD } from "@/lib/report";

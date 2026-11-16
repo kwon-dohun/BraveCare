@@ -1,4 +1,4 @@
-import { BackLink } from "@/components/Icon";
+import BackLink from "@/components/BackLink";
 import { notFound } from "next/navigation";
 import { adminPage } from "@/lib/page-auth";
 import { KIND_LABEL } from "@/lib/timeline";

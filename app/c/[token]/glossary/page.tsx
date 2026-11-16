@@ -1,4 +1,4 @@
-import { BackLink } from "@/components/Icon";
+import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
 import { GLOSSARY } from "@/lib/glossary";
 import GlossaryClient from "./GlossaryClient";

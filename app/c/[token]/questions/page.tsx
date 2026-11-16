@@ -1,4 +1,4 @@
-import { BackLink } from "@/components/Icon";
+import BackLink from "@/components/BackLink";
 import Icon from "@/components/Icon";
 import Mascot from "@/components/Mascot";
 import TaskList from "@/components/TaskList";

@@ -1,4 +1,4 @@
-import { BackLink } from "@/components/Icon";
+import BackLink from "@/components/BackLink";
 import Mascot from "@/components/Mascot";
 import { adminPage } from "@/lib/page-auth";
 import { db } from "@/lib/db";

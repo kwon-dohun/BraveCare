@@ -1,5 +1,6 @@
 import Link from "next/link";
-import Icon, { BackLink } from "@/components/Icon";
+import Icon from "@/components/Icon";
+import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
 
 export const metadata = { title: "도움말 · 씩씩케어" };

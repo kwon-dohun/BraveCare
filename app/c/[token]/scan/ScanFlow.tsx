@@ -3,7 +3,8 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { extractFromImage, extractFromPaste, confirmDocItems } from "@/app/scan-actions";
 import type { Auth } from "@/lib/db";
-import { DOC_TYPE_LABEL, type DocItem } from "@/lib/extract";
+import Link from "next/link";
+import { DOC_TYPE_LABEL, type DocItem, type DocType } from "@/lib/extract";
 import { toApp, useInApp } from "@/lib/app";
 import Mascot from "@/components/Mascot";
 
@@ -26,13 +27,14 @@ async function toJpegBase64(file: Blob): Promise<string> {
 export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
   const router = useRouter();
   const [rows, setRows] = useState<Row[] | null>(null);
-  const [found, setFound] = useState<string[]>([]);
+  const [found, setFound] = useState<DocType[]>([]);
   const [cautions, setCautions] = useState<string[]>([]);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState("");
   const [paste, setPaste] = useState("");
   const [pending, start] = useTransition();
-  const toRows = (items: DocItem[]) => items.map((i) => ({ ...i, quote: i.text, include: !i.needsCheck }));
+  // 날짜가 있는 일정만 기본으로 넣는다. 약·주의사항·문의처는 보관함에 글자로 남기고, 할 일로 만들지는 사용자가 고른다
+  const toRows = (items: DocItem[]) => items.map((i) => ({ ...i, quote: i.text, include: i.kind === "schedule" && !i.needsCheck }));
 
   const app = useInApp();
 
@@ -41,14 +43,14 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
     if (!files.length) return;
     setErr(""); setRows(null); setFound([]); setCautions([]);
     const all: Row[] = [];
-    const types: string[] = [];
+    const types: DocType[] = [];
     const allCautions: string[] = [];
     let failed = 0;
     for (const [i, f] of files.entries()) {
       setBusy(`${files.length}장 중 ${i + 1}장째 읽는 중… (장당 10초쯤 걸려요)`);
       try {
         const r = await extractFromImage(auth, await toJpegBase64(f));
-        types.push(DOC_TYPE_LABEL[r.docType]);
+        types.push(r.docType);
         all.push(...toRows(r.items));
         if (r.cautions?.length) allCautions.push(...r.cautions);
       } catch (e) {
@@ -56,11 +58,8 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
         setErr(e instanceof Error ? e.message : "읽지 못했어요. 다시 촬영해주세요");
       }
     }
-    setBusy(""); setFound(types); setCautions([...new Set(allCautions)]);
-    if (failed < files.length) {
-      setRows(all);
-      if (!all.length) setErr("글자는 보관했지만 할 일로 만들 항목은 찾지 못했어요. 글자가 흐리면 밝은 곳에서 다시 촬영하거나, 할 일을 직접 추가해주세요.");
-    }
+    setBusy(""); setFound([...new Set(types)]); setCautions([...new Set(allCautions)]);
+    if (failed < files.length) setRows(all);
   };
 
   // 앱의 문서 스캐너(자동으로 반듯하게 잘라 줌)가 찍은 사진을 받는다. 매번 최신 onFiles를 쓰도록 의존성 없이 다시 건다.
@@ -75,7 +74,7 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
 
   const onPaste = async () => {
     setErr(""); setRows(null); setFound([]); setBusy("읽는 중…");
-    try { setRows(toRows((await extractFromPaste(auth, paste)).items)); setFound([DOC_TYPE_LABEL.message]); }
+    try { setRows(toRows((await extractFromPaste(auth, paste)).items)); setFound(["message"]); }
     catch (e) { setErr(e instanceof Error ? e.message : "읽지 못했어요"); }
     setBusy("");
   };
@@ -92,11 +91,29 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
     start(async () => {
       try {
         await confirmDocItems(auth, chosen.map((r) => ({ kind: r.kind, text: r.text, quote: r.quote, date: r.date })));
-        router.push(`${base}/tasks?view=list`);
+        // 일정만 넣었으면 달력으로, 할 일도 넣었으면 목록으로
+        router.push(chosen.every((r) => r.kind === "schedule") ? `${base}/tasks` : `${base}/tasks?view=list`);
       } catch (e) {
         setErr(e instanceof Error ? e.message : "추가하지 못했어요");
       }
     });
+
+  const rowItem = (r: Row, i: number) => (
+    <li key={i} className={`rounded-xl p-3 ${blocked(r) ? "bg-warn-soft" : "bg-background"}`}>
+      <label className="flex items-start gap-3">
+        <input type="checkbox" className="mt-1.5 h-5 w-5" checked={r.include && !blocked(r)} disabled={blocked(r)} onChange={(e) => upd(i, { include: e.target.checked })} />
+        <span className="flex-1">
+          <span className="text-sm font-medium text-accent">{KIND[r.kind]}</span>
+          {blocked(r) && <span className="ml-2 text-sm font-medium text-warn">날짜가 맞는지 직접 넣어주세요</span>}
+          <textarea value={r.text} rows={2} aria-label="항목 내용" onChange={(e) => upd(i, { text: e.target.value })} className="mt-1 w-full rounded-lg border border-line bg-card px-3 py-2" />
+        </span>
+      </label>
+      {r.kind === "schedule" && (
+        <input type="date" aria-label="날짜" value={r.date ?? ""} onChange={(e) => upd(i, { date: e.target.value || null, include: !!e.target.value })} className="mt-2 w-full rounded-lg border border-line bg-card px-3 py-2" />
+      )}
+      <p className="mt-2 text-xs text-muted">원문: “{r.quote}”</p>
+    </li>
+  );
 
   return (
     <>
@@ -124,50 +141,49 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
         <ScanningCard busyText={busy} />
       ) : null}
       {err && <p role="alert" className="mt-3 text-warn">{err}</p>}
-      {found.length > 0 && <p role="status" className="mt-3 text-sm text-accent">읽은 서류: {found.join(", ")}</p>}
+      {found.length > 0 && (
+        <section role="status" className="mt-4 rounded-xl bg-accent-soft p-4 text-sm text-accent">
+          <p className="font-semibold">읽은 서류: {found.map((t) => DOC_TYPE_LABEL[t]).join(", ")}</p>
+          <p className="mt-1">읽은 글자는 아래 보관함에 저장했어요. 씩씩이에게 물어보면 이 글자를 근거로 답해요.</p>
+          {found.includes("medication") && (
+            <p className="mt-2">약봉투는 할 일로 만들지 않아요. 약은 매일 챙기는 것이라 <Link href={`${base}/daily`} className="font-semibold underline">데일리 체크</Link>에서 먹었는지 기록해요.</p>
+          )}
+          {found.includes("receipt") && (
+            <p className="mt-2">영수증은 보험 청구에 쓰는 서류예요. <Link href={`${base}/docs`} className="font-semibold underline">보험 청구 서류</Link>에서 받은 서류를 체크해 두세요.</p>
+          )}
+        </section>
+      )}
       {cautions.length > 0 && (
         <aside className="mt-3 rounded-xl bg-[#fff4cc] p-3.5 text-sm text-[#7a5a00]" aria-label="약 보관 및 복약 주의사항">
-          <p className="font-semibold text-xs tracking-wide uppercase">약 보관 및 복약 주의사항</p>
+          <p className="text-xs font-semibold">약 보관 및 복약 주의사항</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {cautions.map((c) => (
-              <span key={c} className="rounded-md bg-card px-2 py-0.5 text-xs font-semibold text-[#7a5a00]">
-                {c}
-              </span>
+              <span key={c} className="rounded-md bg-card px-2 py-0.5 text-xs font-semibold text-[#7a5a00]">{c}</span>
             ))}
           </div>
         </aside>
       )}
 
-      {rows && rows.length > 0 && (
+      {rows && rows.some((r) => r.kind === "schedule") && (
         <section className="mt-5" aria-labelledby="rv">
-          <h2 id="rv" className="font-semibold">찾은 항목을 원문과 비교해 주세요</h2>
-          <p className="text-sm text-muted">서류와 비교해 맞는 것만 체크하세요. 체크한 항목만 타임라인에 들어가요.</p>
-          <ul className="mt-3 space-y-3">
-            {rows.map((r, i) => (
-              <li key={i} className={`rounded-xl border p-3 ${blocked(r) ? "border-warn bg-warn-soft" : "border-line bg-card"}`}>
-                <label className="flex items-start gap-3">
-                  <input type="checkbox" className="mt-1.5 h-5 w-5" checked={r.include && !blocked(r)} disabled={blocked(r)} onChange={(e) => upd(i, { include: e.target.checked })} />
-                  <span className="flex-1">
-                    <span className="text-sm font-medium text-accent">{KIND[r.kind]}</span>
-                    {blocked(r) && <span className="ml-2 text-sm font-medium text-warn">날짜가 맞는지 직접 넣어주세요</span>}
-                    <textarea
-                      value={r.text} rows={2} aria-label="항목 내용"
-                      onChange={(e) => upd(i, { text: e.target.value })}
-                      className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2"
-                    />
-                  </span>
-                </label>
-                {r.kind === "schedule" && (
-                  <input type="date" aria-label="날짜" value={r.date ?? ""} onChange={(e) => upd(i, { date: e.target.value || null, include: !!e.target.value })} className="mt-2 w-full rounded-lg border border-line bg-white px-3 py-2" />
-                )}
-                <p className="mt-2 text-xs text-muted">원문: “{r.quote}”</p>
-              </li>
-            ))}
-          </ul>
-          <button onClick={confirm} disabled={pending || chosen.length === 0} className="mt-5 w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">
-            {pending ? "추가하는 중…" : `확인한 ${chosen.length}개를 할 일에 추가`}
-          </button>
+          <h2 id="rv" className="font-semibold">일정으로 넣을 것</h2>
+          <p className="text-sm text-muted">서류와 비교해 맞는 것만 체크하세요. 체크한 일정은 가족 달력에 들어가요.</p>
+          <ul className="mt-3 space-y-3">{rows.map((r, i) => r.kind === "schedule" && rowItem(r, i))}</ul>
         </section>
+      )}
+
+      {rows && rows.some((r) => r.kind !== "schedule") && (
+        <details className="mt-5 rounded-xl bg-card p-4 shadow-card">
+          <summary className="cursor-pointer font-semibold">참고 내용 {rows.filter((r) => r.kind !== "schedule").length}개 <span className="text-sm font-normal text-muted">· 보관함에 저장됨</span></summary>
+          <p className="mt-2 text-sm text-muted">약 이름·주의사항·문의처예요. 따로 할 일로 만들 필요는 없어요. 챙겨야 할 것만 체크하면 할 일로 넣어요.</p>
+          <ul className="mt-3 space-y-3">{rows.map((r, i) => r.kind !== "schedule" && rowItem(r, i))}</ul>
+        </details>
+      )}
+
+      {rows && rows.length > 0 && (
+        <button onClick={confirm} disabled={pending || chosen.length === 0} className="mt-5 w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">
+          {pending ? "넣는 중…" : chosen.length ? `선택한 ${chosen.length}개 넣기` : "넣을 일정이 없어요 (글자는 저장됨)"}
+        </button>
       )}
     </>
   );
