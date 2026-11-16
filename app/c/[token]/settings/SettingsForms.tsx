@@ -5,6 +5,7 @@ import type { Auth } from "@/lib/db";
 import type { CaseInput, Income, Living, Reason } from "@/lib/benefits";
 import { SIDO, SEOUL_GU, REASON_LABEL, LIVING_LABEL, INCOME_OPTIONS } from "@/lib/options";
 import { useAct } from "@/components/useAct";
+import Mascot from "@/components/Mascot";
 
 const field = "mt-1 w-full rounded-xl border border-line bg-card px-4 py-3";
 
@@ -74,11 +75,33 @@ export function KeyLink({ path }: { path: string }) {
   );
 }
 
-export function DeleteCase({ auth }: { auth: Auth }) {
+export function DeleteCase({ auth, stats }: { auth: Auth; stats?: { doneTasks: number; dailyDays: number; docCount: number } }) {
   const [text, setText] = useState("");
   const { run, pending, err } = useAct();
   return (
     <div className="mt-3">
+      {stats && (stats.doneTasks > 0 || stats.dailyDays > 0) && (
+        <div className="mb-4 rounded-2xl bg-card p-4 shadow-card border border-line">
+          <div className="flex items-center gap-3">
+            <Mascot size={44} mood="cheer" />
+            <div>
+              <p className="font-semibold text-ink">그동안 회복을 위해 정말 고생 많으셨어요</p>
+              <p className="mt-0.5 text-xs text-muted">
+                가족들이 함께 총 {stats.doneTasks}개의 할 일을 해냈고, {stats.dailyDays}일의 저녁 안부를 기록했어요.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <aside className="mb-4 rounded-xl bg-[#fff4cc] p-3.5 text-xs text-[#7a5a00] leading-relaxed border border-[#f5e6a3]" aria-label="삭제 전 확인사항">
+        <p className="font-bold uppercase tracking-wide">삭제 전 마지막 확인</p>
+        <ul className="mt-1 list-disc pl-4 space-y-0.5">
+          <li>내년에 쓸 <b>연말정산 장애인증명서</b>와 <b>실손보험 청구 서류</b>는 모두 내려받으셨나요?</li>
+          {stats?.docCount ? <li>보관해 둔 <b>서류 글자 {stats.docCount}건</b>도 영구 삭제되어 다시 열람할 수 없어요.</li> : null}
+        </ul>
+      </aside>
+
       <label htmlFor="del" className="text-sm">확인을 위해 <b>삭제</b>라고 입력해주세요</label>
       <input id="del" value={text} onChange={(e) => setText(e.target.value)} className={field} autoComplete="off" />
       {err && <p role="alert" className="mt-1 text-warn">{err}</p>}

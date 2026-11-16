@@ -1,5 +1,6 @@
 import { BackLink } from "@/components/Icon";
 import { adminPage } from "@/lib/page-auth";
+import { loadDaily } from "@/lib/daily";
 import { db } from "@/lib/db";
 import { CaseForm, KeyLink, DeleteCase, FontSize, LeaveCase, UnlinkKakao } from "./SettingsForms";
 
@@ -9,7 +10,16 @@ export default async function Settings(props: PageProps<"/c/[token]/settings">) 
   const { token } = await props.params;
   const { actor, data, auth, base } = await adminPage(token);
   const kakaoOn = !!process.env.KAKAO_REST_KEY;
-  const { data: me } = await db.from("members").select("kakao_id").eq("id", actor.memberId).single();
+  const [{ data: me }, dailyList, { count: docCount }] = await Promise.all([
+    db.from("members").select("kakao_id").eq("id", actor.memberId).single(),
+    loadDaily(actor.caseId),
+    db.from("documents").select("id", { count: "exact", head: true }).eq("case_id", actor.caseId),
+  ]);
+  const stats = {
+    doneTasks: data.tasks.filter((t) => t.done).length,
+    dailyDays: dailyList.length,
+    docCount: docCount ?? 0,
+  };
   const justLinked = (await props.searchParams).kakao === "ok";
   return (
     <>
@@ -57,7 +67,7 @@ export default async function Settings(props: PageProps<"/c/[token]/settings">) 
         <section className="mt-10 border-t border-line pt-6" aria-labelledby="s4">
           <h2 id="s4" className="font-semibold">전체 삭제</h2>
           <p className="text-sm text-muted">퇴원 정보, 할 일, 매일 기록, 보관한 서류 글자, 가족 참여 기록이 서버에서 바로 지워지고 되돌릴 수 없어요. 가족의 링크도 더 이상 열리지 않아요.</p>
-          <DeleteCase auth={auth} />
+          <DeleteCase auth={auth} stats={stats} />
         </section>
       ) : (
         <section className="mt-10 border-t border-line pt-6" aria-labelledby="s4">

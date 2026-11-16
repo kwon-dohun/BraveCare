@@ -10,7 +10,7 @@ const GOOD: V = { med_morning: true, med_lunch: true, med_dinner: true, side_eff
 const EMPTY: V = { ...GOOD, med_morning: false, med_lunch: false, med_dinner: false };
 
 // 저녁에 환자와 통화하거나 마주 앉아 10초 만에 남기는 기록. 가족 모두(환자 본인 포함) 쓴다.
-export default function DailyForm({ auth, today }: { auth: Auth; today: Daily | null }) {
+export default function DailyForm({ auth, today, yesterday }: { auth: Auth; today: Daily | null; yesterday?: Daily | null }) {
   const [v, setV] = useState<V>(today ?? EMPTY);
   const [saved, setSaved] = useState(false);
   const { run, pending, err } = useAct();
@@ -24,9 +24,25 @@ export default function DailyForm({ auth, today }: { auth: Auth; today: Daily | 
 
   return (
     <div className="mt-5">
-      <button disabled={pending} onClick={() => save(GOOD)} className="w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">
-        오늘 약 다 먹었고 특이사항 없어요
-      </button>
+      <div className="space-y-2">
+        <button disabled={pending} onClick={() => save(GOOD)} className="w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">
+          오늘 약 다 먹었고 특이사항 없어요
+        </button>
+        {!today && yesterday && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              const { check_date, ...rest } = yesterday;
+              set(rest);
+            }}
+            className="w-full rounded-xl border border-line bg-card px-4 py-3 text-sm font-semibold text-accent shadow-card hover:bg-accent-soft flex items-center justify-between"
+          >
+            <span>어제 기록 불러오기</span>
+            <span className="text-xs font-normal text-muted">통증 {yesterday.pain}점 · 체온 {TEMP_LABEL[yesterday.temp].split(" (")[0]}</span>
+          </button>
+        )}
+      </div>
       <p className="mt-2 text-center text-sm text-muted">다른 점이 있으면 아래에서 골라주세요</p>
       {saved && <p role="status" className="mt-3 rounded-xl bg-accent-soft p-3 text-accent">오늘 기록을 저장했어요.</p>}
       {err && <p role="alert" className="mt-3 text-warn">{err}</p>}

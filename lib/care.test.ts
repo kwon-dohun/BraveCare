@@ -7,6 +7,7 @@ import { searchGlossary } from "./glossary.ts";
 import { isEmergency, verifyAnswer, parseChatJson, chips } from "./chat.ts";
 import { itemsFromText, maskIds, extractCautionTags } from "./extract.ts";
 import { phaseOf, seedTasks } from "./timeline.ts";
+import { identifyScannedPacketDocs } from "./packet.ts";
 
 const day = (d: string, p: Partial<Daily> = {}): Daily => ({ check_date: d, med_morning: true, med_lunch: true, med_dinner: true, side_effect: false, temp: "normal", wound_issue: false, pain: 2, bowel: "good", ...p });
 
@@ -200,4 +201,15 @@ test("서류 스캔 주의사항 키워드 추출: 보관법, 복약, 운전주�
   const tags2 = extractCautionTags(text2);
   assert.ok(tags2.includes("차광 보관"));
   assert.ok(tags2.includes("졸음·운전 주의"));
+});
+
+test("서류 보관함 ↔ 원무과 4종 패키지 교차 식별", () => {
+  const docs = [
+    { doc_type: "receipt", transcript: "진료비 계산서 영수증 총액 450,000원" },
+    { doc_type: "guide", transcript: "퇴원 확인서 및 입퇴원확인서 질병분류코드 S82.1" },
+  ];
+  const matched = identifyScannedPacketDocs(docs);
+  assert.ok(matched.includes("receipt"));
+  assert.ok(matched.includes("admission"));
+  assert.ok(!matched.includes("disabled_cert"));
 });

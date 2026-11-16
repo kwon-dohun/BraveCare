@@ -8,7 +8,9 @@ import { useAct } from "@/components/useAct";
 
 const S24 = [["yes", "전산 청구가 돼요"], ["no", "안 돼요"], ["", "아직 몰라요"]] as const;
 
-export default function PacketForm({ auth, hospital, silson24, checked }: { auth: Auth; hospital: string; silson24: "yes" | "no" | null; checked: string[] }) {
+export default function PacketForm({ auth, hospital, silson24, checked, scannedDocs = [] }: {
+  auth: Auth; hospital: string; silson24: "yes" | "no" | null; checked: string[]; scannedDocs?: string[];
+}) {
   const [name, setName] = useState(hospital);
   const [s24, setS24] = useState<string>(silson24 ?? "");
   const [sel, setSel] = useState(checked);
@@ -159,12 +161,12 @@ export default function PacketForm({ auth, hospital, silson24, checked }: { auth
 
         {s24 === "yes" && (
           <p role="status" className="mt-3 rounded-xl bg-accent-soft p-3 text-sm text-accent">
-            🎉 퇴원 후 실손24 앱에서 종이 서류 없이 간편하게 청구할 수 있어요. 그래도 진료비 영수증과 세부내역서는 다른 보험 청구를 위해 챙겨두면 좋아요.
+            [전산 청구 지원] 퇴원 후 실손24 앱에서 종이 서류 없이 간편하게 청구할 수 있어요. 그래도 진료비 영수증과 세부내역서는 다른 보험 청구를 위해 챙겨두면 좋아요.
           </p>
         )}
         {s24 === "no" && (
           <p role="status" className="mt-3 rounded-xl bg-warn-soft p-3 text-sm text-warn font-medium">
-            ⚠️ 실손24 미지원 병원입니다. 퇴원 날 원무과에서 아래 서류 4종 패키지를 떼지 않으면 보험금을 받지 못하고 병원을 다시 찾아야 해요!
+            [전산 청구 미지원] 퇴원 날 원무과에서 아래 서류 4종 패키지를 떼지 않으면 보험금을 받지 못하고 병원을 다시 찾아야 해요!
           </p>
         )}
         {s24 === "" && (
@@ -187,23 +189,41 @@ export default function PacketForm({ auth, hospital, silson24, checked }: { auth
         <h2 id="p2" className="font-semibold">
           2. 원무과에서 받을 서류 ({sel.length}/{PACKET.length})
         </h2>
+        {scannedDocs.length > 0 && (
+          <aside className="mt-2.5 rounded-xl bg-accent-soft p-3 text-sm text-accent" aria-label="보관함 연동 안내">
+            <p className="font-semibold text-xs tracking-wide uppercase">보관함 자동 확인</p>
+            <p className="mt-0.5">
+              서류 보관함에 이미 스캔해 둔 서류가 있어요. 남은 서류 위주로 원무과에서 챙기시면 돼요.
+            </p>
+          </aside>
+        )}
         <ul className={`mt-2 divide-y divide-line rounded-xl bg-card shadow-card ${pending ? "opacity-70" : ""}`}>
-          {PACKET.map((p) => (
-            <li key={p.id}>
-              <label className="flex items-start gap-3 px-4 py-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={sel.includes(p.id)}
-                  onChange={() => toggle(p.id)}
-                  className="mt-1 h-5 w-5 shrink-0 accent-primary"
-                />
-                <span>
-                  <span className={`font-medium ${sel.includes(p.id) ? "text-muted line-through" : ""}`}>{p.name}</span>
-                  <span className="block text-sm text-muted">{p.note}</span>
-                </span>
-              </label>
-            </li>
-          ))}
+          {PACKET.map((p) => {
+            const isScanned = scannedDocs.includes(p.id);
+            return (
+              <li key={p.id}>
+                <label className="flex items-start gap-3 px-4 py-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sel.includes(p.id)}
+                    onChange={() => toggle(p.id)}
+                    className="mt-1 h-5 w-5 shrink-0 accent-primary"
+                  />
+                  <span className="flex-1">
+                    <span className="flex items-center gap-2">
+                      <span className={`font-medium ${sel.includes(p.id) ? "text-muted line-through" : ""}`}>{p.name}</span>
+                      {isScanned && (
+                        <span className="rounded-md bg-accent-soft px-2 py-0.5 text-caption font-semibold text-accent">
+                          보관함에 있음
+                        </span>
+                      )}
+                    </span>
+                    <span className="block text-sm text-muted">{p.note}</span>
+                  </span>
+                </label>
+              </li>
+            );
+          })}
         </ul>
         <p className="mt-2 text-sm text-muted">
           창구에서 이 화면을 보여주고 &ldquo;이 서류들 발급해 주세요&rdquo;라고 하면 돼요. 발급비는 병원마다 달라요.

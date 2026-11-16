@@ -25,3 +25,20 @@ export function matchPacketDoc(docText: string): (typeof PACKET)[number] | null 
   }
   return null;
 }
+
+// 보관함의 서류(doc_type 및 transcript)를 기반으로 이미 확보된 원무과 4종 서류 식별
+export function identifyScannedPacketDocs(docs: { doc_type: string; transcript: string }[]): string[] {
+  const found = new Set<string>();
+  for (const d of docs) {
+    const t = (d.transcript ?? "").replace(/\s+/g, "");
+    if (d.doc_type === "receipt") {
+      found.add("receipt");
+      if (t.includes("세부내역") || t.includes("세부")) found.add("detail");
+    }
+    if (t.includes("진료비계산서") || t.includes("진료비영수증")) found.add("receipt");
+    if (t.includes("진료비세부내역서") || t.includes("비급여")) found.add("detail");
+    if (t.includes("입퇴원확인서") || t.includes("퇴원확인서") || t.includes("진단서")) found.add("admission");
+    if (t.includes("장애인증명서") || t.includes("장애인공제")) found.add("disabled_cert");
+  }
+  return [...found];
+}
