@@ -3,6 +3,7 @@ import type { CaseInput, Result } from "./benefits.ts";
 import { dayDiff } from "./benefits.ts";
 import { krDate } from "./format.ts";
 import { KIND_LABEL, type TaskKind } from "./timeline.ts";
+import { REASON_LABEL } from "./options.ts";
 
 interface T { title: string; kind: TaskKind; due_date: string | null; assignee_id: string | null; done: boolean }
 interface M { id: string; name: string; role: string }
@@ -19,6 +20,7 @@ export function caseBrief(d: {
   const dc = d.input.dischargeDate;
   out.push(dc ? `퇴원일: ${krDate(dc)} (${dayDiff(dc, d.today) > 0 ? `${dayDiff(dc, d.today)}일 남음` : dayDiff(dc, d.today) === 0 ? "오늘" : `퇴원 ${-dayDiff(dc, d.today)}일째`})` : "퇴원일: 아직 정해지지 않았어요");
   out.push(`오늘: ${krDate(d.today)}`);
+  out.push(`입원 이유: ${REASON_LABEL.find(([k]) => k === d.input.reason)?.[1] ?? "입력 안 함"}`);
   out.push(`가족: ${d.members.map((m) => m.name).join(", ")}`);
 
   const today = open.filter((t) => t.due_date === d.today);

@@ -104,10 +104,10 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
                     <p className="text-caption font-semibold text-accent">근거 · {t.a.source}</p>
                     <p className="mt-0.5 text-xs text-ink/80">“{t.a.sourceQuote}”</p>
                   </div>
-                ) : (
+                ) : t.a.unverified && (
                   <p className="mt-2.5 rounded-lg bg-warn-soft px-3 py-2 text-xs text-warn">자료에서 근거 문장을 찾지 못했어요. 참고만 하고 꼭 병원에 확인해 주세요.</p>
                 )}
-                <p className="mt-2.5 text-xs text-muted leading-relaxed">{t.a.advice}</p>
+                {t.a.advice && <p className="mt-2.5 text-xs text-muted leading-relaxed">{t.a.advice}</p>}
 
                 {/* 민감한 의료 질문 발생 시 -> 의료진에게 물어볼 질문 리스트 추가 연결 */}
                 {t.a.suggestDoctorQuestion && (

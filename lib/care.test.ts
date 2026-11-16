@@ -57,6 +57,9 @@ test("챗봇: 서류에 없는 근거 문장은 버린다", () => {
   assert.equal(verifyAnswer({ summary: "식후에 드세요", sourceQuote: "식후 30분  복용", advice: "" }, docs).sourceQuote, "식후 30분 복용");
   assert.equal(verifyAnswer({ summary: "빈속에 가능", sourceQuote: "빈속에 복용 가능", advice: "" }, docs).sourceQuote, "");
   assert.deepEqual(parseChatJson("죄송합니다"), { summary: "", sourceQuote: "", advice: "" });
+  // 경고는 '인용했는데 자료에 없을 때'만. 일반 상식 답변(인용 없음)에는 경고를 붙이지 않는다
+  assert.equal(verifyAnswer({ summary: "빈속에 가능", sourceQuote: "빈속에 복용 가능", advice: "" }, docs).unverified, true);
+  assert.equal(verifyAnswer({ summary: "부드러운 음식", sourceQuote: "", advice: "" }, docs).unverified, false);
 });
 
 test("챗봇: 응급 표현 감지, 일상 질문은 통과", () => {
@@ -121,6 +124,7 @@ test("챗봇 자료: 우리 집 정보는 한 줄에 사실 하나, 오늘 할 �
     results: evaluate(input, "2026-11-16"), status: {}, hospital: "", silson24: null, packet: [],
   });
   assert.match(text, /^퇴원일: 11월 18일 \(2일 남음\)$/m);
+  assert.match(text, /^입원 이유: 정형외과 수술/m);
   assert.match(text, /^- 11월 16일 서류 받기 \(행정, 민수\)$/m);
   assert.match(text, /^- 11월 27일 정형외과 외래 \(병원 일정, 담당자 없음\)$/m);
   assert.match(text, /^받을 가능성이 높은 지원 \d+개:$/m);
