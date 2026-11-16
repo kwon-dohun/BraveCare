@@ -29,8 +29,8 @@ interface Apply {
 }
 
 interface Rule {
-  // sido는 "서울" 또는 "!서울"(서울 제외), region은 여러 시·도 중 하나. income 조건이 있는데 소득을 모르면 엔진이 '소득 확인 필요'로 돌린다.
-  when: { sido?: string; region?: string[]; living?: Living[]; reason?: Reason[]; age?: "65+" | "under65"; income?: Income[] };
+  // sido는 "서울" 또는 "!서울"(서울 제외), sigungu는 시·군·구, region은 여러 시·도 중 하나. income 조건이 있는데 소득을 모르면 엔진이 '소득 확인 필요'로 돌린다.
+  when: { sido?: string; sigungu?: string | string[]; region?: string[]; living?: Living[]; reason?: Reason[]; age?: "65+" | "under65"; income?: Income[] };
   verdict: Verdict;
   reason: string;
   apply?: Apply; // 지역별로 창구가 다를 때 덮어쓴다
@@ -221,7 +221,8 @@ export function evaluate(input: CaseInput, today: string): Result[] {
       for (const r of b.rules) {
         const w = r.when;
         const sidoOk = !w.sido || (w.sido.startsWith("!") ? input.sido !== w.sido.slice(1) : input.sido === w.sido);
-        const rest = sidoOk && (!w.region || w.region.includes(input.sido))
+        const sigunguOk = !w.sigungu || (Array.isArray(w.sigungu) ? w.sigungu.includes(input.sigungu) : input.sigungu === w.sigungu);
+        const rest = sidoOk && sigunguOk && (!w.region || w.region.includes(input.sido))
           && (!w.living || w.living.includes(input.living)) && (!w.reason || w.reason.includes(input.reason)) && (!w.age || w.age === age);
         if (!rest) continue;
         if (w.income) {

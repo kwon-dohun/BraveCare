@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { updateCase, deleteCase, leaveCase, unlinkKakao } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import type { CaseInput, Income, Living, Reason } from "@/lib/benefits";
-import { SIDO, SEOUL_GU, REASON_LABEL, LIVING_LABEL, INCOME_OPTIONS } from "@/lib/options";
+import { SIDO, SIGUNGU, SEOUL_GU, REASON_LABEL, LIVING_LABEL, INCOME_OPTIONS } from "@/lib/options";
 import { useAct } from "@/components/useAct";
 import Mascot from "@/components/Mascot";
 
@@ -14,7 +14,7 @@ export function CaseForm({ auth, input }: { auth: Auth; input: CaseInput }) {
   const [saved, setSaved] = useState(false);
   const { run, pending, err } = useAct();
   const set = (p: Partial<typeof v>) => { setSaved(false); setV((s) => ({ ...s, ...p })); };
-  const ok = (v.undecided || !!v.date) && /^\d{4}$/.test(v.birth) && (v.sido !== "서울" || !!v.sigungu);
+  const ok = (v.undecided || !!v.date) && /^\d{4}$/.test(v.birth) && (!SIGUNGU[v.sido]?.length || !!v.sigungu);
 
   return (
     <form
@@ -35,12 +35,26 @@ export function CaseForm({ auth, input }: { auth: Auth; input: CaseInput }) {
       </div>
       <div>
         <label htmlFor="ss" className="text-sm font-medium">지내실 곳</label>
-        <select id="ss" value={v.sido} onChange={(e) => set({ sido: e.target.value, sigungu: "" })} className={field}>{SIDO.map((s) => <option key={s}>{s}</option>)}</select>
-        {v.sido === "서울" && (
-          <select aria-label="자치구" value={v.sigungu} onChange={(e) => set({ sigungu: e.target.value })} className={field}>
-            <option value="">자치구 선택</option>{SEOUL_GU.map((s) => <option key={s}>{s}</option>)}
+        <div className="grid grid-cols-2 gap-2">
+          <select
+            id="ss"
+            value={v.sido}
+            onChange={(e) => {
+              const nextSido = e.target.value;
+              const list = SIGUNGU[nextSido] ?? [];
+              set({ sido: nextSido, sigungu: list.length === 1 ? list[0] : "" });
+            }}
+            className={field}
+          >
+            {SIDO.map((s) => <option key={s}>{s}</option>)}
           </select>
-        )}
+          {SIGUNGU[v.sido]?.length ? (
+            <select aria-label="시·군·구" value={v.sigungu} onChange={(e) => set({ sigungu: e.target.value })} className={field}>
+              <option value="">시·군·구 선택</option>
+              {SIGUNGU[v.sido].map((s) => <option key={s}>{s}</option>)}
+            </select>
+          ) : null}
+        </div>
       </div>
       <div>
         <label htmlFor="sr" className="text-sm font-medium">입원 이유</label>

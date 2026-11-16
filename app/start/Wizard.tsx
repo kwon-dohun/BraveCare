@@ -60,7 +60,7 @@ export default function Wizard() {
 
   const cur = new Date().getFullYear();
   const birthOk = /^\d{4}$/.test(d.birth) && Number(d.birth) >= 1900 && Number(d.birth) <= cur;
-  const regionOk = d.sido !== "서울" || !!d.gu;
+  const regionOk = !SIGUNGU[d.sido]?.length || !!d.gu;
   const dateOk = d.undecided || !!d.date;
   const complete = dateOk && birthOk && regionOk && d.reason && d.living && d.income && !!d.name.trim();
 
@@ -117,15 +117,26 @@ export default function Wizard() {
             <label htmlFor="by" className="mt-5 block text-sm font-medium">태어난 해</label>
             <input id="by" inputMode="numeric" maxLength={4} placeholder="예: 1954" value={d.birth} onChange={(e) => set({ birth: e.target.value.replace(/\D/g, "") })} className={field} />
             <label htmlFor="sd" className="mt-5 block text-sm font-medium">퇴원 후 지낼 곳</label>
-            <select id="sd" value={d.sido} onChange={(e) => set({ sido: e.target.value, gu: "" })} className={field}>
-              {SIDO.map((s) => <option key={s}>{s}</option>)}
-            </select>
-            {d.sido === "서울" && (
-              <select aria-label="자치구" value={d.gu} onChange={(e) => set({ gu: e.target.value })} className={field}>
-                <option value="">자치구 선택</option>
-                {SEOUL_GU.map((s) => <option key={s}>{s}</option>)}
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                id="sd"
+                value={d.sido}
+                onChange={(e) => {
+                  const nextSido = e.target.value;
+                  const list = SIGUNGU[nextSido] ?? [];
+                  set({ sido: nextSido, gu: list.length === 1 ? list[0] : "" });
+                }}
+                className={field}
+              >
+                {SIDO.map((s) => <option key={s}>{s}</option>)}
               </select>
-            )}
+              {SIGUNGU[d.sido]?.length ? (
+                <select aria-label="시·군·구" value={d.gu} onChange={(e) => set({ gu: e.target.value })} className={field}>
+                  <option value="">시·군·구 선택</option>
+                  {SIGUNGU[d.sido].map((s) => <option key={s}>{s}</option>)}
+                </select>
+              ) : null}
+            </div>
             <p className="mt-3 text-sm text-muted">나이와 지역에 따라 받을 수 있는 지원이 달라져요.</p>
             {primary(() => next(), nextLabel, !birthOk || !regionOk)}
           </>

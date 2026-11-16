@@ -55,6 +55,13 @@ test("지역 제도: 다른 지역이면 해당 없음, 상병수당은 시범 �
   assert.equal(by(evaluate(worker, T), "sickness_benefit").verdict, "no");
 });
 
+test("창원시 등 상병수당 시범지역 시·군·구 맞춤 판정", () => {
+  const changwon = { ...worker, sido: "경남", sigungu: "창원시" };
+  const res = by(evaluate(changwon, T), "sickness_benefit");
+  assert.equal(res.verdict, "check");
+  assert.match(res.reason, /상병수당 시범지역/);
+});
+
 test("마감: 긴급복지는 퇴원 전까지, 재난적의료비는 퇴원 후 180일, 미정이면 unknown", () => {
   assert.deepEqual(by(evaluate(worker, T), "emergency_medical").deadline, { state: "open", daysLeft: 5, endDate: "2026-11-20" });
   assert.equal(by(evaluate(worker, "2026-11-21"), "emergency_medical").deadline.state, "closed");
