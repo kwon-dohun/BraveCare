@@ -28,20 +28,21 @@ export default async function Calendar(props: PageProps<"/c/[token]/calendar">) 
 
   return (
     <>
-      {!data.input.dischargeDate && (
-        <Link href={`${base}/settings`} className="mb-4 flex items-center justify-between rounded-xl bg-accent-soft px-4 py-3 text-sm text-accent">
-          <span>퇴원일을 정하면 지원 마감일과 일정이 달력에 자동으로 채워져요<span className="block font-semibold">퇴원일 확정하기</span></span>
-          <Icon name="right" size={16} />
-        </Link>
-      )}
       <div className="flex items-center justify-between">
         <h1 className="font-display text-title">일정</h1>
         <Link href={href(`d=${today}`)} className="flex min-h-0 items-center rounded-full bg-card px-3 py-1.5 text-sm font-medium shadow-card">오늘</Link>
       </div>
 
       {!data.input.dischargeDate && (
-        <Link href={`${base}/settings`} className="mt-3 flex items-center gap-3 rounded-xl bg-accent-soft p-3 text-sm text-accent">
-          <Mascot size={36} mood="rest" />퇴원일이 정해지면 할 일이 날짜에 맞춰 달력에 들어가요. 정해졌다면 눌러서 입력해 주세요.
+        <Link href={`${base}/settings`} className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-accent-soft p-3.5 text-sm text-accent hover:opacity-95 shadow-sm">
+          <div className="flex items-center gap-3 min-w-0">
+            <Mascot size={40} mood="rest" />
+            <div className="min-w-0">
+              <p className="font-semibold text-ink">퇴원일을 정하면 달력이 자동으로 채워져요</p>
+              <p className="text-xs text-accent">날짜 입력하고 일정 확인하기</p>
+            </div>
+          </div>
+          <Icon name="right" size={18} className="shrink-0 text-accent" />
         </Link>
       )}
 
