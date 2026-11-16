@@ -27,6 +27,7 @@ type Entry = Omit<AiBenefitItem, "matchReason"> & { when: (p: ExtraParams) => st
 
 const lowIncome = (p: ExtraParams) => p.income === "basic" || p.income === "mid" || p.extraTags.includes("기초생활·차상위");
 
+// 2026-11-16 기관 누리집·공지와 대조함(아산재단 SOS 의료비, 질병관리청 희귀질환 헬프라인, 보훈 1577-0606, 공단 1577-1000, 129). 해마다 다시 확인.
 const CATALOG: Entry[] = [
   {
     id: "hospital_sw", category: "상담 창구", organization: "입원한 병원", title: "의료사회복지팀(사회사업팀) 상담",
@@ -45,16 +46,16 @@ const CATALOG: Entry[] = [
   {
     id: "call129", category: "상담 창구", organization: "보건복지상담센터 · 복지로", title: "129 전화 상담 / 복지로 서비스 찾기",
     summary: "전화 129(보건복지상담센터)나 복지로 누리집에서 우리 조건에 맞는 복지 서비스를 찾아볼 수 있어요.",
-    howToCheck: "전화 129, 또는 복지로(bokjiro.go.kr)의 '복지서비스 찾기'",
+    howToCheck: "국번 없이 129(평일 9~18시), 또는 복지로(bokjiro.go.kr)의 '서비스 찾기'와 '모의계산'",
     searchQuery: "복지로 복지서비스 찾기",
     when: () => "전국 어디서나 쓸 수 있어요.", words: ["복지", "상담", "지원금"],
   },
   {
-    id: "asan", category: "공익재단", organization: "아산사회복지재단", title: "의료비 지원 사업",
-    summary: "형편이 어려운 가정의 환자 의료비를 지원하는 사업을 운영해요. 대상과 지원 범위는 재단 심사로 정해져요.",
-    howToCheck: "입원 병원 의료사회복지팀을 통해 신청해요.",
-    searchQuery: "아산사회복지재단 의료비 지원",
-    when: (p) => (lowIncome(p) ? "소득 구간을 기초·차상위 또는 중위소득 이하로 입력하셨어요." : null), words: ["병원비", "의료비", "치료비", "재단"],
+    id: "asan", category: "공익재단", organization: "아산사회복지재단", title: "SOS 의료비 지원",
+    summary: "수술처럼 급한 치료가 필요한 저소득 환자(기초·차상위 포함, 기준 중위소득 80% 이하)의 치료비를 심사해 전부 또는 일부 지원해요. 만성질환·치과·미용성형·교통사고 등은 빠져요. 아산병원이 아닌 병원의 환자도 신청할 수 있어요.",
+    howToCheck: "지금 입원한 병원의 의료사회복지사를 통해 재단에 신청해요.",
+    searchQuery: "아산사회복지재단 SOS 의료비 지원",
+    when: (p) => (lowIncome(p) ? "소득 구간을 낮게 입력하셨어요. 이 사업은 기준 중위소득 80% 이하가 기준이에요." : null), words: ["병원비", "의료비", "치료비", "재단"],
   },
   {
     id: "chest", category: "공익재단", organization: "사회복지공동모금회(사랑의열매)", title: "의료비 등 긴급 지원",
@@ -65,15 +66,15 @@ const CATALOG: Entry[] = [
   },
   {
     id: "assistive_device", category: "공적 제도", organization: "국민건강보험공단", title: "장애인 보조기기 급여",
-    summary: "등록 장애인이 휠체어·보청기 같은 보조기기를 살 때 비용 일부를 지원해요. 품목마다 기준이 있고 의사 처방이 필요해요.",
+    summary: "등록 장애인이 휠체어·보청기 같은 보조기기를 살 때 비용 일부를 지원해요. 품목마다 기준이 있고, 전문의 처방전을 받아 공단에 내서 신청해요.",
     howToCheck: "국민건강보험공단 지사 또는 고객센터 1577-1000",
     searchQuery: "건강보험 장애인 보조기기 급여",
     when: (p) => (p.extraTags.includes("장애인 등록") ? "장애인 등록을 골라주셨어요." : null), words: ["보청기", "휠체어", "보조기기", "보조기구"],
   },
   {
     id: "rare_disease", category: "공적 제도", organization: "질병관리청 · 보건소", title: "희귀질환자 의료비 지원",
-    summary: "정해진 희귀질환을 앓는 환자 중 소득 등 기준에 맞는 가구에 의료비를 지원해요.",
-    howToCheck: "주소지 보건소에 대상 질환인지 문의하세요.",
+    summary: "산정특례에 등록된 희귀질환자 중 환자 가구와 부양의무자의 소득·재산 기준에 맞으면 의료비를 지원해요. 신청한 날 이후의 의료비만 지원되니 대상이면 빨리 신청하세요.",
+    howToCheck: "주소지 보건소에 신청하거나 희귀질환 헬프라인(helpline.kdca.go.kr)에서 온라인 신청",
     searchQuery: "희귀질환자 의료비 지원사업",
     when: (p) => (p.extraTags.includes("특정 희귀·난치질환") ? "희귀·난치질환을 골라주셨어요." : null), words: ["희귀", "난치"],
   },
@@ -86,7 +87,7 @@ const CATALOG: Entry[] = [
   },
   {
     id: "blood_cancer", category: "공익재단", organization: "한국혈액암협회", title: "혈액암 환우 지원 사업",
-    summary: "혈액암 환우와 가족을 위한 지원 사업을 운영해요. 해마다 사업 내용이 달라서 협회 공지를 확인해야 해요. 혈액암이 아니면 해당하지 않아요.",
+    summary: "혈액암 환우와 가족에게 치료비·약제비 지원, 상담, 교육 같은 사업을 운영해요. 신청 조건은 해마다 공지되니 협회에 확인해야 해요. 혈액암이 아니면 해당하지 않아요.",
     howToCheck: "한국혈액암협회 누리집 공지 또는 전화 문의",
     searchQuery: "한국혈액암협회 환우 지원사업",
     when: (p) => (p.reason === "cancer" ? "입원 이유를 암 치료로 입력하셨어요." : null), words: ["혈액암", "백혈병", "림프종"],
