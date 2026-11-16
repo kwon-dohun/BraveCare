@@ -22,17 +22,17 @@ export interface SavedDoc {
 
 interface Row extends DocItem { quote: string; include: boolean }
 
-// 고화질 서류의 작은 글자도 식별할 수 있도록 1800px 캔버스로 변환하며, 브라우저 호환성을 위해 Image fallback 지원
+// 스마트폰 고화질 원본(10~20MB)을 1200px / 수백 KB로 전처리 압축하여 Vercel 타임아웃 및 OpenAI 페이로드 초과를 방지
 async function toJpegBase64(file: Blob): Promise<string> {
   const drawAndExport = (source: CanvasImageSource, width: number, height: number): string => {
-    const s = Math.min(1, 1800 / Math.max(width, height));
+    const s = Math.min(1, 1200 / Math.max(width, height));
     const c = document.createElement("canvas");
     c.width = Math.round(width * s);
     c.height = Math.round(height * s);
     const ctx = c.getContext("2d");
     if (!ctx) throw new Error("캔버스를 초기화하지 못했어요");
     ctx.drawImage(source, 0, 0, c.width, c.height);
-    return c.toDataURL("image/jpeg", 0.88).split(",")[1];
+    return c.toDataURL("image/jpeg", 0.82).split(",")[1];
   };
 
   try {

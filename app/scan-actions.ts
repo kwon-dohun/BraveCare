@@ -4,7 +4,7 @@ import { db, resolve, logEvent, type Auth } from "@/lib/db";
 import { act } from "@/lib/push";
 import { todaySeoul } from "@/lib/load";
 import { askJson, hasModel } from "@/lib/openai";
-import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, extractCautionTags, type DocItem, type DocType } from "@/lib/extract";
+import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, extractCautionTags, validateTranscript, type DocItem, type DocType } from "@/lib/extract";
 import { CHAT_PROMPT, parseChatJson, verifyAnswer, type ChatAnswer, type Source } from "@/lib/chat";
 import { DOC_TYPE_LABEL } from "@/lib/extract";
 import { loadCase } from "@/lib/load";
@@ -41,10 +41,9 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{
   if (raw === null) throw new Error("지금은 서류 인식이 어려워요. 병원 문자를 복사해 ‘병원 문자·알림톡 붙여넣기’에 넣으면 바로 일정을 만들 수 있어요. 아니면 잠시 뒤 다시 시도하거나 할 일을 직접 추가해 주세요");
   const parsed = parseModelJson(raw);
 
-  // 글자가 전혀 인식되지 않았거나 병원 서류가 아닌 경우 (얼굴 사진, 사물, 빈 종이 등)
-  const trimmed = parsed.transcript.trim();
-  if (trimmed.length < 5) {
-    throw new Error("사진에서 병원 서류 글자를 읽지 못했어요. 얼굴이나 사물이 아닌 진단서, 퇴원 안내문, 약봉투, 영수증 등 병원 서류를 밝은 곳에서 글자가 잘 보이게 찍어주세요.");
+  // 서버 방어막: 의료/행정 키워드 및 길이 검증 (셀카, 사물, 무관한 사진 원천 차단)
+  if (!validateTranscript(parsed.transcript)) {
+    throw new Error("유효한 병원 서류(진단서, 퇴원 안내문, 약봉투, 영수증 등)를 찾을 수 없어요. 병원 서류가 잘 보이게 다시 촬영해 주세요.");
   }
 
   // 원문에 없는 항목은 여기서 버린다

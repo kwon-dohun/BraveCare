@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { verifyItems, parseDate, parseModelJson, toDocItems } from "./extract.ts";
+import { verifyItems, parseDate, parseModelJson, toDocItems, validateTranscript } from "./extract.ts";
 
 const TRANSCRIPT = "퇴원 안내문\n1. 외래 예약: 2026년 11월 27일 오전 10시 정형외과\n2. 아스피린 100mg 하루 1회 식후 복용\n문의 02-123-4567";
 
@@ -52,4 +52,18 @@ test("진단서·확인서 문서 파싱", () => {
   const res = parseModelJson('{"docType":"certificate","transcript":"진단서 질병분류기호 C16","items":[]}');
   assert.equal(res.docType, "certificate");
   assert.equal(res.transcript, "진단서 질병분류기호 C16");
+});
+
+test("서버 방어막 validateTranscript: 의료 키워드 및 길이 검증", () => {
+  // 정상 의료 서류 (진단서, 퇴원안내문, 영수증 등) 통과
+  assert.equal(validateTranscript("서울병원 정형외과 퇴원안내문 환자 홍길동 11월 27일 외래 방문"), true);
+  assert.equal(validateTranscript("진료비 계산서 및 영수증 본인부담금 450,000원 납부 완료"), true);
+
+  // 셀카, 풍경, 사물 등 의료 키워드 없는 사진 차단
+  assert.equal(validateTranscript("오늘 날씨가 너무 좋아서 친구와 카페에서 커피를 마셨다"), false);
+  assert.equal(validateTranscript("맥북 프로 16인치 M3 맥스 스페이스 블랙"), false);
+
+  // 20자 미만의 너무 짧은 텍스트 차단
+  assert.equal(validateTranscript("서울병원 진료"), false);
+  assert.equal(validateTranscript(""), false);
 });

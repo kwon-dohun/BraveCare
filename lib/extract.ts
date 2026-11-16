@@ -16,6 +16,16 @@ export const DOC_TYPE_LABEL: Record<DocType, string> = { receipt: "영수증", m
 // 주민등록번호 뒷자리는 저장하지 않는다
 export const maskIds = (s: string) => s.replace(/(\d{6})\s*-\s*[1-8]\d{6}/g, "$1-*******");
 
+// 유효한 의료/행정 서류인지 검증하는 서버 방어선 (셀카, 사물, 일상 사진 원천 차단)
+export const MEDICAL_KEYWORDS_REGEX =
+  /병원|의원|의료|진료|처방|영수증|진단|소견|환자|질병|입원|퇴원|외래|복약|투약|약국|검사|급여|비급여|본인부담|원무|수술|치료|재활|상병|질환|주치의|병동/;
+
+export function validateTranscript(transcript: string): boolean {
+  const t = norm(transcript);
+  if (t.length < 20) return false;
+  return MEDICAL_KEYWORDS_REGEX.test(t);
+}
+
 export const EXTRACT_PROMPT = `너는 병원에서 받은 서류(진단서·소견서·입퇴원확인서, 퇴원 안내문, 약봉투·처방전, 영수증) 사진을 글자 그대로 옮겨 적는 도구야. 의료 판단·해석·요약·보충 설명은 절대 하지 마.
 1) transcript: 사진에 보이는 글자를 있는 그대로 옮겨 적어. 진단명, 질병분류기호(질병코드), 입원·퇴원·진단 날짜, 의사 소견, 복약 방법, 검사/외래 일정, 비용 내역 등을 빠짐없이 적어. 사진이 흐리거나 글자가 없는 사물/얼굴 사진이면 빈 문자열("")로 둬.
 2) items: transcript 안의 문장 중 가족 캘린더 일정이나 할 일이 될 만한 것을 골라. (진단서나 영수증처럼 외래/검사 일정이 없으면 items는 빈 배열 []로 둬). 각 항목은:
