@@ -84,8 +84,8 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
 
       <div className="space-y-4" aria-live="polite">
         <Bot>
-          <p>안녕하세요, 씩씩이예요. 우리 집 일정과 할 일, 받을 수 있는 지원{docCount ? `, 보관한 서류 ${docCount}장` : ""}을 보고 답해 드려요.</p>
-          <p className="mt-1 text-sm text-muted">진단이나 약 처방은 하지 않아요. 몸 상태는 꼭 의료진에게 확인해 주세요.</p>
+          <p className="text-callout leading-relaxed">안녕하세요, 씩씩이예요. 우리 집 일정과 할 일, 받을 수 있는 지원{docCount ? `, 보관한 서류 ${docCount}장` : ""}을 보고 답해 드려요.</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted">진단이나 약 처방은 하지 않아요. 몸 상태는 꼭 의료진에게 확인해 주세요.</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {chips.map((c) => (
               <button key={c} disabled={busy} onClick={() => ask(c)} className="h-8 min-h-0 rounded-full bg-accent-soft px-3 text-xs font-medium text-accent disabled:opacity-50">{c}</button>
@@ -97,23 +97,22 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
           <div key={i} className="view-in space-y-3">
             <p className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-callout text-ink">{t.q}</p>
             {t.a ? (
-              <Bot>
-                <p className="font-semibold leading-relaxed">{t.a.summary}</p>
+              <Answer a={t.a} onGrow={() => end.current?.scrollIntoView({ block: "end" })}>
                 {t.a.sourceQuote ? (
                   <div className="mt-2.5 rounded-lg bg-background px-3 py-2">
                     <p className="text-caption font-semibold text-accent">근거 · {t.a.source}</p>
-                    <p className="mt-0.5 text-xs text-ink/80">“{t.a.sourceQuote}”</p>
+                    <p className="mt-0.5 text-sm leading-relaxed text-ink/80">“{t.a.sourceQuote}”</p>
                   </div>
                 ) : t.a.unverified && (
-                  <p className="mt-2.5 rounded-lg bg-warn-soft px-3 py-2 text-xs text-warn">자료에서 근거 문장을 찾지 못했어요. 참고만 하고 꼭 병원에 확인해 주세요.</p>
+                  <p className="mt-2.5 rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">자료에서 근거 문장을 찾지 못했어요. 참고만 하고 꼭 병원에 확인해 주세요.</p>
                 )}
-                {t.a.advice && <p className="mt-2.5 text-xs text-muted leading-relaxed">{t.a.advice}</p>}
+                {t.a.advice && <p className="mt-2.5 text-sm leading-relaxed text-muted">{t.a.advice}</p>}
 
                 {/* 민감한 의료 질문 발생 시 -> 의료진에게 물어볼 질문 리스트 추가 연결 */}
                 {t.a.suggestDoctorQuestion && (
                   <div className="mt-3 rounded-xl border border-primary/40 bg-accent-soft p-3">
                     <p className="text-caption font-semibold text-accent">진료실에서 의료진에게 여쭤볼 수 있어요</p>
-                    <p className="mt-1 text-xs font-medium text-ink">“{t.a.suggestDoctorQuestion}”</p>
+                    <p className="mt-1 text-sm leading-relaxed text-ink">“{t.a.suggestDoctorQuestion}”</p>
                     {addedQ[t.a.suggestDoctorQuestion] ? (
                       <p className="mt-2 text-caption font-semibold text-accent">✓ 의료진에게 물어볼 질문에 등록했어요 (외래 리포트에도 나와요)</p>
                     ) : (
@@ -128,9 +127,9 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
                     )}
                   </div>
                 )}
-              </Bot>
+              </Answer>
             ) : t.err ? (
-              <Bot><p className="text-sm text-warn">{t.err}</p></Bot>
+              <Bot><p className="text-callout leading-relaxed text-warn">{t.err}</p></Bot>
             ) : (
               <ThinkingBubble />
             )}
@@ -160,6 +159,34 @@ function Bot({ children, mascotClass }: { children: React.ReactNode; mascotClass
       <Mascot size={36} className={`mt-1 ${mascotClass ?? ""}`} />
       <div className="max-w-[85%] rounded-2xl rounded-tl-md bg-card px-4 py-3 shadow-card">{children}</div>
     </div>
+  );
+}
+
+// 답은 빠르게 타이핑하듯 나오고, 다 나오면 근거·조언이 이어서 떠오른다
+function Answer({ a, onGrow, children }: { a: ChatAnswer; onGrow: () => void; children: React.ReactNode }) {
+  const full = a.summary;
+  // 답이 도착한 뒤에만 그려지므로 window를 바로 읽어도 된다. 움직임 줄이기면 한 번에 보여 준다
+  const [n, setN] = useState(() => (window.matchMedia("(prefers-reduced-motion: reduce)").matches ? full.length : 0));
+  useEffect(() => {
+    let i = n;
+    if (i >= full.length) return;
+    const id = setInterval(() => {
+      i = Math.min(full.length, i + 2);
+      setN(i);
+      if (i % 20 === 0 || i === full.length) onGrow();
+      if (i === full.length) clearInterval(id);
+    }, 18);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 답 하나에 한 번만
+  }, [full]);
+  const done = n >= full.length;
+  return (
+    <Bot>
+      <p className="text-callout leading-relaxed" aria-label={full}>
+        <span aria-hidden>{full.slice(0, n)}</span>
+      </p>
+      {done && <div className="view-in">{children}</div>}
+    </Bot>
   );
 }
 

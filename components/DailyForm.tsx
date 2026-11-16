@@ -51,7 +51,7 @@ export default function DailyForm({ auth, today, yesterday }: { auth: Auth; toda
         <legend className="mb-2 w-full text-sm font-semibold">약</legend>
         <div className="grid w-full grid-cols-3 gap-2">
           {([["med_morning", "아침"], ["med_lunch", "점심"], ["med_dinner", "저녁"]] as const).map(([k, l]) => (
-            <button key={k} aria-pressed={v[k]} onClick={() => set({ [k]: !v[k] })} className={`${pill(v[k])} flex flex-col items-center leading-tight`}><span>{l}</span><span className={`text-xs ${v[k] ? "text-accent" : "font-normal text-muted"}`}>{v[k] ? "먹음" : "안 먹음"}</span></button>
+            <button key={k} aria-pressed={v[k]} onClick={() => set({ [k]: !v[k] })} className={`${pill(v[k])} flex flex-col items-center justify-center leading-tight`}><span>{l}</span><span className={`text-xs ${v[k] ? "text-accent" : "font-normal text-muted"}`}>{v[k] ? "먹음" : "안 먹음"}</span></button>
           ))}
         </div>
         {check("속쓰림·어지러움 같은 불편함이 있었어요", v.side_effect, (b) => set({ side_effect: b }))}
@@ -60,7 +60,7 @@ export default function DailyForm({ auth, today, yesterday }: { auth: Auth; toda
       <div className={box}><fieldset>
         <legend className="mb-2 w-full text-sm font-semibold">체온</legend>
         <div className="grid w-full grid-cols-3 gap-2">
-          {(Object.keys(TEMP_LABEL) as V["temp"][]).map((k) => <button key={k} aria-pressed={v.temp === k} onClick={() => set({ temp: k })} className={`${pill(v.temp === k)} flex flex-col items-center leading-tight`}><span>{TEMP_LABEL[k].split(" (")[0]}</span>{TEMP_LABEL[k].includes("(") && <span className="text-xs font-normal opacity-80">{TEMP_LABEL[k].split(" (")[1].replace(")", "")}</span>}</button>)}
+          {(Object.keys(TEMP_LABEL) as V["temp"][]).map((k) => <button key={k} aria-pressed={v.temp === k} onClick={() => set({ temp: k })} className={`${pill(v.temp === k)} flex flex-col items-center justify-center leading-tight`}><span>{TEMP_LABEL[k].split(" (")[0]}</span>{TEMP_LABEL[k].includes("(") && <span className="text-xs font-normal opacity-80">{TEMP_LABEL[k].split(" (")[1].replace(")", "")}</span>}</button>)}
         </div>
         {check("수술 부위에 진물이 나거나 벌어졌어요", v.wound_issue, (b) => set({ wound_issue: b }))}
       </fieldset></div>

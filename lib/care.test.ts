@@ -57,6 +57,7 @@ test("챗봇: 서류에 없는 근거 문장은 버린다", () => {
   assert.equal(verifyAnswer({ summary: "식후에 드세요", sourceQuote: "식후 30분  복용", advice: "" }, docs).sourceQuote, "식후 30분 복용");
   assert.equal(verifyAnswer({ summary: "빈속에 가능", sourceQuote: "빈속에 복용 가능", advice: "" }, docs).sourceQuote, "");
   assert.deepEqual(parseChatJson("죄송합니다"), { summary: "", sourceQuote: "", advice: "" });
+  assert.equal(verifyAnswer({ summary: "죽이 좋아요. 병원에 확인해 보세요.", sourceQuote: "", advice: "병원에 확인해 보세요." }, docs).summary, "죽이 좋아요.");
   // 경고는 '인용했는데 자료에 없을 때'만. 일반 상식 답변(인용 없음)에는 경고를 붙이지 않는다
   assert.equal(verifyAnswer({ summary: "빈속에 가능", sourceQuote: "빈속에 복용 가능", advice: "" }, docs).unverified, true);
   assert.equal(verifyAnswer({ summary: "부드러운 음식", sourceQuote: "", advice: "" }, docs).unverified, false);

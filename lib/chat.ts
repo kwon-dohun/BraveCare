@@ -33,6 +33,7 @@ export const CHAT_PROMPT = `너는 퇴원 환자 보호자를 돕는 안내 도�
 - 의학 용어는 쉬운 말로 풀어서 말해. 보호자는 의료 지식이 없어.
 - sourceQuote에는 [자료]에 있는 문장을 한 글자도 바꾸지 않고 그대로 복사해. 근거가 될 문장이 없으면 빈 문자열.
 - 일반 상식으로도 말하기 어려운 내용(이 환자에게만 해당하는 상태 판단 등)이면 summary에 "이건 환자 상태를 아는 의료진이 답해야 해요"라고 쓰고, advice에 누구에게(병원 간호사실, 약국, 관할 기관 등) 물어보면 되는지 적어.
+- "병원에 확인해 보세요" 같은 확인 권유는 advice에만 한 번 쓰고 summary에 되풀이하지 마.
 - 이모지와 특수 기호는 쓰지 마. 한국어 존댓말, 짧고 다정하게.
 JSON만 출력해: {"summary": "핵심 한두 문장", "sourceQuote": "자료 원문 그대로", "advice": "다음에 할 일이나 누구에게 확인할지 한두 문장", "suggestDoctorQuestion": "외래 질문 추천 (필요 시 한 줄, 없으면 빈 문자열)"}`;
 
@@ -57,7 +58,8 @@ export function verifyAnswer(a: ChatAnswer, sources: Source[] | string[]): ChatA
   const q = norm(a.sourceQuote);
   const hit = q.length >= 2 ? list.find((s) => norm(s.text).includes(q)) : undefined;
   return {
-    summary: a.summary || "답을 만들지 못했어요",
+    // 모델이 확인 권유를 본문에도 되풀이하면 본문 쪽을 지운다
+    summary: (a.advice && a.summary.includes(a.advice) ? a.summary.replace(a.advice, "").trim() : a.summary) || "답을 만들지 못했어요",
     sourceQuote: hit ? q : "",
     source: hit?.label,
     advice: a.advice || (a.summary ? "" : "정확한 내용은 병원 간호사실이나 약국에 확인해 보세요."),
