@@ -183,11 +183,11 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
                       isSel
                         ? "bg-ink font-semibold text-white shadow-sm"
                         : isDis
-                        ? "bg-[#ffe9dc] font-bold text-[#9a3f12] ring-2 ring-[#ef7a4a]"
+                        ? "bg-[#ffede2] font-bold text-[#c2410c] ring-2 ring-[#f97316]"
                         : hasVisit
-                        ? "bg-[#e3f0ff] font-semibold text-[#1f5aa6] ring-1.5 ring-[#3b82d6]"
+                        ? "bg-[#e8f1fd] font-bold text-[#1d4ed8] ring-1.5 ring-[#3b82f6]"
                         : isToday
-                        ? "bg-accent-soft font-semibold text-accent"
+                        ? "bg-accent-soft font-semibold text-accent ring-1 ring-accent/30"
                         : i % 7 === 0
                         ? "text-[#c2410c]"
                         : ""
@@ -197,9 +197,9 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
                     </span>
                     <span className="flex h-3 items-center">
                       {isDis ? (
-                        <span className="rounded bg-[#ef7a4a] px-1 text-[9px] font-bold text-white leading-tight">퇴원</span>
+                        <span className="rounded bg-[#ffede2] px-1 py-0.2 text-[10px] font-bold text-[#c2410c] border border-[#f97316]/30 leading-tight">퇴원</span>
                       ) : hasVisit ? (
-                        <span className="rounded bg-[#3b82d6] px-1 text-[9px] font-bold text-white leading-tight">외래</span>
+                        <span className="rounded bg-[#e8f1fd] px-1 py-0.2 text-[10px] font-bold text-[#1d4ed8] border border-[#3b82f6]/30 leading-tight">외래</span>
                       ) : (
                         <span className="flex h-1.5 gap-0.5">
                           {kinds.map((k) => <span key={k} className="h-1.5 w-1.5 rounded-full" style={{ background: EVENT_STYLE[k].dot }} />)}
@@ -211,8 +211,6 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
               })}
             </div>
             <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1 border-t border-line pt-3 text-caption text-muted" aria-label="색 설명">
-              <li className="flex items-center gap-1"><span className="rounded bg-[#ef7a4a] px-1 text-[9px] font-bold text-white">퇴원</span> 퇴원일</li>
-              <li className="flex items-center gap-1"><span className="rounded bg-[#3b82d6] px-1 text-[9px] font-bold text-white">외래</span> 병원 방문</li>
               {(Object.keys(EVENT_STYLE) as EventKind[]).filter((k) => k !== "discharge" && k !== "visit").map((k) => (
                 <li key={k} className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: EVENT_STYLE[k].dot }} />{EVENT_STYLE[k].label}</li>
               ))}
