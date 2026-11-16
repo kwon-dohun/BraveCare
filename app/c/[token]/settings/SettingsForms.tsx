@@ -1,4 +1,5 @@
 "use client";
+import Segmented from "@/components/Segmented";
 import { useEffect, useState } from "react";
 import { updateCase, deleteCase, leaveCase, unlinkKakao } from "@/app/actions";
 import type { Auth } from "@/lib/db";
@@ -137,11 +138,7 @@ export function FontSize() {
     try { localStorage.setItem("bc:font", v); } catch {}
   };
   return (
-    <div role="group" aria-label="글자 크기" className="mt-3 flex rounded-full bg-card p-1 shadow-card">
-      {FONTS.map(([v, label]) => (
-        <button key={v} type="button" aria-pressed={cur === v} onClick={() => pick(v)} className={`flex-1 rounded-full text-sm transition-colors ${cur === v ? "bg-accent-soft font-semibold text-accent" : "text-muted"}`}>{label}</button>
-      ))}
-    </div>
+    <div className="mt-3"><Segmented label="글자 크기" active={FONTS.findIndex(([v]) => v === cur)} items={FONTS.map(([v, label]) => ({ label, onClick: () => pick(v) }))} /></div>
   );
 }
 

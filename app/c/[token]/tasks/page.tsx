@@ -5,6 +5,7 @@ import TaskList from "@/components/TaskList";
 import Mascot from "@/components/Mascot";
 import Icon from "@/components/Icon";
 import AddTask from "./AddTask";
+import Segmented from "@/components/Segmented";
 import CalSyncLink from "@/components/CalSyncLink";
 import { openDeadlines, sortTasks, badgeFor } from "@/lib/priority";
 import { buildEvents, monthGrid, shiftMonth, weekday, WEEKDAY, EVENT_STYLE, type EventKind } from "@/lib/calendar";
@@ -73,24 +74,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
     <>
       {/* 상단 통합 세그먼트 스위처: [달력] (메인) | [할 일 목록] */}
       <div className="flex items-center justify-between">
-        <div className="inline-flex items-center rounded-full bg-card p-1 shadow-card">
-          <Link
-            href={`${base}/tasks`}
-            className={`flex h-8 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors ${
-              !isList ? "bg-accent-soft text-accent shadow-card" : "text-muted hover:text-ink"
-            }`}
-          >
-            달력
-          </Link>
-          <Link
-            href={`${base}/tasks?view=list`}
-            className={`flex h-8 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors ${
-              isList ? "bg-accent-soft text-accent shadow-card" : "text-muted hover:text-ink"
-            }`}
-          >
-            할 일 목록
-          </Link>
-        </div>
+        <Segmented inline label="일정 보기" active={isList ? 1 : 0} items={[{ label: "달력", href: `${base}/tasks` }, { label: "할 일 목록", href: `${base}/tasks?view=list` }]} />
 
         {!isList ? (
           <Link scroll={false} href={calHref(`d=${today}`)} className="flex h-8 items-center justify-center rounded-full bg-card px-3.5 text-xs font-semibold shadow-card text-ink">
@@ -109,6 +93,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
       </div>
 
       {/* ======================= [1. 메인: 월별 캘린더 뷰] ======================= */}
+      <div key={isList ? "list" : "cal"} className="view-in">
       {!isList ? (
         <>
           {!data.input.dischargeDate ? (
@@ -446,6 +431,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
           {/* (사용자 피드백 반영: 상단 우측에 '+ 추가' 버튼이 있으므로 스크롤 최하단 중복 추가 폼 및 끝낸 일 아코디언은 제거함) */}
         </>
       )}
+      </div>
     </>
   );
 }

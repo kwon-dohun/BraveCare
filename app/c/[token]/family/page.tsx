@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Segmented from "@/components/Segmented";
 import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
 import { Invite, RemoveMember } from "@/components/InviteButton";
@@ -21,17 +22,14 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
 
   // 돌봄 일정표: 오늘부터 14일. 별도 입력 없이 날짜 있는 할 일과 담당자로 만든다.
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i)).map((d) => ({ d, list: tasks.filter((t) => t.due_date === d && !t.done) }));
-  const tabCls = (on: boolean) => `flex flex-1 items-center justify-center rounded-full text-sm transition-colors ${on ? "bg-accent-soft font-semibold text-accent" : "text-muted"}`;
 
   return (
     <>
       <BackLink href={`${base}/more`}>전체</BackLink>
       <h1 className="mt-2 text-title font-display">가족</h1>
-      <nav aria-label="가족 보기" className="mt-4 flex rounded-full bg-card p-1 shadow-card">
-        <Link href={`${base}/family`} aria-current={tab === "members" ? "page" : undefined} className={tabCls(tab === "members")}>구성원</Link>
-        <Link href={`${base}/family?tab=schedule`} aria-current={tab === "schedule" ? "page" : undefined} className={tabCls(tab === "schedule")}>돌봄 일정표</Link>
-      </nav>
+      <div className="mt-4"><Segmented label="가족 보기" active={tab === "members" ? 0 : 1} items={[{ label: "구성원", href: `${base}/family` }, { label: "돌봄 일정표", href: `${base}/family?tab=schedule` }]} /></div>
 
+      <div key={tab} className="view-in">
       {tab === "members" ? (
         <>
           <ul className="mt-5 divide-y divide-line rounded-xl bg-card shadow-card">
@@ -82,6 +80,7 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
           </ol>
         </>
       )}
+      </div>
     </>
   );
 }
