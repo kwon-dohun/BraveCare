@@ -22,7 +22,7 @@ Notifications.setNotificationHandler({
 
 async function setUpNotifications() {
   // Android 13 이상은 채널이 있어야 권한 창이 뜬다. 종류별로 나눠 두면 휴대폰 설정에서 따로 끌 수 있다.
-  await Notifications.setNotificationChannelAsync('daily', { name: '저녁 안부 체크', importance: Notifications.AndroidImportance.HIGH });
+  await Notifications.setNotificationChannelAsync('daily', { name: '데일리 체크', importance: Notifications.AndroidImportance.HIGH });
   await Notifications.setNotificationChannelAsync('tasks', { name: '할 일·지원 마감', importance: Notifications.AndroidImportance.HIGH });
   await Notifications.setNotificationChannelAsync('family', { name: '가족 소식', importance: Notifications.AndroidImportance.DEFAULT });
   const { status } = await Notifications.requestPermissionsAsync();
@@ -51,7 +51,7 @@ async function sync() {
   }
   await Notifications.cancelAllScheduledNotificationsAsync(); // 매번 다시 잡아 중복을 막는다
   await Notifications.scheduleNotificationAsync({
-    content: { title: '씩씩케어', body: '오늘 하루는 어땠나요? 저녁 안부 체크를 남겨주세요.', categoryIdentifier: 'daily' },
+    content: { title: '씩씩케어', body: '오늘 하루는 어땠나요? 데일리 체크를 남겨주세요.', categoryIdentifier: 'daily' },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: 20, minute: 0, channelId: 'daily' },
   });
   for (const m of reminders) {

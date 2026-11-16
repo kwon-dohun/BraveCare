@@ -149,8 +149,8 @@ test("시간대별 씩씩이 멘트: 새벽, 오전, 저녁 맞춤", () => {
   assert.equal(timeContextCheer("recovery", false, 3), "늦은 밤 간병 힘내세요. 응급 시엔 119");
   assert.equal(timeContextCheer("visit", false, 9), "오늘 외래 진료! 신분증 챙기기");
   assert.equal(timeContextCheer("pre", false, 9), "오늘 챙길 서류와 질문 확인하기");
-  assert.equal(timeContextCheer("recovery", false, 20), "10초 저녁 안부 체크를 남겨보세요");
-  assert.equal(timeContextCheer("recovery", true, 20), "오늘 안부 기록 완료! 푹 쉬세요");
+  assert.equal(timeContextCheer("recovery", false, 20), "10초 데일리 체크를 남겨보세요");
+  assert.equal(timeContextCheer("recovery", true, 20), "오늘 데일리 체크 완료! 푹 쉬세요");
 });
 
 test("주말 퇴원 보정: 월요일 퇴원 시 주말 원무과 휴무 사전 경고", () => {
@@ -184,10 +184,10 @@ test("쉬운 용어 사전: 띄어쓰기·공백 무관 검색", () => {
 test("사후 가입자 맞춤 멘트: 퇴원 후 7일 이내 초기 회복기 안내", () => {
   // 퇴원 후 3일차 오전: 서류/지원금 점검 유도
   assert.equal(timeContextCheer("recovery", false, 10, 3), "퇴원 3일째, 놓친 서류와 미신청 지원금부터 점검해 드릴게요");
-  // 퇴원 후 3일차 저녁: 저녁 안부 체크
-  assert.equal(timeContextCheer("recovery", false, 19, 3), "퇴원 3일째, 저녁 안부 체크를 남겨보세요");
+  // 퇴원 후 3일차 저녁: 데일리 체크
+  assert.equal(timeContextCheer("recovery", false, 19, 3), "퇴원 3일째, 데일리 체크를 남겨보세요");
   // 이미 오늘 체크 완료했으면 완료 멘트 우선
-  assert.equal(timeContextCheer("recovery", true, 19, 3), "오늘 안부 기록 완료! 푹 쉬세요");
+  assert.equal(timeContextCheer("recovery", true, 19, 3), "오늘 데일리 체크 완료! 푹 쉬세요");
 });
 
 test("서류 스캔 주의사항 키워드 추출: 보관법, 복약, 운전주의", () => {

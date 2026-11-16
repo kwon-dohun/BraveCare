@@ -87,7 +87,7 @@ export function DeleteCase({ auth, stats }: { auth: Auth; stats?: { doneTasks: n
             <div>
               <p className="font-semibold text-ink">그동안 회복을 위해 정말 고생 많으셨어요</p>
               <p className="mt-0.5 text-xs text-muted">
-                가족들이 함께 총 {stats.doneTasks}개의 할 일을 해냈고, {stats.dailyDays}일의 저녁 안부를 기록했어요.
+                가족들이 함께 총 {stats.doneTasks}개의 할 일을 해냈고, {stats.dailyDays}일의 데일리 체크를 기록했어요.
               </p>
             </div>
           </div>

@@ -122,7 +122,10 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           <h2 id="h-stage" className="font-semibold">오늘은 병원 가는 날이에요</h2>
           <p className="mt-1 text-sm text-muted">{visit!.title}</p>
           <Link href={`${base}/report`} className={cta}>외래 리포트 열기</Link>
-          <p className="mt-2 text-sm text-muted">진료실에서 휴대폰을 가로로 돌려 의료진에게 보여주세요.</p>
+          <div className="mt-2.5 flex items-center justify-between text-xs text-muted">
+            <span>진료실에서 휴대폰을 가로로 돌려 보여주세요</span>
+            <Link href={`${base}/daily`} className="text-accent underline underline-offset-2">진료 전 데일리 체크</Link>
+          </div>
         </section>
       )}
       {stage === "pre" && (
@@ -132,15 +135,32 @@ export default async function Home(props: PageProps<"/c/[token]">) {
             보험 청구 서류 {data.packet.length}/{PACKET.length} 준비 · 실손24 {data.silson24 === "yes" ? "전산 청구 가능" : data.silson24 === "no" ? "미지원 병원 (종이 서류 필요)" : "아직 확인 전"}
           </p>
           <Link href={`${base}/docs`} className={cta}>서류 챙기기</Link>
+          {!input.dischargeDate && (
+            <p className="mt-2.5 text-xs text-muted">
+              이미 퇴원하셨다면 <Link href={`${base}/settings`} className="font-semibold text-accent underline underline-offset-2">퇴원일을 설정</Link>하시면 데일리 체크와 맞춤 일정이 시작돼요.
+            </p>
+          )}
         </section>
       )}
       {stage === "recovery" && (
         <section className={card} aria-labelledby="h-stage">
-          <h2 id="h-stage" className="font-semibold">저녁 안부 체크</h2>
-          <p className="mt-1 text-sm text-muted">{checkedToday ? "오늘 기록을 남겼어요. 외래 리포트에 쌓이고 있어요." : "약, 체온, 통증, 배변을 10초 만에 남겨요. 외래 때 의료진에게 보여줄 기록이 돼요."}</p>
-          {checkedToday
-            ? <Link href={`${base}/report`} className="mt-3 flex items-center justify-center rounded-full bg-accent-soft px-4 py-3 font-semibold text-accent">외래 리포트 보기</Link>
-            : <Link href={`${base}/daily`} className={cta}>오늘 기록 남기기</Link>}
+          <div className="flex items-center justify-between">
+            <h2 id="h-stage" className="font-semibold">데일리 체크</h2>
+            {checkedToday && <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">오늘 완료</span>}
+          </div>
+          <p className="mt-1 text-sm text-muted">
+            {checkedToday
+              ? "오늘 데일리 체크를 남겼어요. 외래 리포트에 자동으로 정리되고 있어요."
+              : "약 복용, 체온, 통증, 배변을 10초 만에 남겨요. 낮이든 밤이든 언제든 기록할 수 있어요."}
+          </p>
+          {checkedToday ? (
+            <div className="mt-3 flex gap-2">
+              <Link href={`${base}/report`} className="flex-1 flex items-center justify-center rounded-xl bg-accent-soft px-4 py-3 font-semibold text-accent">외래 리포트 보기</Link>
+              <Link href={`${base}/daily`} className="flex items-center justify-center rounded-xl border border-line bg-card px-4 py-3 text-sm font-medium text-muted">기록 수정</Link>
+            </div>
+          ) : (
+            <Link href={`${base}/daily`} className={cta}>오늘 데일리 체크 남기기</Link>
+          )}
         </section>
       )}
 

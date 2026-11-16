@@ -45,13 +45,13 @@ export function timeContextCheer(stage: "visit" | "pre" | "recovery", checkedTod
     return "퇴원 준비, 같이 해요";
   }
   // recovery (퇴원 후 회복)
-  if (checkedToday) return "오늘 안부 기록 완료! 푹 쉬세요";
+  if (checkedToday) return "오늘 데일리 체크 완료! 푹 쉬세요";
   // 사후 가입자 배려: 퇴원 후 7일 이내 초기 회복기 보호자에게 놓친 서류/지원금 점검 안내
   if (daysSince !== undefined && daysSince > 0 && daysSince <= 7) {
-    if (hour >= 18) return `퇴원 ${daysSince}일째, 저녁 안부 체크를 남겨보세요`;
+    if (hour >= 18) return `퇴원 ${daysSince}일째, 데일리 체크를 남겨보세요`;
     return `퇴원 ${daysSince}일째, 놓친 서류와 미신청 지원금부터 점검해 드릴게요`;
   }
-  if (hour >= 18) return "10초 저녁 안부 체크를 남겨보세요";
+  if (hour >= 18) return "10초 데일리 체크를 남겨보세요";
   if (hour < 12) return "좋은 아침! 밤새 편안하셨나요?";
   return "오늘도 씩씩하게 회복해요";
 }

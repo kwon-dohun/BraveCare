@@ -45,8 +45,8 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
         {s.days === 0 ? (
           <>
           <div className="mt-6 rounded-xl border border-line p-5">
-            <p>아직 기록이 없어요. 저녁 안부 체크를 하루만 남겨도 이 리포트가 만들어져요.</p>
-            <Link href={`${base}/daily`} className="mt-4 flex items-center justify-center rounded-xl bg-primary px-5 py-3 font-semibold text-ink">오늘 기록 남기기</Link>
+            <p>아직 기록이 없어요. 데일리 체크를 하루만 남겨도 이 리포트가 만들어져요.</p>
+            <Link href={`${base}/daily`} className="mt-4 flex items-center justify-center rounded-xl bg-primary px-5 py-3 font-semibold text-ink">오늘 데일리 체크 남기기</Link>
           </div>
           <div className="mt-4 grid gap-4 landscape:grid-cols-2">
             <section className={box} aria-labelledby="r4">

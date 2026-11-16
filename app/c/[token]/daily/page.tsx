@@ -6,7 +6,7 @@ import { TEMP_LABEL, PAIN_WORD } from "@/lib/report";
 import DailyForm from "@/components/DailyForm";
 import Mascot from "@/components/Mascot";
 
-export const metadata = { title: "기록 · 씩씩케어" };
+export const metadata = { title: "데일리 체크 · 씩씩케어" };
 
 export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
   const { token } = await props.params;
@@ -15,6 +15,7 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
   const today = checks.find((c) => c.check_date === data.today) ?? null;
   const prev = checks.filter((c) => c.check_date < data.today).sort((a, b) => b.check_date.localeCompare(a.check_date))[0] ?? null;
   const qLeft = data.tasks.filter((t) => t.kind === "question" && !t.done).length;
+  const isPre = !data.input.dischargeDate || data.today <= data.input.dischargeDate;
   const link = "flex flex-1 items-center justify-center rounded-full bg-card px-3 py-2.5 text-center text-sm font-medium shadow-card";
 
   return (
@@ -23,10 +24,18 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
       <div className="mt-2 flex items-center gap-3">
         <Mascot size={60} mood={today ? "cheer" : "idle"} />
         <div>
-          <h1 className="text-title font-display">저녁 안부 체크</h1>
-          <p className="text-sm text-muted">{today ? "오늘 기록을 남겼어요. 고마워요!" : "환자와 오늘 하루를 10초 만에 남겨요"}</p>
+          <h1 className="text-title font-display">데일리 체크</h1>
+          <p className="text-sm text-muted">{today ? "오늘 기록을 남겼어요. 상태가 바뀌면 언제든 고칠 수 있어요." : "환자의 오늘 복약·체온·통증을 10초 만에 남겨요"}</p>
         </div>
       </div>
+      {isPre && (
+        <div className="mt-3 rounded-2xl bg-accent-soft p-3.5 text-xs text-accent leading-relaxed">
+          <p className="font-semibold text-ink">아직 입원 중이신가요?</p>
+          <p className="mt-0.5 opacity-90">
+            병원에 계실 때는 간호·의료진이 투약과 활력징후를 직접 챙겨주므로 기록하지 않으셔도 괜찮아요. 퇴원 후 집으로 돌아오신 뒤부터 매일 남겨주시면 다음 외래 진료 때 큰 도움이 됩니다. (원하시면 지금 미리 써보셔도 좋아요.)
+          </p>
+        </div>
+      )}
       <div className="mt-4 flex gap-2">
         <Link href={`${base}/report`} className={link}>외래 리포트</Link>
         <Link href={`${base}/chat`} className={link}>서류 내용 물어보기</Link>

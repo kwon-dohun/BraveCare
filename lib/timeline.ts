@@ -27,7 +27,7 @@ const COMMON: TaskSeed[] = [
   { rel: 0, kind: "prep", title: "퇴원 안내문과 약봉투를 사진으로 남기기" },
   // 3단계: 집에서 회복, 첫 외래
   { rel: 1, kind: "prep", title: "식사와 약을 챙길 사람 정하기" },
-  { rel: 1, kind: "prep", title: "저녁 안부 체크 시작하기 (하루 10초)" },
+  { rel: 1, kind: "prep", title: "데일리 체크 시작하기 (하루 10초)" },
   { rel: 7, kind: "prep", title: "퇴원 일주일, 불편한 점을 환자에게 물어보고 외래 때 물어볼 것 적어두기" },
   { rel: 13, kind: "prep", title: "첫 외래 전날: 외래 리포트와 물어볼 것 확인하기" },
   // 4단계: 정기 외래, 마무리

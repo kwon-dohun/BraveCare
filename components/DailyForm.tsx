@@ -43,8 +43,8 @@ export default function DailyForm({ auth, today, yesterday }: { auth: Auth; toda
           </button>
         )}
       </div>
-      <p className="mt-2 text-center text-sm text-muted">다른 점이 있으면 아래에서 골라주세요</p>
-      {saved && <p role="status" className="mt-3 rounded-xl bg-accent-soft p-3 text-accent">오늘 기록을 저장했어요.</p>}
+      <p className="mt-2 text-center text-sm text-muted">다른 점이 있으면 언제든 아래에서 골라주세요</p>
+      {saved && <p role="status" className="mt-3 rounded-xl bg-accent-soft p-3 text-accent">오늘 데일리 체크를 저장했어요.</p>}
       {err && <p role="alert" className="mt-3 text-warn">{err}</p>}
 
       <div className={box}><fieldset>

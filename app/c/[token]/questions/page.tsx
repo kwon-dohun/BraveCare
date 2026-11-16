@@ -12,7 +12,7 @@ export const metadata = { title: "물어볼 것 · 씩씩케어" };
 const PHASE_HINT = ["입원 중에 끝내 두면 퇴원 날이 편해요", "계산·서류·약을 한 번에 챙기는 날", "집에 와서 2주, 첫 외래까지", "정기 외래와 남은 지원 정리"];
 
 // 의료진에게 물어볼 것. 회진·외래 때 보여주는 화면이라 담당 개념 없이 체크와 답 메모만 둔다.
-// 저녁 안부 기록과 외래 리포트가 같은 질문을 쓴다(리포트에는 이 중 일부가 큰 글씨로 나온다).
+// 데일리 체크와 외래 리포트가 같은 질문을 쓴다(리포트에는 이 중 일부가 큰 글씨로 나온다).
 export default async function Questions(props: PageProps<"/c/[token]/questions">) {
   const { token } = await props.params;
   const { actor, data, auth, base } = await adminPage(token);
@@ -34,7 +34,7 @@ export default async function Questions(props: PageProps<"/c/[token]/questions">
       <h1 className="mt-2 font-display text-title">의료진에게 물어볼 것</h1>
       <p className="mt-1 flex gap-2 rounded-xl bg-accent-soft p-3 text-sm text-accent">
         <Icon name="help" size={18} className="mt-0.5 shrink-0" />
-        <span>회진이나 외래 때 이 화면을 보여주며 하나씩 물어보세요. 답을 들으면 체크하고, 눌러서 답을 메모해 두면 가족도 볼 수 있어요. 저녁 안부를 기록하다 떠오른 것도 여기에 적어 두세요.</span>
+        <span>회진이나 외래 때 이 화면을 보여주며 하나씩 물어보세요. 답을 들으면 체크하고, 눌러서 답을 메모해 두면 가족도 볼 수 있어요. 데일리 체크를 하다 떠오른 것도 여기에 적어 두세요.</span>
       </p>
 
       <p className="mt-4 text-sm text-muted tabular-nums">{open.length ? `남은 질문 ${open.length}개` : "질문을 모두 확인했어요"} · 전체 {pool.length}개</p>
