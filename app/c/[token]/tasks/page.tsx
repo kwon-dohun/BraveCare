@@ -93,7 +93,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
         </div>
 
         {!isList ? (
-          <Link href={calHref(`d=${today}`)} className="flex h-8 items-center justify-center rounded-full bg-card px-3.5 text-xs font-semibold shadow-card text-ink">
+          <Link scroll={false} href={calHref(`d=${today}`)} className="flex h-8 items-center justify-center rounded-full bg-card px-3.5 text-xs font-semibold shadow-card text-ink">
             오늘
           </Link>
         ) : (
@@ -124,7 +124,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
             </Link>
           ) : (
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <Link href={calHref(`d=${data.input.dischargeDate}`)} className="flex items-center justify-between rounded-2xl bg-[#ffe9dc] p-3 text-[#9a3f12] shadow-card hover:opacity-90">
+              <Link scroll={false} href={calHref(`d=${data.input.dischargeDate}`)} className="flex items-center justify-between rounded-2xl bg-[#ffe9dc] p-3 text-[#9a3f12] shadow-card hover:opacity-90">
                 <div>
                   <p className="text-caption font-semibold">퇴원일</p>
                   <p className="text-sm font-semibold tabular-nums">{krDate(data.input.dischargeDate)}</p>
@@ -138,7 +138,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
                 (() => {
                   const nextV = data.tasks.filter((t) => t.kind === "schedule" && t.due_date && t.due_date >= today).sort((a, b) => a.due_date!.localeCompare(b.due_date!))[0];
                   return (
-                    <Link href={calHref(`d=${nextV.due_date}`)} className="flex items-center justify-between rounded-2xl bg-[#e3f0ff] p-3 text-[#1f5aa6] shadow-card hover:opacity-90">
+                    <Link scroll={false} href={calHref(`d=${nextV.due_date}`)} className="flex items-center justify-between rounded-2xl bg-[#e3f0ff] p-3 text-[#1f5aa6] shadow-card hover:opacity-90">
                       <div className="min-w-0">
                         <p className="text-caption font-semibold">다음 외래</p>
                         <p className="text-sm font-semibold truncate">{krDate(nextV.due_date!)}</p>
@@ -159,12 +159,12 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
             </div>
           )}
 
-          {/* 달 이동 + 달력 */}
+          {/* 달 이동 + 달력 (같은 화면 안 이동이라 scroll={false}로 보던 위치를 유지) */}
           <section className="mt-4 rounded-3xl bg-card p-4 shadow-card" aria-label={`${y}년 ${m}월 달력`}>
             <div className="flex items-center justify-between">
-              <Link href={calHref(`m=${shiftMonth(ym, -1)}`)} aria-label="이전 달" className="flex w-11 items-center justify-center text-muted"><Icon name="left" size={20} /></Link>
+              <Link scroll={false} href={calHref(`m=${shiftMonth(ym, -1)}`)} aria-label="이전 달" className="flex w-11 items-center justify-center text-muted"><Icon name="left" size={20} /></Link>
               <p className="font-display text-headline">{y}년 {m}월</p>
-              <Link href={calHref(`m=${shiftMonth(ym, 1)}`)} aria-label="다음 달" className="flex w-11 items-center justify-center text-muted"><Icon name="right" size={20} /></Link>
+              <Link scroll={false} href={calHref(`m=${shiftMonth(ym, 1)}`)} aria-label="다음 달" className="flex w-11 items-center justify-center text-muted"><Icon name="right" size={20} /></Link>
             </div>
             <div className="mt-2 grid grid-cols-7 text-center text-xs text-muted">
               {WEEKDAY.map((w, i) => <span key={w} className={i === 0 ? "text-[#a3324f]" : ""}>{w}</span>)}
@@ -178,7 +178,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
                 const hasVisit = ev.some((e) => e.kind === "visit");
 
                 return (
-                  <Link key={d} href={calHref(`m=${ym}&d=${d}`)} aria-current={isSel ? "date" : undefined}
+                  <Link key={d} scroll={false} href={calHref(`m=${ym}&d=${d}`)} aria-current={isSel ? "date" : undefined}
                     className="flex min-h-0 flex-col items-center gap-0.5 py-1">
                     <span className={`flex h-9 w-9 items-center justify-center rounded-full text-sm tabular-nums transition-colors ${
                       isSel
