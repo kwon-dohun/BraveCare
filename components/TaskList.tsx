@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { toggleTask, claimTask } from "@/app/actions";
+import { toggleTask, claimTask, rescheduleTaskToToday } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import { KIND_LABEL, REPEAT_LABEL } from "@/lib/timeline";
 import { EVENT_STYLE, KIND } from "@/lib/calendar";
-import { dateLabel, krTime } from "@/lib/format";
+import { krDate, krTime } from "@/lib/format";
+import { dayDiff } from "@/lib/benefits";
 import { useAct } from "./useAct";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
@@ -26,7 +27,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
 
   const copyHelp = async (t: T) => {
     const url = typeof window !== "undefined" ? window.location.href : "";
-    const dStr = t.due_date ? ` (${dateLabel(t.due_date, t.rel_day, today)})` : "";
+    const dStr = t.due_date ? ` (${krDate(t.due_date)}까지)` : "";
     const text = `[${t.title}]${dStr} 아직 담당 가족이 없어요. 시간 되시는 분이 맡아주세요.\n${url}`;
     try {
       await navigator.clipboard.writeText(text);
@@ -47,8 +48,28 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
       <ul className="divide-y divide-line overflow-hidden rounded-xl bg-card shadow-card">
         {tasks.map((t) => {
           const late = !t.done && !!t.due_date && t.due_date < today;
-          const lateDays = late ? Math.round((Date.parse(today) - Date.parse(t.due_date!)) / 86_400_000) : 0;
-          const meta = [KIND_LABEL[t.kind], showDate ? dateLabel(t.due_date, t.rel_day, today) : "", t.due_time ? krTime(t.due_time) : "", t.repeat ? `${REPEAT_LABEL[t.repeat]} 반복` : "", t.done && t.done_by ? `${t.done_by} 완료` : ""].filter(Boolean).join(" · ");
+          let dueText = "";
+          let isUrgent = false;
+          if (showDate) {
+            if (t.due_date) {
+              const diff = dayDiff(t.due_date, today);
+              if (diff === 0) { dueText = "오늘 마감 (D-Day)"; isUrgent = true; }
+              else if (diff === 1) { dueText = "내일 마감 (D-1)"; isUrgent = true; }
+              else if (diff > 1) { dueText = `${krDate(t.due_date)}까지 (D-${diff})`; }
+              else { dueText = `마감 기한 지남 (${krDate(t.due_date)} 예정)`; }
+            } else if (t.rel_day !== null) {
+              dueText = t.rel_day === 0 ? "퇴원 당일 예정" : t.rel_day < 0 ? `퇴원 ${-t.rel_day}일 전 예정` : `퇴원 ${t.rel_day}일 후 예정`;
+            }
+          }
+
+          const metaParts = [
+            t.kind === "schedule" ? "병원 방문" : "",
+            dueText,
+            t.due_time ? krTime(t.due_time) : "",
+            t.repeat ? `${REPEAT_LABEL[t.repeat]} 반복` : "",
+            t.done && t.done_by ? `${t.done_by} 완료` : "",
+          ].filter(Boolean);
+
           const owner = nameOf(t.assignee_id);
           const badge = !t.done ? badges[t.id] : undefined;
           const title = `line-clamp-3 text-callout font-medium leading-snug ${t.done ? "text-muted line-through" : ""}`;
@@ -61,16 +82,27 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                   onClick={() => run(() => toggleTask(auth, t.id, !t.done))}
                   className="group flex h-11 w-11 shrink-0 items-center justify-center"
                 >
-                  {/* 눌리는 영역은 44px, 보이는 원은 28px */}
                   <span className={`flex h-7 w-7 items-center justify-center rounded-full border-2 transition-colors ${t.done ? "border-primary bg-primary text-ink" : "border-[#9fb8ac] bg-card group-hover:border-accent"}`}>
                     {t.done && <Icon name="check" size={16} />}
                   </span>
                 </button>
                 <div className="min-w-0 flex-1 py-1.5">
                   {detailBase ? <Link href={`${detailBase}/${t.id}`} className={`block min-h-0 ${title}`}>{t.title}</Link> : <p className={title}>{t.title}</p>}
-                  <p className={`mt-0.5 text-xs ${late ? "text-warn" : "text-muted"}`}>
-                    {meta}{late && <span className="font-semibold">{meta ? " · " : ""}{lateDays}일 지남</span>}
-                  </p>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
+                    <span className={late ? "font-medium text-warn" : isUrgent ? "font-semibold text-accent" : "text-muted"}>
+                      {metaParts.join(" · ")}
+                    </span>
+                    {late && !t.done && (
+                      <button
+                        type="button"
+                        onClick={() => run(() => rescheduleTaskToToday(auth, t.id, today))}
+                        className="rounded bg-accent-soft px-1.5 py-0.5 text-caption font-semibold text-accent hover:opacity-80"
+                        title="마감일을 오늘로 변경합니다"
+                      >
+                        오늘 하기
+                      </button>
+                    )}
+                  </div>
                   {badge && <span className="mt-1 inline-block rounded-full bg-warn-soft px-2 py-0.5 text-caption font-semibold text-warn">{badge}</span>}
                   {t.memo && <p className="mt-0.5 truncate text-xs text-muted">메모: {t.memo}</p>}
                 </div>

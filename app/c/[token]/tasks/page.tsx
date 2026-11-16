@@ -32,9 +32,14 @@ export default async function Tasks(props: PageProps<"/c/[token]/tasks">) {
   const sort = (l: typeof open) => sortTasks(l, deadlines, data.today);
   const common = { members: data.members, auth, meId: me, today: data.today, detailBase: `${base}/tasks`, badges };
 
-  const mine = sort(open.filter((t) => t.assignee_id === me));
-  const needOwner = sort(open.filter((t) => !t.assignee_id));
-  const others = sort(open.filter((t) => t.assignee_id && t.assignee_id !== me));
+  // 기한이 지난 일과 앞으로 해야 할 일을 분리하여 집중도를 높인다
+  const activeOpen = open.filter((t) => !t.due_date || t.due_date >= data.today);
+  const pastTasks = open.filter((t) => t.due_date && t.due_date < data.today);
+
+  const mine = sort(activeOpen.filter((t) => t.assignee_id === me));
+  const needOwner = sort(activeOpen.filter((t) => !t.assignee_id));
+  const others = sort(activeOpen.filter((t) => t.assignee_id && t.assignee_id !== me));
+  const sortedPast = sort(pastTasks);
 
   const head = (title: string, n: number, hint?: string, tone = "") => (
     <div className="mb-2 flex items-end justify-between gap-2">
@@ -67,7 +72,7 @@ export default async function Tasks(props: PageProps<"/c/[token]/tasks">) {
 
       {f !== "none" && open.length > 0 && (
         <section className="mt-6" aria-label="내가 맡은 일">
-          {head("내가 맡은 일", mine.length, mine.length ? "밀린 일과 급한 일이 위에 있어요" : undefined)}
+          {head("내가 맡은 일", mine.length, mine.length ? "오늘 할 일과 앞으로 해야 할 일이에요" : undefined)}
           {mine.length ? <TaskList tasks={mine} {...common} /> : (
             <p className="rounded-xl bg-card p-4 text-sm text-muted shadow-card">{needOwner.length ? "아직 맡은 일이 없어요. 아래에서 ‘내가 할게’를 눌러 보세요." : "맡은 일이 없어요."}</p>
           )}
@@ -76,7 +81,7 @@ export default async function Tasks(props: PageProps<"/c/[token]/tasks">) {
 
       {f !== "mine" && needOwner.length > 0 && (
         <section className="mt-6" aria-label="맡을 사람이 필요한 일">
-          {head("맡을 사람이 필요해요", needOwner.length, "‘내가 할게’를 누르면 바로 내 일이 돼요", "text-warn")}
+          {head("맡을 사람이 필요해요", needOwner.length, "마감이 가까운 일부터 먼저 나와요. ‘내가 할게’를 눌러보세요", "text-warn")}
           <TaskList tasks={needOwner.slice(0, SHOW_FIRST)} {...common} />
           {needOwner.length > SHOW_FIRST && (
             <details className="mt-2">
@@ -92,6 +97,19 @@ export default async function Tasks(props: PageProps<"/c/[token]/tasks">) {
           <summary className="cursor-pointer font-semibold">다른 가족이 맡은 일 <span className="tabular-nums">{others.length}</span></summary>
           <p className="mt-1 text-xs text-muted">담당을 바꾸려면 항목을 눌러 들어가세요. 바꾸면 가족에게 알려줘요.</p>
           <div className="mt-2"><TaskList tasks={others} {...common} /></div>
+        </details>
+      )}
+
+      {/* 기한이 지난 일: 별도 구역으로 분리하여 오늘 할 일의 집중도를 방해하지 않는다 */}
+      {f === "" && sortedPast.length > 0 && (
+        <details className="mt-6 rounded-2xl bg-[#fff8f5] p-4 border border-[#ffd5c2]" open={sortedPast.length <= 2}>
+          <summary className="cursor-pointer font-semibold text-warn flex items-center justify-between">
+            <span>기한이 지난 일 ({sortedPast.length})</span>
+            <span className="text-xs font-normal text-muted">‘오늘 하기’를 누르거나 완료할 수 있어요</span>
+          </summary>
+          <div className="mt-3">
+            <TaskList tasks={sortedPast} {...common} />
+          </div>
         </details>
       )}
 

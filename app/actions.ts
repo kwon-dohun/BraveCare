@@ -255,6 +255,14 @@ export async function deleteTask(a: Auth, taskId: string) {
   refresh();
 }
 
+// 지난 할 일을 오늘 날짜로 즉시 변경
+export async function rescheduleTaskToToday(a: Auth, taskId: string, todayDate: string) {
+  const actor = await resolve(a);
+  if (!isDate(todayDate)) throw new Error("날짜가 올바르지 않아요");
+  await db.from("tasks").update({ due_date: todayDate, rel_day: null }).eq("id", taskId).eq("case_id", actor.caseId);
+  refresh();
+}
+
 // ---- 지원 ----
 
 const STATUSES = ["none", "applied", "approved", "rejected", "dropped"];
