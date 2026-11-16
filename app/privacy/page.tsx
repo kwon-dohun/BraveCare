@@ -32,7 +32,7 @@ const SECTIONS: [string, React.ReactNode][] = [
   )],
   ["6. 이용자의 권리", "언제든 설정에서 퇴원 정보를 고칠 수 있고, 전체 삭제로 모든 기록을 지우고 동의를 철회할 수 있어요. 초대받은 가족을 내보내거나 가족이 스스로 나가면 그 가족의 참여 기록(카카오 회원번호·알림 토큰 포함)도 지워져요. 카카오 연결은 설정에서 언제든 끊을 수 있어요."],
   ["7. 안전성 확보 조치", "추측할 수 없는 긴 주소(링크)로 접근하고, 카카오 계정을 연결하면 카카오 로그인으로도 내 주소를 되찾을 수 있어요. 이 주소를 아는 사람은 기록을 볼 수 있으니 다른 사람과 공유하지 마세요. 초대 링크는 7일 뒤 만료되고 언제든 새로 만들 수 있어요. 데이터는 서버만 읽을 수 있게 막아 두었어요."],
-  ["8. 개인정보 보호책임자", "[이름·연락처 작성 필요] — 서울과학기술대학교 산업공학과 ITM전공 씩씩케어 팀"],
+  ["8. 개인정보 보호책임자", "씩씩케어 운영팀 (책임자: 권도훈) · dhkwon0901@seoultech.ac.kr"],
 ];
 
 export default function Privacy() {
@@ -40,7 +40,7 @@ export default function Privacy() {
     <main className="mx-auto w-full max-w-md flex-1 px-5 py-8">
       <Link href="/" className="inline-flex"><Logo /></Link>
       <h1 className="mt-6 font-display text-title">개인정보처리방침</h1>
-      <p className="mt-1 text-sm text-muted">시행일 [작성 필요]</p>
+      <p className="mt-1 text-sm text-muted">시행일 2026년 11월 16일</p>
       <div className="mt-6 space-y-6">
         {SECTIONS.map(([title, body]) => (
           <section key={title}>

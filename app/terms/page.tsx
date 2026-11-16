@@ -20,7 +20,7 @@ export default function Terms() {
     <main className="mx-auto w-full max-w-md flex-1 px-5 py-8">
       <Link href="/" className="inline-flex"><Logo /></Link>
       <h1 className="mt-6 font-display text-title">이용약관</h1>
-      <p className="mt-1 text-sm text-muted">시행일 [작성 필요]</p>
+      <p className="mt-1 text-sm text-muted">시행일 2026년 11월 16일</p>
       <div className="mt-6 space-y-6">
         {SECTIONS.map(([title, body]) => (
           <section key={title}>
