@@ -18,6 +18,7 @@ export interface CaseInput {
   living: Living;
   income: Income;
   dailyCompleted?: boolean; // 회복 완료 / 데일리 체크 종료 여부
+  customDocs?: string[]; // 원무과 발급용 추가 서류 목록
 }
 
 export type Verdict = "high" | "check" | "no";
@@ -147,7 +148,13 @@ export const INCOMES: Income[] = ["basic", "mid", "general", "unknown"];
 export function normalizeInput(raw: Record<string, unknown>): CaseInput {
   const living = raw.living === "spouse" || raw.living === "family" ? "home" : raw.living;
   const income = raw.income === "near" ? "basic" : raw.income === "none" ? "general" : raw.income ?? "unknown";
-  return { ...(raw as unknown as CaseInput), living: living as Living, income: income as Income, dailyCompleted: !!raw.dailyCompleted };
+  return {
+    ...(raw as unknown as CaseInput),
+    living: living as Living,
+    income: income as Income,
+    dailyCompleted: !!raw.dailyCompleted,
+    customDocs: Array.isArray(raw.customDocs) ? (raw.customDocs as string[]).filter((x) => typeof x === "string") : [],
+  };
 }
 
 // 신뢰 경계 검증: 클라이언트가 보낸 값을 그대로 믿지 않는다. 잘못되면 null.
@@ -168,6 +175,7 @@ export function validateInput(raw: unknown, today: string): CaseInput | null {
     reason: r.reason as Reason, living: r.living as Living,
     income: INCOMES.includes(r.income as Income) ? (r.income as Income) : "unknown",
     dailyCompleted: typeof r.dailyCompleted === "boolean" ? r.dailyCompleted : false,
+    customDocs: Array.isArray(r.customDocs) ? r.customDocs.filter((x): x is string => typeof x === "string").slice(0, 20) : [],
   };
 }
 

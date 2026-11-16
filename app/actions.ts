@@ -307,12 +307,26 @@ export async function setDocsChecked(a: Auth, benefitId: string, checked: string
 
 // ---- 보험 청구 서류 ----
 
-export async function savePacket(a: Auth, hospital: string, silson24: string | null, checked: string[]) {
+export async function savePacket(a: Auth, hospital: string, silson24: string | null, checked: string[], customDocs?: string[]) {
   const actor = await resolve(a);
-  const docs = (Array.isArray(checked) ? checked : []).filter((d) => PACKET.some((p) => p.id === d));
-  await db.from("cases").update({
-    hospital: hospital.trim().slice(0, 40) || null, silson24: silson24 === "yes" || silson24 === "no" ? silson24 : null, docs_checked: docs,
-  }).eq("id", actor.caseId);
+  const docs = (Array.isArray(checked) ? checked : []).filter((d) => typeof d === "string" && d.length <= 60);
+  const updatePayload: Record<string, unknown> = {
+    hospital: hospital.trim().slice(0, 40) || null,
+    silson24: silson24 === "yes" || silson24 === "no" ? silson24 : null,
+    docs_checked: docs,
+  };
+
+  if (customDocs !== undefined) {
+    const { data: c } = await db.from("cases").select("input").eq("id", actor.caseId).single();
+    if (c?.input) {
+      updatePayload.input = {
+        ...c.input,
+        customDocs: customDocs.map((x) => String(x).trim().slice(0, 50)).filter(Boolean),
+      };
+    }
+  }
+
+  await db.from("cases").update(updatePayload).eq("id", actor.caseId);
   await logEvent(actor.caseId, "doc_packet_viewed", { silson24: silson24 ?? "unknown", checked: docs.length });
   refresh();
 }
