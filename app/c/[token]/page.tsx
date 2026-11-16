@@ -48,7 +48,10 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   // 이번 주 띠와 다가오는 일정(할 일 중 병원 일정 + 퇴원일 + 지원 마감)
   const events = buildEvents(data);
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i));
-  const topBenefits = [...open].sort((a, b) => (a.deadline.state === "open" ? a.deadline.daysLeft! : 9999) - (b.deadline.state === "open" ? b.deadline.daysLeft! : 9999)).filter((r) => r.verdict === "high").slice(0, 3);
+  const byDeadline = [...open].sort((a, b) => (a.deadline.state === "open" ? a.deadline.daysLeft! : 9999) - (b.deadline.state === "open" ? b.deadline.daysLeft! : 9999));
+  // 가능성 높은 지원이 없으면 '확인 필요' 지원을 대신 보여준다(빈 칸으로 두지 않는다)
+  const onlyCheck = !byDeadline.some((r) => r.verdict === "high");
+  const topBenefits = byDeadline.filter((r) => r.verdict === (onlyCheck ? "check" : "high")).slice(0, 3);
   const cta = "mt-3 flex items-center justify-center rounded-xl bg-primary px-4 py-3 font-semibold text-ink";
   const card = "mt-4 rounded-xl bg-card shadow-card p-4";
 
@@ -215,8 +218,10 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       <section className="mt-6" aria-labelledby="h-benefit">
         <div className="mb-2 flex items-end justify-between">
           <div>
-            <h2 id="h-benefit" className="font-display text-headline">받을 수 있는 지원 <span className="text-accent">{highCount}개</span></h2>
-            <p className="text-xs text-muted">우리 가족 조건으로 골랐어요. 마감이 가까운 순서예요</p>
+            {onlyCheck
+              ? <h2 id="h-benefit" className="font-display text-headline">조건을 확인해 볼 지원</h2>
+              : <h2 id="h-benefit" className="font-display text-headline">받을 수 있는 지원 <span className="text-accent">{highCount}개</span></h2>}
+            <p className="text-xs text-muted">{onlyCheck ? "확실히 대상인 지원은 아직 없지만, 조건에 따라 받을 수 있어요" : "우리 가족 조건으로 골랐어요. 마감이 가까운 순서예요"}</p>
           </div>
           <Link href={`${base}/benefits`} className="flex items-center text-sm font-medium text-accent">전체 보기<span className="sr-only"> 지원</span></Link>
         </div>
@@ -233,7 +238,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
               </Link>
             </li>
           ))}
-          {topBenefits.length === 0 && <li className="px-4 py-3 text-sm text-muted">확인이 필요한 지원을 모두 살펴봤어요</li>}
+          {topBenefits.length === 0 && <li className="px-4 py-3 text-sm text-muted">지금 새로 챙길 지원은 없어요. 신청한 지원은 ‘지원’에서 진행 상황을 볼 수 있고, 퇴원일·소득이 바뀌면 설정에서 고치면 다시 찾아 드려요.</li>}
         </ul>
       </section>
 

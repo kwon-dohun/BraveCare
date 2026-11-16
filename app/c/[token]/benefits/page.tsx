@@ -25,13 +25,21 @@ export default async function Benefits(props: PageProps<"/c/[token]/benefits">) 
   return (
     <>
       <div className="flex items-start justify-between gap-3">
-        <h1 className="text-title font-display leading-snug">우리 가족이 받을 수 있는<br />지원 <span className="text-accent tabular-nums">{high.length}개</span></h1>
+        <h1 className="text-title font-display leading-snug">
+          {high.length ? <>우리 가족이 받을 수 있는<br />지원 <span className="text-accent tabular-nums">{high.length}개</span></>
+            : results.length ? <>조건을 확인해 볼<br />지원 <span className="text-accent tabular-nums">{results.length}개</span></>
+            : <>지금 조건에 꼭 맞는<br />공공 지원은 아직 없어요</>}
+        </h1>
         <Link href={`${base}/benefits/saved`} className="flex h-11 shrink-0 items-center gap-1 rounded-full bg-card px-3.5 text-sm font-semibold text-muted shadow-card">
           <Icon name="like" size={18} className={saved.length ? "fill-current text-[#e0517a]" : ""} />
           찜 <span className="tabular-nums">{saved.length}</span>
         </Link>
       </div>
-      <p className="mt-1 text-sm text-muted">입력한 조건으로 대상이 될 수 있는 지원 {results.length}개를 골랐어요. 특정 업체로 연결하지 않아요. 마음에 드는 지원은 하트로 찜해 두세요.</p>
+      <p className="mt-1 text-sm text-muted">
+        {high.length ? `입력한 조건으로 대상이 될 수 있는 지원 ${results.length}개를 골랐어요. 특정 업체로 연결하지 않아요. 마음에 드는 지원은 하트로 찜해 두세요.`
+          : results.length ? "입력한 조건만으로는 확실히 대상이라고 말하기 어렵지만, 나이·소득·사는 곳에 따라 받을 수 있는 지원이에요. 카드를 눌러 조건을 확인해 보세요. 잘 모르겠으면 주민센터나 129에 물어보면 돼요."
+          : "입력한 나이·소득·돌봄 상황으로는 전국 공통 지원 중 맞는 것이 없어요. 아래 '더 알아볼 곳'에서 지역 자체 지원을 확인해 보고, 상황이 바뀌면 설정에서 고치면 다시 찾아 드려요."}
+      </p>
 
       {/* 기본 26개 밖의 추가 확인처 (확인된 기관·제도만) */}
       <AiBenefitsExplorer auth={auth} region={region || null} reasonLabel={reasonLabel} base={base} savedExtra={saved.filter((s) => s.startsWith("x:"))} />

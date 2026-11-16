@@ -16,7 +16,7 @@ export default async function More(props: PageProps<"/c/[token]/more">) {
 
   const groups: [string, [string, IconName, string, string, string][]][] = [
     ["돌봄", [
-      ["/benefits", "gift", "받을 수 있는 지원", `가능성 높음 ${high}개 · 신청 ${applied}개`, "bg-[#dff7ec] text-[#0b7a57]"],
+      ["/benefits", "gift", "받을 수 있는 지원", high ? `가능성 높음 ${high}개 · 신청 ${applied}개` : `확인해 볼 지원 ${data.results.filter((r) => r.verdict === "check").length}개`, "bg-[#dff7ec] text-[#0b7a57]"],
       ["/family", "users", "가족과 나누기", `${data.members.length}명 참여 중`, "bg-[#ffe9dc] text-[#9a3f12]"],
       ["/daily", "heart", "데일리 체크", "약·체온·통증 하루 상태 기록", "bg-[#ffe4ea] text-[#a3324f]"],
       ["/questions", "help", "물어볼 것", qLeft ? `의료진에게 ${qLeft}개` : "회진·외래 때 보여주기", "bg-[#f1e9ff] text-[#5b3aa6]"],
