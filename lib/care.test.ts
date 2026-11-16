@@ -110,6 +110,21 @@ test("홈 히어로: 퇴원 전·당일·후·미정을 큰 숫자 하나와 설
   assert.deepEqual(heroLabel("2026-11-16", "2026-11-16"), { big: "D-Day", sub: "오늘 퇴원해요" });
   assert.equal(heroLabel("2026-11-10", "2026-11-16").big, "6일째");
   assert.equal(heroLabel(null, "2026-11-16").big, "D-?");
+  // 셀프 케어 모드 1인칭 맞춤
+  assert.deepEqual(heroLabel("2026-11-18", "2026-11-16", true), { big: "D-2", sub: "너무 걱정 마세요, 씩씩이가 하나씩 챙겨드릴게요" });
+  assert.deepEqual(heroLabel("2026-11-16", "2026-11-16", true), { big: "D-Day", sub: "오늘 퇴원해요 · 서류와 약 챙겨서 조심히 귀가하세요" });
+});
+
+test("셀프 케어 모드: 할 일 템플릿 문구가 환자 1인칭으로 변환된다", async () => {
+  const seeds = seedTasks({
+    dischargeDate: "2026-11-20", birthYear: 1990, sido: "서울", sigungu: "마포구",
+    reason: "ortho", living: "alone", income: "unknown", isSelfCare: true,
+  }, []);
+  const titles = seeds.map((s) => s.title);
+  assert.ok(titles.includes("퇴원 수납할 때 원무과에 내 보험 청구 서류 4종 요청하기"));
+  assert.ok(titles.includes("식사와 오늘 약 챙겨 먹기"));
+  assert.ok(titles.includes("퇴원 일주일, 내 몸 상태 돌아보고 외래 때 물어볼 것 적어두기"));
+  assert.ok(titles.includes("회진 때 의사 선생님께 '샤워 언제부터 되나요?' 여쭤보기"));
 });
 
 test("챗봇 자료: 우리 집 정보는 한 줄에 사실 하나, 오늘 할 일·병원 일정·담당자가 들어간다", async () => {

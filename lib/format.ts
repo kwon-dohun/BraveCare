@@ -17,11 +17,26 @@ export function krTime(t: string) {
 export const dotDate = (d: string) => d.slice(0, 10).replaceAll("-", ".");
 
 // 히어로용: 큰 숫자 하나 + 설명 한 줄
-export function heroLabel(discharge: string | null, today: string) {
-  if (!discharge) return { big: "D-?", sub: "퇴원일이 정해지면 다시 계산해요" };
+export function heroLabel(discharge: string | null, today: string, isSelfCare = false) {
+  if (!discharge) {
+    return isSelfCare
+      ? { big: "D-?", sub: "퇴원일이 정해지면 씩씩이가 일정과 준비를 맞춰드려요" }
+      : { big: "D-?", sub: "퇴원일이 정해지면 다시 계산해요" };
+  }
   const d = dayDiff(discharge, today);
   const md = krDate(discharge);
-  return d > 0 ? { big: `D-${d}`, sub: `${md} 퇴원까지` } : d === 0 ? { big: "D-Day", sub: "오늘 퇴원해요" } : { big: `${-d}일째`, sub: `${md} 퇴원 후 회복 중` };
+  if (isSelfCare) {
+    return d > 0
+      ? { big: `D-${d}`, sub: "너무 걱정 마세요, 씩씩이가 하나씩 챙겨드릴게요" }
+      : d === 0
+        ? { big: "D-Day", sub: "오늘 퇴원해요 · 서류와 약 챙겨서 조심히 귀가하세요" }
+        : { big: `${-d}일째`, sub: `${md} 퇴원 후 혼자서도 씩씩하게 회복 중` };
+  }
+  return d > 0
+    ? { big: `D-${d}`, sub: `${md} 퇴원까지` }
+    : d === 0
+      ? { big: "D-Day", sub: "오늘 퇴원해요" }
+      : { big: `${-d}일째`, sub: `${md} 퇴원 후 회복 중` };
 }
 
 export function dday(daysLeft: number) {
@@ -36,24 +51,24 @@ export function dateLabel(date: string | null, rel: number | null, today: string
 }
 
 // 시간대와 회복 단계에 맞춘 씩씩이 감성 한마디
-export function timeContextCheer(stage: "visit" | "pre" | "recovery", checkedToday: boolean, hour: number, daysSince?: number) {
-  if (hour >= 0 && hour < 6) return "늦은 밤 간병 힘내세요. 응급 시엔 119";
-  if (stage === "visit") return hour < 12 ? "오늘 외래 진료! 신분증 챙기기" : "병원 진료 동행, 힘내세요";
+export function timeContextCheer(stage: "visit" | "pre" | "recovery", checkedToday: boolean, hour: number, daysSince?: number, isSelfCare = false) {
+  if (hour >= 0 && hour < 6) return isSelfCare ? "늦은 밤 혼자 아프실 땐 망설이지 말고 119" : "늦은 밤 간병 힘내세요. 응급 시엔 119";
+  if (stage === "visit") return hour < 12 ? (isSelfCare ? "오늘 외래 진료! 신분증과 카드 챙기기" : "오늘 외래 진료! 신분증 챙기기") : (isSelfCare ? "진료 잘 받으시고 조심히 귀가하세요" : "병원 진료 동행, 힘내세요");
   if (stage === "pre") {
-    if (hour < 12) return "오늘 챙길 서류와 질문 확인하기";
-    if (hour >= 18) return "퇴원 준비, 차근차근 같이 해요";
-    return "퇴원 준비, 같이 해요";
+    if (hour < 12) return isSelfCare ? "오늘 원무과에 요청할 서류 확인하기" : "오늘 챙길 서류와 질문 확인하기";
+    if (hour >= 18) return isSelfCare ? "혼자 퇴원 준비, 씩씩이가 함께해요" : "퇴원 준비, 차근차근 같이 해요";
+    return isSelfCare ? "퇴원 준비, 씩씩이와 같이 해요" : "퇴원 준비, 같이 해요";
   }
   // recovery (퇴원 후 회복)
-  if (checkedToday) return "오늘 데일리 체크 완료! 푹 쉬세요";
-  // 사후 가입자 배려: 퇴원 후 7일 이내 초기 회복기 보호자에게 놓친 서류/지원금 점검 안내
+  if (checkedToday) return isSelfCare ? "오늘 안부 기록 완료! 따뜻한 밤 보내세요" : "오늘 데일리 체크 완료! 푹 쉬세요";
+  // 사후 가입자 배려: 퇴원 후 7일 이내 초기 회복기 보호자/환자에게 놓친 서류/지원금 점검 안내
   if (daysSince !== undefined && daysSince > 0 && daysSince <= 7) {
-    if (hour >= 18) return `퇴원 ${daysSince}일째, 데일리 체크를 남겨보세요`;
-    return `퇴원 ${daysSince}일째, 놓친 서류와 미신청 지원금부터 점검해 드릴게요`;
+    if (hour >= 18) return isSelfCare ? `퇴원 ${daysSince}일째, 오늘 컨디션을 기록해 둘까요?` : `퇴원 ${daysSince}일째, 데일리 체크를 남겨보세요`;
+    return isSelfCare ? `퇴원 ${daysSince}일째, 놓친 서류와 혼자 받을 수 있는 지원금부터 챙겨드릴게요` : `퇴원 ${daysSince}일째, 놓친 서류와 미신청 지원금부터 점검해 드릴게요`;
   }
-  if (hour >= 18) return "10초 데일리 체크를 남겨보세요";
-  if (hour < 12) return "좋은 아침! 밤새 편안하셨나요?";
-  return "오늘도 씩씩하게 회복해요";
+  if (hour >= 18) return isSelfCare ? "오늘 하루 고생 많으셨어요. 10초 안부를 남겨볼까요?" : "10초 데일리 체크를 남겨보세요";
+  if (hour < 12) return isSelfCare ? "좋은 아침! 오늘 컨디션은 어떠세요?" : "좋은 아침! 밤새 편안하셨나요?";
+  return isSelfCare ? "혼자서도 씩씩하게 회복해요" : "오늘도 씩씩하게 회복해요";
 }
 
 // 퇴원일 전후 주말 원무과·주민센터 휴무 사전 경고 (D-1 주말 보정)

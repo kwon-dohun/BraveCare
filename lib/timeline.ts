@@ -65,13 +65,25 @@ const BY_REASON: Partial<Record<Reason, Omit<TaskSeed, "source">[]>> = {
   internal: [{ rel: -3, kind: "question", title: "식사와 활동에서 주의할 점이 있는지 물어보기" }],
 };
 
+export const SELF_CARE_TITLE_MAP: Record<string, string> = {
+  "원무과에서 보험 청구 서류 4종 받기": "퇴원 수납할 때 원무과에 내 보험 청구 서류 4종 요청하기",
+  "식사와 약을 챙길 사람 정하기": "식사와 오늘 약 챙겨 먹기",
+  "퇴원 일주일, 불편한 점을 환자에게 물어보고 외래 때 물어볼 것 적어두기": "퇴원 일주일, 내 몸 상태 돌아보고 외래 때 물어볼 것 적어두기",
+  "퇴원 당일 이동 방법(차량 등)과 같이 갈 사람 정하기": "퇴원 당일 이동 방법(병원 안심동행 또는 택시) 챙기기",
+  "계단 이용과 샤워가 언제부터 가능한지 물어보기": "회진 때 의사 선생님께 '샤워 언제부터 되나요?' 여쭤보기",
+};
+
 export function seedTasks(input: CaseInput, results: Result[]): TaskSeed[] {
   const byReason = (BY_REASON[input.reason] ?? []).map((t) => ({ ...t, source: "template" as const }));
   // 가능성 높은 지원만 할 일로 만든다(확인 필요까지 넣으면 타임라인이 지원 목록으로 덮인다). 마감 있는 건 퇴원 전날, 없는 건 퇴원 다음 날.
   const benefit: TaskSeed[] = results
     .filter((r) => r.verdict === "high")
     .map((r) => ({ rel: r.benefit.deadline ? -1 : 1, kind: "admin" as const, source: "benefit" as const, title: `${r.benefit.name} 신청 알아보기` }));
-  return [...COMMON, ...byReason, ...benefit].sort((a, b) => a.rel - b.rel);
+  const all = [...COMMON, ...byReason, ...benefit].sort((a, b) => a.rel - b.rel);
+  if (input.isSelfCare) {
+    return all.map((t) => ({ ...t, title: SELF_CARE_TITLE_MAP[t.title] ?? t.title }));
+  }
+  return all;
 }
 
 export const addDays = (date: string, n: number) =>

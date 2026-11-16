@@ -45,8 +45,17 @@ export async function createCase(raw: CaseInput, adminName: string, consented: b
   const name = adminName.trim().slice(0, 20) || "나";
 
   const adminToken = token();
+  const patientToken = token();
   const { data: c, error } = await db.from("cases")
-    .insert({ admin_token: adminToken, share_token: token(), share_expires_at: shareExpiry(), input, consent_at: new Date().toISOString() })
+    .insert({
+      admin_token: adminToken,
+      share_token: token(),
+      share_expires_at: shareExpiry(),
+      patient_token: patientToken,
+      is_self_care: !!input.isSelfCare,
+      input,
+      consent_at: new Date().toISOString(),
+    })
     .select("id").single();
   if (error) throw new Error("저장하지 못했어요. 잠시 후 다시 시도해주세요");
   const { data: me } = await db.from("members").insert({ case_id: c.id, name, role: "admin" }).select("id").single();

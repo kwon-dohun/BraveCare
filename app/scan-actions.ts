@@ -5,7 +5,7 @@ import { act } from "@/lib/push";
 import { todaySeoul } from "@/lib/load";
 import { askJson, hasModel } from "@/lib/openai";
 import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, extractCautionTags, validateTranscript, type DocItem, type DocType } from "@/lib/extract";
-import { CHAT_PROMPT, parseChatJson, verifyAnswer, type ChatAnswer, type Source } from "@/lib/chat";
+import { CHAT_PROMPT, buildChatPrompt, parseChatJson, verifyAnswer, type ChatAnswer, type Source } from "@/lib/chat";
 import { DOC_TYPE_LABEL } from "@/lib/extract";
 import { loadCase } from "@/lib/load";
 import { caseBrief } from "@/lib/brief";
@@ -139,7 +139,8 @@ export async function askChat(a: Auth, question: string): Promise<ChatAnswer> {
     { label: "씩씩케어 정보", text: caseBrief(data) },
     { label: "쉬운 용어 사전", text: glossaryText() },
   ];
-  const raw = await askJson(CHAT_PROMPT, [{ type: "text", text: `[자료]\n${sources.map((s) => `--- ${s.label} ---\n${s.text}`).join("\n")}\n\n[질문]\n${q}` }]);
+  const prompt = buildChatPrompt(!!data.isSelfCare);
+  const raw = await askJson(prompt, [{ type: "text", text: `[자료]\n${sources.map((s) => `--- ${s.label} ---\n${s.text}`).join("\n")}\n\n[질문]\n${q}` }]);
   if (raw === null) throw new Error("지금은 답을 만들지 못했어요. 잠시 뒤에 다시 물어봐 주세요");
   return verifyAnswer(parseChatJson(raw), sources);
 }

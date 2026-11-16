@@ -12,8 +12,15 @@ const DRAFT = "toewon:draft";
 let startedAt = 0; // 온보딩 소요 시간 측정용 (KPI)
 const SUMMARY = 5; // 질문 5개 뒤 요약
 
-interface Draft { date: string; undecided: boolean; birth: string; sido: string; gu: string; reason: Reason | null; living: Living | null; income: Income | null; name: string; step: number }
-const EMPTY: Draft = { date: "", undecided: false, birth: "", sido: "서울", gu: "", reason: null, living: null, income: null, name: "", step: 0 };
+interface Draft {
+  date: string; undecided: boolean; birth: string; sido: string; gu: string;
+  reason: Reason | null; living: Living | null; income: Income | null;
+  name: string; step: number; isSelfCare: boolean;
+}
+const EMPTY: Draft = {
+  date: "", undecided: false, birth: "", sido: "서울", gu: "",
+  reason: null, living: null, income: null, name: "", step: 0, isSelfCare: false,
+};
 
 export default function Wizard() {
   const router = useRouter();
@@ -52,7 +59,7 @@ export default function Wizard() {
     run(async () => {
       const input: CaseInput = {
         dischargeDate: d.undecided ? null : d.date, birthYear: Number(d.birth), sido: d.sido, sigungu: d.gu,
-        reason: d.reason!, living: d.living!, income: d.income!,
+        reason: d.reason!, living: d.living!, income: d.income!, isSelfCare: d.isSelfCare,
       };
       try { localStorage.removeItem(DRAFT); } catch {}
       await createCase(input, d.name, true, (Date.now() - startedAt) / 1000);
@@ -144,7 +151,44 @@ export default function Wizard() {
         {step === 3 && (
           <>
             <h1 className="text-title font-display">퇴원 후 낮 시간에는 누가 곁에 있나요?</h1>
-            <div className="mt-5 space-y-3">{LIVING_LABEL.map(([v, l]) => choice(l, d.living === v, () => next({ living: v })))}</div>
+            <div className="mt-5 space-y-3">
+              {LIVING_LABEL.map(([v, l]) =>
+                choice(l, d.living === v, () => {
+                  if (v === "alone") {
+                    set({ living: "alone" });
+                  } else {
+                    next({ living: v, isSelfCare: false });
+                  }
+                })
+              )}
+            </div>
+            {d.living === "alone" && (
+              <div className="mt-5 rounded-2xl bg-accent-soft p-4 animate-in fade-in">
+                <p className="font-semibold text-sm text-ink">이 앱은 주로 누가 쓰시나요?</p>
+                <div className="mt-3 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => next({ isSelfCare: true })}
+                    className={`flex w-full items-center justify-between rounded-xl border p-3.5 text-left text-sm font-semibold transition-all ${
+                      d.isSelfCare ? "border-primary bg-primary/20 text-ink" : "border-line bg-card text-muted hover:border-line/80"
+                    }`}
+                  >
+                    <span>환자 본인이 직접 써요 (1인 가구 셀프 케어 모드)</span>
+                    <span className="text-xs text-accent font-bold">혼자 챙기기</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => next({ isSelfCare: false })}
+                    className={`flex w-full items-center justify-between rounded-xl border p-3.5 text-left text-sm font-semibold transition-all ${
+                      !d.isSelfCare ? "border-primary bg-primary/20 text-ink" : "border-line bg-card text-muted hover:border-line/80"
+                    }`}
+                  >
+                    <span>떨어져 사는 가족이 챙겨드려요</span>
+                    <span className="text-xs text-muted">가족 돌봄</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
         {step === 4 && (
@@ -163,6 +207,7 @@ export default function Wizard() {
                 ["퇴원일", d.undecided ? "아직 미정" : d.date, 1],
                 ["나이·지역", birthOk && regionOk ? `${d.birth}년생 · ${d.sido} ${d.gu}`.trim() : "", 2],
                 ["낮 시간 돌봄", LIVING_LABEL.find(([v]) => v === d.living)?.[1], 3],
+                ...(d.isSelfCare ? [["사용 모드", "환자 본인 직접 사용 (1인 셀프 케어)", 3] as [string, string, number]] : []),
                 ["소득", INCOME_OPTIONS.find(([v]) => v === d.income)?.[1], 4],
               ] as [string, string | undefined, number][]).map(([k, v, n]) => (
                 <div key={k} className="flex items-center gap-3 px-4 py-1.5">
@@ -172,8 +217,8 @@ export default function Wizard() {
                 </div>
               ))}
             </dl>
-            <label htmlFor="nm" className="mt-5 block font-semibold">가족에게 보일 내 이름</label>
-            <input id="nm" maxLength={20} placeholder="예: 지은" value={d.name} onChange={(e) => set({ name: e.target.value })} className={field} />
+            <label htmlFor="nm" className="mt-5 block font-semibold">{d.isSelfCare ? "내 닉네임 또는 이름" : "가족에게 보일 내 이름"}</label>
+            <input id="nm" maxLength={20} placeholder={d.isSelfCare ? "예: 씩씩이" : "예: 지은"} value={d.name} onChange={(e) => set({ name: e.target.value })} className={field} />
             {err && <p role="alert" className="mt-4 text-warn">{err}</p>}
             {primary(submit, pending ? "정리하는 중…" : "씩씩케어 시작하기", !complete)}
           </>

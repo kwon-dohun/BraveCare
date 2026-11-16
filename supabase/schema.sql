@@ -118,6 +118,16 @@ alter table public.members
   add column if not exists kakao_id text,
   add column if not exists push_token text,
   add column if not exists seen_at timestamptz not null default now();
+
+-- ---- 환자 중심 케어 모드 확장 (2026-11-17) ----
+-- 1. cases: 환자 전용 안부 링크 토큰(/p/<토큰>) 및 1인 가구 셀프 케어 여부
+alter table public.cases
+  add column if not exists patient_token text unique,
+  add column if not exists is_self_care boolean not null default false;
+
+-- 2. daily_checks: 기록 주체 구분 (가족 대리 기록 vs 환자 본인 직접 기록)
+alter table public.daily_checks
+  add column if not exists source_role text not null default 'family' check (source_role in ('family', 'patient'));
 create index if not exists members_kakao_idx on public.members(kakao_id);
 
 -- 할 일 시간(외래 오후 2시)과 반복(매일 소독). 반복은 완료할 때 다음 회차를 새로 만든다.

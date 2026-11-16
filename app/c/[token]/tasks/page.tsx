@@ -23,8 +23,9 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
 
   const { actor, data, auth, base } = await adminPage(token);
   const me = actor.memberId;
-  // 기본(디폴트)은 월별 캘린더! ?view=list 일 때만 전체 할 일 목록 뷰로 전환
-  const isList = sp.view === "list";
+  const isSelfCare = !!data.isSelfCare;
+  // 기본(디폴트): 셀프 케어 모드는 할 일 목록 뷰, 일반 가족 모드는 월별 캘린더
+  const isList = isSelfCare ? sp.view !== "calendar" : sp.view === "list";
 
   const pool = data.tasks.filter((t) => t.kind !== "question");
   const open = pool.filter((t) => !t.done);
@@ -55,7 +56,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
 
   // 2) 할 일 목록 계산
   const f = sp.f === "none" || sp.f === "mine" ? sp.f : "";
-  const common = { members: data.members, auth, meId: me, today: data.today, detailBase: `${base}/tasks`, badges };
+  const common = { members: data.members, auth, meId: me, today: data.today, detailBase: `${base}/tasks`, badges, showOwner: !isSelfCare };
   const activeOpen = open.filter((t) => !t.due_date || t.due_date >= data.today);
   const pastTasks = open.filter((t) => t.due_date && t.due_date < data.today);
   const mine = sort(activeOpen.filter((t) => t.assignee_id === me));
@@ -365,55 +366,77 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
           )}
           {open.length === 0 && <p className="mt-4 flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card"><Mascot size={40} mood="cheer" />남은 일이 없어요. 수고했어요!</p>}
 
-          {/* 1) 내가 맡은 일 */}
-          {f !== "none" && open.length > 0 && (
-            <section className="mt-6" aria-label="내가 맡은 일">
-              {head("내가 맡은 일", mine.length, mine.length ? "오늘 할 일과 앞으로 해야 할 일이에요" : undefined)}
-              {mine.length ? (
+          {/* 셀프 케어 모드: 가족 분담 없이 하나의 깔끔한 체크리스트 */}
+          {isSelfCare ? (
+            <section className="mt-6" aria-label="할 일 목록">
+              {head("챙길 일", activeOpen.length, "마감이 가까운 일부터 먼저 나와요")}
+              {activeOpen.length > 0 ? (
                 <>
-                  <TaskList tasks={mine.slice(0, SHOW_FIRST)} {...common} />
-                  {mine.length > SHOW_FIRST && (
+                  <TaskList tasks={sort(activeOpen).slice(0, SHOW_FIRST)} {...common} />
+                  {activeOpen.length > SHOW_FIRST && (
                     <details className="mt-2">
-                      <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {mine.length - SHOW_FIRST}개 보기</summary>
-                      <div className="mt-2"><TaskList tasks={mine.slice(SHOW_FIRST)} {...common} /></div>
+                      <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {activeOpen.length - SHOW_FIRST}개 보기</summary>
+                      <div className="mt-2"><TaskList tasks={sort(activeOpen).slice(SHOW_FIRST)} {...common} /></div>
                     </details>
                   )}
                 </>
               ) : (
-                <p className="rounded-xl bg-card p-4 text-sm text-muted shadow-card">{needOwner.length ? "아직 맡은 일이 없어요. 아래에서 ‘내가 할게’를 눌러 보세요." : "맡은 일이 없어요."}</p>
+                <p className="rounded-xl bg-card p-4 text-sm text-muted shadow-card">남은 할 일이 없어요.</p>
               )}
             </section>
-          )}
+          ) : (
+            <>
+              {/* 1) 내가 맡은 일 */}
+              {f !== "none" && open.length > 0 && (
+                <section className="mt-6" aria-label="내가 맡은 일">
+                  {head("내가 맡은 일", mine.length, mine.length ? "오늘 할 일과 앞으로 해야 할 일이에요" : undefined)}
+                  {mine.length ? (
+                    <>
+                      <TaskList tasks={mine.slice(0, SHOW_FIRST)} {...common} />
+                      {mine.length > SHOW_FIRST && (
+                        <details className="mt-2">
+                          <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {mine.length - SHOW_FIRST}개 보기</summary>
+                          <div className="mt-2"><TaskList tasks={mine.slice(SHOW_FIRST)} {...common} /></div>
+                        </details>
+                      )}
+                    </>
+                  ) : (
+                    <p className="rounded-xl bg-card p-4 text-sm text-muted shadow-card">{needOwner.length ? "아직 맡은 일이 없어요. 아래에서 ‘내가 할게’를 눌러 보세요." : "맡은 일이 없어요."}</p>
+                  )}
+                </section>
+              )}
 
-          {/* 2) 맡을 사람이 필요한 일 */}
-          {f !== "mine" && needOwner.length > 0 && (
-            <section className="mt-6" aria-label="맡을 사람이 필요한 일">
-              {head("맡을 사람이 필요해요", needOwner.length, "마감이 가까운 일부터 먼저 나와요. ‘내가 할게’를 눌러보세요", "text-warn")}
-              <TaskList tasks={needOwner.slice(0, SHOW_FIRST)} {...common} />
-              {needOwner.length > SHOW_FIRST && (
-                <details className="mt-2">
-                  <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {needOwner.length - SHOW_FIRST}개 보기</summary>
-                  <div className="mt-2"><TaskList tasks={needOwner.slice(SHOW_FIRST)} {...common} /></div>
+              {/* 2) 맡을 사람이 필요한 일 */}
+              {f !== "mine" && needOwner.length > 0 && (
+                <section className="mt-6" aria-label="맡을 사람이 필요한 일">
+                  {head("맡을 사람이 필요해요", needOwner.length, "마감이 가까운 일부터 먼저 나와요. ‘내가 할게’를 눌러보세요", "text-warn")}
+                  <TaskList tasks={needOwner.slice(0, SHOW_FIRST)} {...common} />
+                  {needOwner.length > SHOW_FIRST && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {needOwner.length - SHOW_FIRST}개 보기</summary>
+                      <div className="mt-2"><TaskList tasks={needOwner.slice(SHOW_FIRST)} {...common} /></div>
+                    </details>
+                  )}
+                </section>
+              )}
+
+              {/* 3) 다른 가족이 맡은 일 */}
+              {f === "" && others.length > 0 && (
+                <details className="mt-6">
+                  <summary className="cursor-pointer font-semibold">다른 가족이 맡은 일 <span className="tabular-nums">{others.length}</span></summary>
+                  <p className="mt-1 text-xs text-muted">담당을 바꾸려면 항목을 눌러 들어가세요. 바꾸면 가족에게 알려줘요.</p>
+                  <div className="mt-2">
+                    <TaskList tasks={others.slice(0, SHOW_FIRST)} {...common} />
+                    {others.length > SHOW_FIRST && (
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {others.length - SHOW_FIRST}개 보기</summary>
+                        <div className="mt-2"><TaskList tasks={others.slice(SHOW_FIRST)} {...common} /></div>
+                      </details>
+                    )}
+                  </div>
                 </details>
               )}
-            </section>
-          )}
-
-          {/* 3) 다른 가족이 맡은 일 */}
-          {f === "" && others.length > 0 && (
-            <details className="mt-6">
-              <summary className="cursor-pointer font-semibold">다른 가족이 맡은 일 <span className="tabular-nums">{others.length}</span></summary>
-              <p className="mt-1 text-xs text-muted">담당을 바꾸려면 항목을 눌러 들어가세요. 바꾸면 가족에게 알려줘요.</p>
-              <div className="mt-2">
-                <TaskList tasks={others.slice(0, SHOW_FIRST)} {...common} />
-                {others.length > SHOW_FIRST && (
-                  <details className="mt-2">
-                    <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {others.length - SHOW_FIRST}개 보기</summary>
-                    <div className="mt-2"><TaskList tasks={others.slice(SHOW_FIRST)} {...common} /></div>
-                  </details>
-                )}
-              </div>
-            </details>
+            </>
           )}
 
           {/* 4) 지난 일 (기한이 지난 미완료 할 일) */}

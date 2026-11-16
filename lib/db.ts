@@ -42,6 +42,27 @@ export async function resolve(a: Auth): Promise<Actor> {
   return actor;
 }
 
+// 환자 전용 안부 링크(/p/<token>) 식별자. 최소 권한 원칙(Least Privilege)에 따라 서류·가족·설정엔 일절 접근 불가.
+export interface PatientCase {
+  caseId: string;
+  isSelfCare: boolean;
+  dischargeDate: string | null;
+  patientToken: string;
+}
+
+export async function caseFromPatientToken(token: string): Promise<PatientCase | null> {
+  if (!/^[0-9a-f]{32}$/.test(token)) return null;
+  const { data } = await db.from("cases").select("id,input,is_self_care,patient_token").eq("patient_token", token).maybeSingle();
+  if (!data) return null;
+  const input = data.input as { dischargeDate?: string | null };
+  return {
+    caseId: data.id,
+    isSelfCare: !!data.is_self_care,
+    dischargeDate: input?.dischargeDate ?? null,
+    patientToken: data.patient_token,
+  };
+}
+
 // KPI용 이벤트. 실패해도 사용자 흐름을 막지 않는다. 이름·토큰 같은 식별 정보는 넣지 않는다.
 export async function logEvent(caseId: string | null, name: string, meta: Record<string, unknown> = {}) {
   await db.from("events").insert({ case_id: caseId, name, meta });

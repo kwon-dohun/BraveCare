@@ -15,7 +15,7 @@ export const todaySeoul = () => new Date().toLocaleDateString("sv-SE", { timeZon
 
 export const loadCase = cache(async (caseId: string) => {
   const [c, m, t, s, a] = await Promise.all([
-    db.from("cases").select("input,share_token,share_expires_at,admin_token,hospital,silson24,docs_checked").eq("id", caseId).single(),
+    db.from("cases").select("input,share_token,share_expires_at,admin_token,hospital,silson24,docs_checked,patient_token,is_self_care").eq("id", caseId).single(),
     db.from("members").select("id,name,role").eq("case_id", caseId).order("created_at"),
     db.from("tasks").select("id,title,kind,due_date,rel_day,assignee_id,done,done_at,done_by,source,source_quote,memo,due_time,repeat").eq("case_id", caseId),
     db.from("benefit_status").select("benefit_id,status,docs_checked").eq("case_id", caseId),
@@ -24,6 +24,12 @@ export const loadCase = cache(async (caseId: string) => {
   if (c.error) throw c.error;
   const input = normalizeInput(c.data.input);
   const today = todaySeoul();
+  let patientToken = (c.data.patient_token ?? null) as string | null;
+  if (!patientToken) {
+    patientToken = crypto.randomUUID().replaceAll("-", "");
+    await db.from("cases").update({ patient_token: patientToken }).eq("id", caseId);
+  }
+  const isSelfCare = !!(c.data.is_self_care ?? input.isSelfCare);
   // DB의 시간은 14:00:00 꼴이라 분까지만 쓴다
   const tasks = ((t.data ?? []) as Task[]).map((x) => ({ ...x, due_time: x.due_time?.slice(0, 5) ?? null })).sort(
     (x, y) => (x.due_date ?? "9999").localeCompare(y.due_date ?? "9999") || (x.due_time ?? "99").localeCompare(y.due_time ?? "99") || (x.rel_day ?? 999) - (y.rel_day ?? 999),
@@ -35,6 +41,7 @@ export const loadCase = cache(async (caseId: string) => {
     input, today, shareToken: c.data.share_token as string, adminToken: c.data.admin_token as string,
     shareExpiresAt: c.data.share_expires_at as string, shareExpired: Date.parse(c.data.share_expires_at) < Date.now(),
     hospital: (c.data.hospital ?? "") as string, silson24: c.data.silson24 as "yes" | "no" | null, packet: (c.data.docs_checked ?? []) as string[],
+    patientToken, isSelfCare,
     members: (m.data ?? []) as Member[], tasks, status, docsChecked, results,
     activity: (a.data ?? []) as { id: string; text: string; created_at: string }[],
   };

@@ -143,6 +143,16 @@ ${taskUrl}`;
                         {copiedId === t.id ? "복사 완료!" : "카톡 부탁"}
                       </button>
                     )}
+                    {!showOwner && !t.done && t.due_date && (
+                      <a
+                        href={`/ics/${auth.k}/${auth.v}/${t.id}`}
+                        download={`${t.title}.ics`}
+                        className={`${inlineBtn} text-muted hover:text-accent`}
+                        title="내 스마트폰 캘린더에 일정 등록"
+                      >
+                        캘린더 알람 (.ics)
+                      </a>
+                    )}
                   </div>
                   {badge && <span className="mt-1.5 inline-block rounded-full bg-warn-soft px-2 py-0.5 text-caption font-semibold text-warn">{badge}</span>}
                   {t.memo && <p className="mt-1 truncate text-xs text-muted">메모: {t.memo}</p>}

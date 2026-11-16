@@ -6,6 +6,7 @@ import { Invite, RemoveMember } from "@/components/InviteButton";
 import { addDays } from "@/lib/timeline";
 import { dateLabel } from "@/lib/format";
 import Avatar from "@/components/Avatar";
+import PatientInvite from "@/components/PatientInvite";
 
 export const metadata = { title: "가족 · 씩씩케어" };
 
@@ -52,6 +53,11 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
           {members.length < 2 && <p className="mt-3 text-muted">아직 혼자예요. 가족을 초대하면 할 일을 나눠 맡길 수 있어요.</p>}
           <div className="mt-5"><Invite auth={auth} path={`/j/${data.shareToken}`} expiresAt={data.shareExpiresAt} expired={expired} /></div>
           <p className="mt-3 text-sm text-muted">초대받은 가족은 이름만 입력하고 참여해요. 참여한 가족은 모두 똑같이 할 일을 맡고, 체크하고, 퇴원 정보를 고칠 수 있어요.</p>
+          {data.patientToken && (
+            <div className="mt-5">
+              <PatientInvite patientToken={data.patientToken} />
+            </div>
+          )}
         </>
       ) : (
         <>

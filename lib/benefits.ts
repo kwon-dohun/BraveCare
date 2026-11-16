@@ -19,6 +19,7 @@ export interface CaseInput {
   income: Income;
   dailyCompleted?: boolean; // 회복 완료 / 데일리 체크 종료 여부
   customDocs?: string[]; // 원무과 발급용 추가 서류 목록
+  isSelfCare?: boolean; // 1인 가구 셀프 케어 모드 여부
 }
 
 export type Verdict = "high" | "check" | "no";
@@ -154,6 +155,7 @@ export function normalizeInput(raw: Record<string, unknown>): CaseInput {
     income: income as Income,
     dailyCompleted: !!raw.dailyCompleted,
     customDocs: Array.isArray(raw.customDocs) ? (raw.customDocs as string[]).filter((x) => typeof x === "string") : [],
+    isSelfCare: !!raw.isSelfCare,
   };
 }
 
@@ -176,6 +178,7 @@ export function validateInput(raw: unknown, today: string): CaseInput | null {
     income: INCOMES.includes(r.income as Income) ? (r.income as Income) : "unknown",
     dailyCompleted: typeof r.dailyCompleted === "boolean" ? r.dailyCompleted : false,
     customDocs: Array.isArray(r.customDocs) ? r.customDocs.filter((x): x is string => typeof x === "string").slice(0, 20) : [],
+    isSelfCare: typeof r.isSelfCare === "boolean" ? r.isSelfCare : false,
   };
 }
 

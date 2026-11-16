@@ -36,15 +36,15 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const noOwnerVisits = tasks.filter((t) => !t.done && t.kind === "schedule" && !t.assignee_id && (!t.due_date || t.due_date >= today)).length;
   const doneCount = tasks.filter((t) => t.done).length;
   const highCount = results.filter((r) => r.verdict === "high").length;
-  // 히어로는 큰 숫자 하나 + 설명 한 줄로 나눈다
-  const hero = heroLabel(input.dischargeDate, today);
-  // 씩씩이 감성 한마디: 한국 시간 기준 시간대(새벽/오전/오후/저녁)와 회복 단계, 사후 가입 여부에 맞춤
+  // 히어로는 큰 숫자 하나 + 설명 한 줄로 나눈다 (셀프 케어 모드 시 1인칭 맞춤)
+  const hero = heroLabel(input.dischargeDate, today, data.isSelfCare);
+  // 씩씩이 감성 한마디: 한국 시간 기준 시간대(새벽/오전/오후/저녁)와 회복 단계, 사후 가입 여부, 셀프 케어 모드에 맞춤
   const kstHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", hour: "numeric", hour12: false }).format(new Date()));
   const daysSince = input.dischargeDate ? -dayDiff(input.dischargeDate, today) : undefined;
-  const cheer = timeContextCheer(stage, checkedToday, kstHour, daysSince);
+  const cheer = timeContextCheer(stage, checkedToday, kstHour, daysSince, data.isSelfCare);
   const weekendWarning = weekendDischargeWarning(input.dischargeDate, today);
   const mood = stage === "recovery" && checkedToday ? "cheer" : "idle";
-  const list = { members, auth, meId: actor.memberId, today, detailBase: `${base}/tasks` };
+  const list = { members, auth, meId: actor.memberId, today, detailBase: `${base}/tasks`, showOwner: !data.isSelfCare };
   // 이번 주 띠와 다가오는 일정(할 일 중 병원 일정 + 퇴원일 + 지원 마감)
   const events = buildEvents(data);
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i));
@@ -61,7 +61,9 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       <header className="flex items-center justify-between">
         <Logo />
         <div className="-mr-2 flex items-center">
-          <span className="rounded-full bg-card px-3 py-1 text-xs font-medium text-muted shadow-card">{actor.name}님 가족</span>
+          <span className="rounded-full bg-card px-3 py-1 text-xs font-medium text-muted shadow-card">
+            {actor.name}님 {data.isSelfCare ? "(셀프 케어)" : "가족"}
+          </span>
           <Link href={`${base}/news`} aria-label={unread ? `새 소식 ${unread}개` : "새 소식"} className="relative flex w-11 items-center justify-center text-muted">
             <Icon name="bell" size={20} />
             {unread > 0 && <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#e0517a] ring-2 ring-background" />}
@@ -182,7 +184,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         </section>
       ) : null}
 
-      {noOwnerVisits > 0 && (
+      {!data.isSelfCare && noOwnerVisits > 0 && (
         <Link href={`${base}/tasks?view=list&f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={18} /></Link>
       )}
 
