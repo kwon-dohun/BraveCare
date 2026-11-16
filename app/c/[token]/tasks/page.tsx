@@ -13,7 +13,7 @@ import { dayDiff } from "@/lib/benefits";
 
 export const metadata = { title: "일정 · 씩씩케어" };
 
-const SHOW_FIRST = 5;
+const SHOW_FIRST = 3; // 각 섹션별 처음 3개만 노출하고 나머지는 더보기로 확장
 
 export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">) {
   const { token } = await props.params;
@@ -376,7 +376,17 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
           {f !== "none" && open.length > 0 && (
             <section className="mt-6" aria-label="내가 맡은 일">
               {head("내가 맡은 일", mine.length, mine.length ? "오늘 할 일과 앞으로 해야 할 일이에요" : undefined)}
-              {mine.length ? <TaskList tasks={mine} {...common} /> : (
+              {mine.length ? (
+                <>
+                  <TaskList tasks={mine.slice(0, SHOW_FIRST)} {...common} />
+                  {mine.length > SHOW_FIRST && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {mine.length - SHOW_FIRST}개 보기</summary>
+                      <div className="mt-2"><TaskList tasks={mine.slice(SHOW_FIRST)} {...common} /></div>
+                    </details>
+                  )}
+                </>
+              ) : (
                 <p className="rounded-xl bg-card p-4 text-sm text-muted shadow-card">{needOwner.length ? "아직 맡은 일이 없어요. 아래에서 ‘내가 할게’를 눌러 보세요." : "맡은 일이 없어요."}</p>
               )}
             </section>
@@ -401,7 +411,15 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
             <details className="mt-6">
               <summary className="cursor-pointer font-semibold">다른 가족이 맡은 일 <span className="tabular-nums">{others.length}</span></summary>
               <p className="mt-1 text-xs text-muted">담당을 바꾸려면 항목을 눌러 들어가세요. 바꾸면 가족에게 알려줘요.</p>
-              <div className="mt-2"><TaskList tasks={others} {...common} /></div>
+              <div className="mt-2">
+                <TaskList tasks={others.slice(0, SHOW_FIRST)} {...common} />
+                {others.length > SHOW_FIRST && (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {others.length - SHOW_FIRST}개 보기</summary>
+                    <div className="mt-2"><TaskList tasks={others.slice(SHOW_FIRST)} {...common} /></div>
+                  </details>
+                )}
+              </div>
             </details>
           )}
 
@@ -412,14 +430,17 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
                 <h2 className="text-sm font-bold text-warn">이월된 지난 일 <span className="tabular-nums">{sortedPast.length}</span></h2>
                 <span className="text-xs text-muted">마감일을 오늘로 바꾸거나 확인해보세요</span>
               </div>
-              <TaskList tasks={sortedPast} {...common} />
+              <TaskList tasks={sortedPast.slice(0, SHOW_FIRST)} {...common} />
+              {sortedPast.length > SHOW_FIRST && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {sortedPast.length - SHOW_FIRST}개 보기</summary>
+                  <div className="mt-2"><TaskList tasks={sortedPast.slice(SHOW_FIRST)} {...common} /></div>
+                </details>
+              )}
             </section>
           )}
 
-          {/* (사용자 피드백 반영: '끝낸 일' 불필요한 아코디언은 완전히 제거함) */}
-
-          {/* 할 일 직접 추가 */}
-          {f === "" && <AddTask auth={auth} />}
+          {/* (사용자 피드백 반영: 상단 우측에 '+ 추가' 버튼이 있으므로 스크롤 최하단 중복 추가 폼 및 끝낸 일 아코디언은 제거함) */}
         </>
       )}
     </>
