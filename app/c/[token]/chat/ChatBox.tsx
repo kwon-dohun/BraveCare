@@ -20,6 +20,14 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
   const [addingQ, setAddingQ] = useState(false);
   const [addedQ, setAddedQ] = useState<Record<string, boolean>>({});
   const end = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLTextAreaElement>(null);
+  // 글이 길어지면 아랫줄로 늘어나고, 6줄쯤 넘으면 그 안에서 스크롤
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [text]);
 
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [turns, busy]);
 
@@ -132,9 +140,14 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
       </div>
 
       {/* 입력창은 하단 탭 바로 위에 mt-auto로 붙어 항상 최하단에 위치 */}
-      <form className="sticky bottom-[4.5rem] z-10 mt-6 flex items-center gap-2 rounded-full bg-card/95 p-1.5 pl-4 shadow-lg border border-line backdrop-blur-md" onSubmit={(e) => { e.preventDefault(); ask(text); }}>
+      <form className="sticky bottom-[4.5rem] z-10 mt-6 flex items-end gap-2 rounded-[1.5rem] border border-line bg-card/95 p-1.5 pl-4 shadow-lg backdrop-blur-md transition-colors focus-within:border-accent" onSubmit={(e) => { e.preventDefault(); ask(text); }}>
         <label htmlFor="cq" className="sr-only">씩씩이에게 질문</label>
-        <input id="cq" value={text} maxLength={300} onChange={(e) => setText(e.target.value)} placeholder="무엇이든 물어보세요" className="min-h-0 min-w-0 flex-1 bg-transparent py-2 text-sm outline-none" />
+        {/* 16px 글씨라 휴대폰이 입력할 때 화면을 확대하지 않는다. 컴퓨터에서는 Enter로 보내고 Shift+Enter로 줄바꿈, 휴대폰은 Enter가 줄바꿈 */}
+        <textarea id="cq" ref={box} rows={1} value={text} maxLength={300} onChange={(e) => setText(e.target.value)} placeholder="무엇이든 물어보세요"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && window.matchMedia("(pointer: fine)").matches) { e.preventDefault(); ask(text); }
+          }}
+          className="min-h-0 min-w-0 flex-1 resize-none bg-transparent py-2 text-base leading-6 outline-none" />
         <button disabled={busy || !text.trim()} aria-label="보내기" className="flex h-10 w-10 min-h-0 shrink-0 items-center justify-center rounded-full bg-primary text-ink disabled:opacity-30"><Icon name="send" size={18} /></button>
       </form>
     </div>

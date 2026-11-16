@@ -97,7 +97,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       )}
 
       {/* 씩씩이 질문창: 자바스크립트 없이도 동작하는 GET 폼 */}
-      <section className="mt-3 rounded-xl bg-card p-3 shadow-card" aria-label="씩씩이에게 물어보기">
+      <section className="mt-3 rounded-xl border border-transparent bg-card p-3 shadow-card transition-colors focus-within:border-accent" aria-label="씩씩이에게 물어보기">
         <form action={`${base}/chat`} className="flex items-center gap-2">
           <Mascot size={36} />
           <label htmlFor="ask" className="sr-only">씩씩이에게 질문</label>
