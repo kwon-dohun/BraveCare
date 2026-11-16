@@ -5,6 +5,7 @@ import { extractFromImage, extractFromPaste, confirmDocItems } from "@/app/scan-
 import type { Auth } from "@/lib/db";
 import { DOC_TYPE_LABEL, type DocItem } from "@/lib/extract";
 import { toApp, useInApp } from "@/lib/app";
+import Mascot from "@/components/Mascot";
 
 const KIND: Record<DocItem["kind"], string> = { schedule: "일정", medication: "복약", caution: "주의사항", contact: "문의처" };
 const MAX = 3; // 한 번에 읽는 사진 수
@@ -116,7 +117,9 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
         <button type="button" disabled={!!busy || paste.trim().length < 5} onClick={onPaste} className="mt-2 w-full rounded-full bg-accent-soft px-4 py-3 font-semibold text-accent disabled:opacity-40">일정 찾기</button>
       </details>
 
-      {busy && <p role="status" className="mt-4 rounded-xl bg-card shadow-card p-4 text-muted">{busy}</p>}
+      {busy ? (
+        <ScanningCard busyText={busy} />
+      ) : null}
       {err && <p role="alert" className="mt-3 text-warn">{err}</p>}
       {found.length > 0 && <p role="status" className="mt-3 text-sm text-accent">읽은 서류: {found.join(", ")}</p>}
 
@@ -152,5 +155,57 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
         </section>
       )}
     </>
+  );
+}
+
+const SCAN_STEPS = [
+  "1단계: 서류에 적힌 글자를 그대로 읽어내고 있어요",
+  "2단계: 외래 일정과 주의사항을 찾고 있어요",
+  "3단계: 원문에 실제로 있는 내용인지 대조하고 있어요",
+];
+
+function ScanningCard({ busyText }: { busyText: string }) {
+  const [stepIdx, setStepIdx] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStepIdx((i) => (i + 1) % SCAN_STEPS.length);
+    }, 2400);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <section aria-live="polite" className="mt-5 overflow-hidden rounded-2xl bg-card p-5 shadow-card border border-line">
+      <div className="flex items-center gap-3">
+        <Mascot size={40} className="mascot-bob shrink-0" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-ink">{busyText}</p>
+          <p className="mt-0.5 text-xs font-medium text-accent transition-all duration-300">
+            {SCAN_STEPS[stepIdx]}
+          </p>
+        </div>
+      </div>
+
+      {/* 가상 서류 스캔 비주얼 박스 */}
+      <div className="relative mt-4 h-24 overflow-hidden rounded-xl border border-dashed border-[#c5d9cf] bg-background p-3 flex flex-col justify-around">
+        {/* 스캔 레이저 바 */}
+        <div className="scan-beam absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_8px_#62deae]" />
+        
+        {/* 가상 텍스트 라인 스켈레톤 */}
+        <div className="h-2 w-3/4 rounded-full bg-line" />
+        <div className="h-2 w-1/2 rounded-full bg-line" />
+        <div className="h-2 w-4/5 rounded-full bg-line" />
+        <div className="h-2 w-2/3 rounded-full bg-line" />
+      </div>
+
+      {/* 부드러운 진행 프로그레스 바 */}
+      <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-line">
+        <div className="pulse-bar h-full w-1/2 rounded-full bg-primary" />
+      </div>
+
+      <p className="mt-2 text-center text-xs text-muted">
+        서류 1장당 5~10초 정도 걸려요. 화면을 닫지 말고 잠시만 기다려 주세요.
+      </p>
+    </section>
   );
 }

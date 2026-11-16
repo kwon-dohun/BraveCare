@@ -86,7 +86,7 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
             ) : t.err ? (
               <Bot><p className="text-sm text-warn">{t.err}</p></Bot>
             ) : (
-              <Bot><span className="flex gap-1 py-1.5" aria-label="답을 찾는 중">{[0, 1, 2].map((d) => <span key={d} className="h-2 w-2 animate-pulse rounded-full bg-primary" style={{ animationDelay: `${d * 120}ms` }} />)}</span></Bot>
+              <ThinkingBubble />
             )}
           </div>
         ))}
@@ -103,11 +103,34 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
   );
 }
 
-function Bot({ children }: { children: React.ReactNode }) {
+function Bot({ children, mascotClass }: { children: React.ReactNode; mascotClass?: string }) {
   return (
     <div className="flex items-start gap-2">
-      <Mascot size={36} className="mt-1" />
+      <Mascot size={36} className={`mt-1 ${mascotClass ?? ""}`} />
       <div className="max-w-[85%] rounded-2xl rounded-tl-md bg-card px-4 py-3 shadow-card">{children}</div>
     </div>
+  );
+}
+
+function ThinkingBubble() {
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setStep((s) => (s + 1) % 2), 1600);
+    return () => clearInterval(timer);
+  }, []);
+
+  const msg = step === 0 ? "서류와 일정을 찾아보고 있어요" : "자료를 바탕으로 정리하고 있어요";
+
+  return (
+    <Bot mascotClass="mascot-bob">
+      <div className="flex items-center gap-2.5 py-1">
+        <div className="flex items-center gap-1" aria-label="답을 찾는 중">
+          <span className="dot-bounce h-2 w-2 rounded-full bg-primary" style={{ animationDelay: "0ms" }} />
+          <span className="dot-bounce h-2 w-2 rounded-full bg-primary" style={{ animationDelay: "150ms" }} />
+          <span className="dot-bounce h-2 w-2 rounded-full bg-primary" style={{ animationDelay: "300ms" }} />
+        </div>
+        <span className="text-xs font-medium text-muted transition-opacity duration-300">{msg}</span>
+      </div>
+    </Bot>
   );
 }
