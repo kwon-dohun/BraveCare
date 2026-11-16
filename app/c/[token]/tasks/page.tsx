@@ -11,20 +11,20 @@ import { buildEvents, monthGrid, shiftMonth, weekday, WEEKDAY, EVENT_STYLE, type
 import { krDate } from "@/lib/format";
 import { dayDiff } from "@/lib/benefits";
 
-export const metadata = { title: "일정·할 일 · 씩씩케어" };
+export const metadata = { title: "일정 · 씩씩케어" };
 
 const SHOW_FIRST = 5;
 
-export default async function TasksAndCalendar(props: PageProps<"/c/[token]/tasks">) {
+export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">) {
   const { token } = await props.params;
   const sp = await props.searchParams;
   if (sp.v === "q") redirect(`/c/${token}/questions`);
 
   const { actor, data, auth, base } = await adminPage(token);
   const me = actor.memberId;
-  const isCalendar = sp.view === "calendar";
+  // 기본(디폴트)은 월별 캘린더! ?view=list 일 때만 전체 할 일 목록 뷰로 전환
+  const isList = sp.view === "list";
 
-  // 공통 기본 정보
   const pool = data.tasks.filter((t) => t.kind !== "question");
   const open = pool.filter((t) => !t.done);
   const done = pool.filter((t) => t.done);
@@ -35,18 +35,24 @@ export default async function TasksAndCalendar(props: PageProps<"/c/[token]/task
   for (const t of open) { const b = badgeFor(t, deadlines, data.today); if (b) badges[t.id] = b; }
   const sort = (l: typeof open) => sortTasks(l, deadlines, data.today);
 
-  // 1) 캘린더 뷰 계산
+  // 1) 캘린더 계산
   const { today } = data;
   const ym = typeof sp.m === "string" && /^\d{4}-\d{2}$/.test(sp.m) ? sp.m : (typeof sp.d === "string" ? sp.d : today).slice(0, 7);
   const sel = typeof sp.d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sp.d) ? sp.d : ym === today.slice(0, 7) ? today : `${ym}-01`;
   const events = buildEvents(data);
   const dayEvents = events.get(sel) ?? [];
-  const dayTasks = data.tasks.filter((t) => t.due_date === sel);
+  const dayTasks = pool.filter((t) => t.due_date === sel);
   const othersInDay = dayEvents.filter((e) => !e.taskId);
   const [y, m] = ym.split("-").map(Number);
-  const calHref = (q: string) => `${base}/tasks?view=calendar&${q}`;
+  const calHref = (q: string) => `${base}/tasks?${q}`;
 
-  // 2) 할 일 목록 뷰 계산
+  // 날짜 선택 시 할 일 3단 분류: 내가 할 일 -> 배정 대기 -> 다른 가족
+  const dayMine = dayTasks.filter((t) => t.assignee_id === me && !t.done);
+  const dayNeedOwner = dayTasks.filter((t) => !t.assignee_id && !t.done);
+  const dayOthers = dayTasks.filter((t) => t.assignee_id && t.assignee_id !== me && !t.done);
+  const dayCompleted = dayTasks.filter((t) => t.done);
+
+  // 2) 할 일 목록 계산
   const f = sp.f === "none" || sp.f === "mine" ? sp.f : "";
   const common = { members: data.members, auth, meId: me, today: data.today, detailBase: `${base}/tasks`, badges };
   const activeOpen = open.filter((t) => !t.due_date || t.due_date >= data.today);
@@ -64,24 +70,24 @@ export default async function TasksAndCalendar(props: PageProps<"/c/[token]/task
 
   return (
     <>
-      {/* 상단 통합 세그먼트 스위처: [할 일 목록] | [달력 보기] */}
+      {/* 상단 통합 세그먼트 스위처: [달력] (메인) | [할 일 목록] */}
       <div className="flex items-center justify-between">
         <div className="inline-flex rounded-2xl bg-card p-1 shadow-card border border-line">
           <Link
             href={`${base}/tasks`}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${!isCalendar ? "bg-accent-soft text-accent" : "text-muted hover:text-ink"}`}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${!isList ? "bg-accent-soft text-accent" : "text-muted hover:text-ink"}`}
+          >
+            달력
+          </Link>
+          <Link
+            href={`${base}/tasks?view=list`}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${isList ? "bg-accent-soft text-accent" : "text-muted hover:text-ink"}`}
           >
             할 일 목록
           </Link>
-          <Link
-            href={`${base}/tasks?view=calendar`}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${isCalendar ? "bg-accent-soft text-accent" : "text-muted hover:text-ink"}`}
-          >
-            달력 보기
-          </Link>
         </div>
 
-        {isCalendar ? (
+        {!isList ? (
           <Link href={calHref(`d=${today}`)} className="flex min-h-0 items-center rounded-full bg-card px-3.5 py-1.5 text-xs font-semibold shadow-card text-ink">
             오늘
           </Link>
@@ -97,8 +103,8 @@ export default async function TasksAndCalendar(props: PageProps<"/c/[token]/task
         )}
       </div>
 
-      {/* ======================= [달력 보기 뷰] ======================= */}
-      {isCalendar ? (
+      {/* ======================= [1. 메인: 월별 캘린더 뷰] ======================= */}
+      {!isList ? (
         <>
           {!data.input.dischargeDate ? (
             <Link href={`${base}/settings`} className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-accent-soft p-3.5 text-sm text-accent hover:opacity-95 shadow-sm">
@@ -209,15 +215,19 @@ export default async function TasksAndCalendar(props: PageProps<"/c/[token]/task
             </ul>
           </section>
 
-          {/* 고른 날의 일정 */}
+          {/* 고른 날의 일정 및 할 일 (우선순위: 내가 할 일 -> 배정 대기 -> 다른 가족 순) */}
           <section className="mt-6" aria-labelledby="h-day">
-            <div className="flex items-baseline gap-2">
-              <h2 id="h-day" className="font-display text-headline">{krDate(sel)} ({weekday(sel)})</h2>
-              {sel === today && <span className="text-sm font-medium text-accent">오늘</span>}
+            <div className="flex items-baseline justify-between gap-2">
+              <div className="flex items-baseline gap-2">
+                <h2 id="h-day" className="font-display text-headline">{krDate(sel)} ({weekday(sel)})</h2>
+                {sel === today && <span className="text-sm font-medium text-accent">오늘</span>}
+              </div>
+              <span className="text-xs text-muted tabular-nums">할 일 {dayTasks.length}개</span>
             </div>
 
+            {/* 퇴원 당일 또는 외래 진료일 시각적 하이라이트 배너 */}
             {sel === data.input.dischargeDate && (
-              <div className="mt-2 flex items-center justify-between rounded-2xl bg-[#ffe9dc] p-3.5 text-[#9a3f12] border border-[#ef7a4a]/40 shadow-sm">
+              <div className="mt-2.5 flex items-center justify-between rounded-2xl bg-[#ffe9dc] p-3.5 text-[#9a3f12] border border-[#ef7a4a]/40 shadow-sm">
                 <div>
                   <p className="font-bold text-sm">퇴원 당일 · 집으로 복귀하는 날</p>
                   <p className="text-xs opacity-90 mt-0.5">원무과 보험 서류 4종 수령 및 약국 복약 지도를 꼭 챙기세요</p>
@@ -227,7 +237,7 @@ export default async function TasksAndCalendar(props: PageProps<"/c/[token]/task
             )}
 
             {dayEvents.some((e) => e.kind === "visit") && (
-              <div className="mt-2 flex items-center justify-between rounded-2xl bg-[#e3f0ff] p-3.5 text-[#1f5aa6] border border-[#3b82d6]/40 shadow-sm">
+              <div className="mt-2.5 flex items-center justify-between rounded-2xl bg-[#e3f0ff] p-3.5 text-[#1f5aa6] border border-[#3b82d6]/40 shadow-sm">
                 <div>
                   <p className="font-bold text-sm">외래 진료 당일</p>
                   <p className="text-xs opacity-90 mt-0.5">신분증을 지참하시고 진료실에서 외래 리포트를 가로로 돌려 보여주세요</p>
@@ -235,8 +245,9 @@ export default async function TasksAndCalendar(props: PageProps<"/c/[token]/task
                 <Link href={`${base}/report`} className="rounded-full bg-[#3b82d6] px-2.5 py-1 text-xs font-bold text-white shrink-0">외래 리포트</Link>
               </div>
             )}
+
             {othersInDay.length > 0 && (
-              <ul className="mt-2 space-y-2">
+              <ul className="mt-2.5 space-y-2">
                 {othersInDay.map((e) => (
                   <li key={e.title}>
                     {e.benefitId ? (
@@ -250,18 +261,77 @@ export default async function TasksAndCalendar(props: PageProps<"/c/[token]/task
                 ))}
               </ul>
             )}
-            <div className="mt-2">
-              <TaskList
-                tasks={dayTasks}
-                members={data.members}
-                auth={auth}
-                meId={me}
-                today={today}
-                detailBase={`${base}/tasks`}
-                showDate={false}
-                emptyText={othersInDay.length ? "이 날 할 일은 없어요" : "이 날은 일정이 없어요. 쉬어가는 날이에요"}
-              />
-            </div>
+
+            {/* 1) 내가 해야 할 일 (최우선) */}
+            {dayMine.length > 0 && (
+              <div className="mt-4">
+                <p className="mb-1 text-xs font-bold text-accent">내가 할 일 ({dayMine.length})</p>
+                <TaskList
+                  tasks={dayMine}
+                  members={data.members}
+                  auth={auth}
+                  meId={me}
+                  today={today}
+                  detailBase={`${base}/tasks`}
+                  showDate={false}
+                />
+              </div>
+            )}
+
+            {/* 2) 아직 사람 배정이 안 된 할 일 (내가 할게 버튼) */}
+            {dayNeedOwner.length > 0 && (
+              <div className="mt-4">
+                <p className="mb-1 text-xs font-bold text-warn">맡을 사람이 필요해요 ({dayNeedOwner.length})</p>
+                <TaskList
+                  tasks={dayNeedOwner}
+                  members={data.members}
+                  auth={auth}
+                  meId={me}
+                  today={today}
+                  detailBase={`${base}/tasks`}
+                  showDate={false}
+                />
+              </div>
+            )}
+
+            {/* 3) 다른 가족이 맡은 일 */}
+            {dayOthers.length > 0 && (
+              <div className="mt-4">
+                <p className="mb-1 text-xs font-bold text-muted">다른 가족이 맡은 일 ({dayOthers.length})</p>
+                <TaskList
+                  tasks={dayOthers}
+                  members={data.members}
+                  auth={auth}
+                  meId={me}
+                  today={today}
+                  detailBase={`${base}/tasks`}
+                  showDate={false}
+                />
+              </div>
+            )}
+
+            {/* 4) 이미 완료된 일 (간결한 한 줄) */}
+            {dayCompleted.length > 0 && (
+              <div className="mt-4">
+                <p className="mb-1 text-xs font-medium text-muted">완료한 일 ({dayCompleted.length})</p>
+                <TaskList
+                  tasks={dayCompleted}
+                  members={data.members}
+                  auth={auth}
+                  meId={me}
+                  today={today}
+                  detailBase={`${base}/tasks`}
+                  showDate={false}
+                />
+              </div>
+            )}
+
+            {dayTasks.length === 0 && othersInDay.length === 0 && (
+              <p className="mt-3 flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card">
+                <Mascot size={36} mood="rest" />이 날은 일정이 없어요. 쉬어가는 날이에요.
+              </p>
+            )}
+
             <details className="mt-3 rounded-xl bg-card shadow-card">
               <summary className="cursor-pointer px-4 py-3 text-sm font-semibold"><span className="flex items-center gap-1.5"><Icon name="plus" size={16} />이 날에 할 일 추가</span></summary>
               <div className="px-4 pb-4"><AddTask auth={auth} defaultDate={sel} plain /></div>
@@ -281,7 +351,7 @@ export default async function TasksAndCalendar(props: PageProps<"/c/[token]/task
           </section>
         </>
       ) : (
-        /* ======================= [할 일 목록 뷰] ======================= */
+        /* ======================= [2. 할 일 목록 뷰 (?view=list)] ======================= */
         <>
           {/* 진행 요약 */}
           <section className="mt-4 flex items-center gap-4 rounded-xl bg-card p-4 shadow-card" aria-label="진행 상황">
@@ -296,12 +366,13 @@ export default async function TasksAndCalendar(props: PageProps<"/c/[token]/task
           </section>
 
           {f && (
-            <Link href={`${base}/tasks`} className="mt-3 flex items-center justify-between rounded-xl bg-card px-4 py-2 text-sm text-accent shadow-card">
+            <Link href={`${base}/tasks?view=list`} className="mt-3 flex items-center justify-between rounded-xl bg-card px-4 py-2 text-sm text-accent shadow-card">
               {f === "none" ? "맡을 사람이 필요한 일만 보는 중" : "내가 맡은 일만 보는 중"}<span className="font-semibold">전체 보기</span>
             </Link>
           )}
           {open.length === 0 && <p className="mt-4 flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card"><Mascot size={40} mood="cheer" />남은 일이 없어요. 수고했어요!</p>}
 
+          {/* 1) 내가 맡은 일 */}
           {f !== "none" && open.length > 0 && (
             <section className="mt-6" aria-label="내가 맡은 일">
               {head("내가 맡은 일", mine.length, mine.length ? "오늘 할 일과 앞으로 해야 할 일이에요" : undefined)}
@@ -311,6 +382,7 @@ export default async function TasksAndCalendar(props: PageProps<"/c/[token]/task
             </section>
           )}
 
+          {/* 2) 맡을 사람이 필요한 일 */}
           {f !== "mine" && needOwner.length > 0 && (
             <section className="mt-6" aria-label="맡을 사람이 필요한 일">
               {head("맡을 사람이 필요해요", needOwner.length, "마감이 가까운 일부터 먼저 나와요. ‘내가 할게’를 눌러보세요", "text-warn")}
@@ -324,6 +396,7 @@ export default async function TasksAndCalendar(props: PageProps<"/c/[token]/task
             </section>
           )}
 
+          {/* 3) 다른 가족이 맡은 일 */}
           {f === "" && others.length > 0 && (
             <details className="mt-6">
               <summary className="cursor-pointer font-semibold">다른 가족이 맡은 일 <span className="tabular-nums">{others.length}</span></summary>
@@ -332,21 +405,18 @@ export default async function TasksAndCalendar(props: PageProps<"/c/[token]/task
             </details>
           )}
 
-          {/* 지난 일 (기한이 지난 미완료 할 일) */}
+          {/* 4) 지난 일 (기한이 지난 미완료 할 일) */}
           {f === "" && sortedPast.length > 0 && (
-            <details className="mt-6">
-              <summary className="cursor-pointer font-semibold text-muted">지난 일 <span className="tabular-nums">{sortedPast.length}</span></summary>
-              <p className="mt-1 text-xs text-muted">예정일이 지난 일이에요. 지금이라도 챙기시거나 날짜를 변경할 수 있어요.</p>
-              <div className="mt-2"><TaskList tasks={sortedPast} {...common} /></div>
-            </details>
+            <section className="mt-6" aria-label="기한이 지난 할 일">
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-warn">이월된 지난 일 <span className="tabular-nums">{sortedPast.length}</span></h2>
+                <span className="text-xs text-muted">마감일을 오늘로 바꾸거나 확인해보세요</span>
+              </div>
+              <TaskList tasks={sortedPast} {...common} />
+            </section>
           )}
 
-          {f === "" && done.length > 0 && (
-            <details className="mt-6">
-              <summary className="cursor-pointer font-semibold text-muted">끝낸 일 <span className="tabular-nums">{done.length}</span></summary>
-              <div className="mt-2"><TaskList tasks={done} {...common} /></div>
-            </details>
-          )}
+          {/* (사용자 피드백 반영: '끝낸 일' 불필요한 아코디언은 완전히 제거함) */}
 
           {/* 할 일 직접 추가 */}
           {f === "" && <AddTask auth={auth} />}

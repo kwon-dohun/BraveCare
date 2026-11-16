@@ -4,11 +4,11 @@ import { usePathname } from "next/navigation";
 import Icon, { type IconName } from "./Icon";
 import Mascot from "./Mascot";
 
-// 하단 탭 5개: 홈 → 지원 → 씩씩이 → 일정·할 일 → 전체. 씩씩이는 가운데에 크게.
+// 하단 탭 5개: 홈 → 지원 → 씩씩이 → 일정 → 전체. 씩씩이는 가운데에 크게.
 const SIDE: [string, string, IconName][] = [
   ["", "홈", "home"],
   ["/benefits", "지원", "gift"],
-  ["/tasks", "일정·할 일", "tasks"],
+  ["/tasks", "일정", "calendar"],
   ["/more", "전체", "grid"],
 ];
 // '전체' 아래에 있는 화면들 ('지원'은 1depth 탭으로 승격)

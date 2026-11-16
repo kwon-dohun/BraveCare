@@ -108,14 +108,16 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                 </div>
                 {showOwner && !t.done && (
                   t.assignee_id ? (
-                    <span className="flex shrink-0 flex-col items-center gap-0.5" title={`담당: ${owner ?? ""}`}>
+                    <div className="flex w-20 shrink-0 flex-col items-center justify-center self-center gap-0.5" title={`담당: ${owner ?? ""}`}>
                       <Avatar name={owner ?? "?"} size={28} />
-                      <span className={`max-w-14 truncate text-caption leading-none ${t.assignee_id === meId ? "font-semibold text-accent" : "text-muted"}`}>{t.assignee_id === meId ? "나" : owner}</span>
-                    </span>
+                      <span className={`max-w-16 truncate text-caption leading-none ${t.assignee_id === meId ? "font-semibold text-accent" : "text-muted"}`}>{t.assignee_id === meId ? "나" : owner}</span>
+                    </div>
                   ) : (
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <button onClick={() => run(() => claimTask(auth, t.id))} className="h-9 min-h-0 shrink-0 rounded-full bg-accent-soft px-3 text-xs font-semibold text-accent">내가 할게</button>
-                      <button type="button" onClick={() => copyHelp(t)} className="text-caption text-muted underline hover:text-ink">
+                    <div className="flex w-20 shrink-0 flex-col items-center justify-center self-center gap-1">
+                      <button onClick={() => run(() => claimTask(auth, t.id))} className="flex h-8 w-full items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent transition-colors hover:opacity-90">
+                        내가 할게
+                      </button>
+                      <button type="button" onClick={() => copyHelp(t)} className="text-caption text-muted hover:text-ink">
                         {copiedId === t.id ? "복사됨" : "도움 요청"}
                       </button>
                     </div>
