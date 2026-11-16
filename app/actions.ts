@@ -118,9 +118,18 @@ export async function joinCase(shareToken: string, name: string) {
   if (!c || Date.parse(c.share_expires_at) < Date.now()) throw new Error("만료되었거나 잘못된 링크예요. 초대한 가족에게 새 링크를 요청해주세요");
   const { count } = await db.from("members").select("id", { count: "exact", head: true }).eq("case_id", c.id);
   if ((count ?? 0) >= 12) throw new Error("참여 인원이 가득 찼어요");
-  const { data: m, error } = await db.from("members").insert({ case_id: c.id, name: n, role: "member" }).select("id").single();
+
+  // 동명이인 가족 참여 시 혼선 방지를 위해 자동으로 번호 부여 (예: 지은 2)
+  let finalName = n;
+  const { data: existingSame } = await db.from("members").select("name").eq("case_id", c.id);
+  const sameCount = (existingSame ?? []).filter((m) => m.name === n || m.name.startsWith(`${n} `)).length;
+  if (sameCount > 0) {
+    finalName = `${n} ${sameCount + 1}`.slice(0, 20);
+  }
+
+  const { data: m, error } = await db.from("members").insert({ case_id: c.id, name: finalName, role: "member" }).select("id").single();
   if (error) throw new Error("참여하지 못했어요. 다시 시도해주세요");
-  await act(c.id, `${n}님이 가족으로 참여했어요`, m.id);
+  await act(c.id, `${finalName}님이 가족으로 참여했어요`, m.id);
   await logEvent(c.id, "member_joined");
   redirect(`/c/${m.id}`);
 }

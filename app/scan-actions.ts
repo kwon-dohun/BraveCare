@@ -56,13 +56,19 @@ const KIND_MAP = { schedule: "schedule", medication: "prep", caution: "prep", co
 export async function confirmDocItems(a: Auth, items: { kind: DocItem["kind"]; text: string; quote: string; date: string | null }[]) {
   const actor = await resolve(a);
   const today = todaySeoul();
-  const rows = items
+  const rawRows = items
     .filter((i) => i.text.trim() && i.kind in KIND_MAP)
     .slice(0, 30)
     .map((i) => ({
       case_id: actor.caseId, title: maskIds(i.text.trim()).slice(0, 200), kind: KIND_MAP[i.kind], source: "doc",
       source_quote: maskIds(i.quote).slice(0, 300), due_date: i.date && /^\d{4}-\d{2}-\d{2}$/.test(i.date) ? i.date : null,
     }));
+  if (!rawRows.length) return;
+
+  // 이미 등록된 할 일과 제목 및 날짜가 완전히 동일한 중복 항목은 제외한다 (외래 예약증 중복 스캔 방어)
+  const { data: existing } = await db.from("tasks").select("title,due_date").eq("case_id", actor.caseId);
+  const existingSet = new Set((existing ?? []).map((t) => `${t.title}::${t.due_date ?? ""}`));
+  const rows = rawRows.filter((r) => !existingSet.has(`${r.title}::${r.due_date ?? ""}`));
   if (!rows.length) return;
 
   // 이미 지난 병원 일정이 있는데 새 일정을 등록하면 외래 사이클 갱신으로 본다
