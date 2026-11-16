@@ -59,7 +59,10 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
       }
     }
     setBusy(""); setFound([...new Set(types)]); setCautions([...new Set(allCautions)]);
-    if (failed < files.length) setRows(all);
+    if (failed < files.length) {
+      setRows(all);
+      router.refresh();
+    }
   };
 
   // 앱의 문서 스캐너(자동으로 반듯하게 잘라 줌)가 찍은 사진을 받는다. 매번 최신 onFiles를 쓰도록 의존성 없이 다시 건다.
@@ -74,7 +77,11 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
 
   const onPaste = async () => {
     setErr(""); setRows(null); setFound([]); setBusy("읽는 중…");
-    try { setRows(toRows((await extractFromPaste(auth, paste)).items)); setFound(["message"]); }
+    try {
+      setRows(toRows((await extractFromPaste(auth, paste)).items));
+      setFound(["message"]);
+      router.refresh();
+    }
     catch (e) { setErr(e instanceof Error ? e.message : "읽지 못했어요"); }
     setBusy("");
   };
@@ -143,13 +150,18 @@ export default function ScanFlow({ auth, base }: { auth: Auth; base: string }) {
       {err && <p role="alert" className="mt-3 text-warn">{err}</p>}
       {found.length > 0 && (
         <section role="status" className="mt-4 rounded-xl bg-accent-soft p-4 text-sm text-accent">
-          <p className="font-semibold">읽은 서류: {found.map((t) => DOC_TYPE_LABEL[t]).join(", ")}</p>
-          <p className="mt-1">읽은 글자는 아래 보관함에 저장했어요. 씩씩이에게 물어보면 이 글자를 근거로 답해요.</p>
+          <p className="font-semibold text-ink">✅ 서류 분석 완료: {found.map((t) => DOC_TYPE_LABEL[t]).join(", ")}</p>
+          <p className="mt-1 font-medium">
+            사진 원본은 개인정보 보호를 위해 저장하지 않고, <strong>읽어낸 글자만 서류 보관함에 안전하게 저장했어요.</strong>
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            화면 아래 &lsquo;보관한 서류 글자&rsquo;에서 확인하실 수 있고, 씩씩이에게 질문할 때 답변 근거로 쓰여요.
+          </p>
           {found.includes("medication") && (
-            <p className="mt-2">약봉투는 할 일로 만들지 않아요. 약은 매일 챙기는 것이라 <Link href={`${base}/daily`} className="font-semibold underline">데일리 체크</Link>에서 먹었는지 기록해요.</p>
+            <p className="mt-2 text-xs text-ink/80">약봉투는 데일리 체크에서 복약 여부를 챙겨드리므로 별도 할 일로 등록하지 않아요.</p>
           )}
           {found.includes("receipt") && (
-            <p className="mt-2">영수증은 보험 청구에 쓰는 서류예요. <Link href={`${base}/docs`} className="font-semibold underline">보험 청구 서류</Link>에서 받은 서류를 체크해 두세요.</p>
+            <p className="mt-2 text-xs text-ink/80">영수증은 보험 청구에 쓰는 서류예요. <Link href={`${base}/docs`} className="font-semibold underline">보험 청구 서류</Link>에서 챙긴 서류를 체크해 두세요.</p>
           )}
         </section>
       )}

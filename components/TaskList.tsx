@@ -23,6 +23,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
 }) {
   const { run, pending, err } = useAct();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const nameOf = (id: string | null) => members.find((m) => m.id === id)?.name;
 
   const copyHelp = async (t: T) => {
@@ -32,7 +33,11 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
     try {
       await navigator.clipboard.writeText(text);
       setCopiedId(t.id);
-      setTimeout(() => setCopiedId(null), 2500);
+      setToast("카톡 단톡방에 보낼 부탁 문구가 복사되었어요. 카톡에 붙여넣어 공유하세요!");
+      setTimeout(() => {
+        setCopiedId(null);
+        setToast(null);
+      }, 3000);
     } catch {}
   };
 
@@ -45,6 +50,12 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
   return (
     <div className={pending ? "opacity-60" : ""} aria-busy={pending}>
       {err && <p role="alert" className="mb-2 text-warn">{err}</p>}
+      {toast && (
+        <div role="status" className="mb-2.5 flex items-center justify-between rounded-xl bg-accent-soft p-3 text-xs font-medium text-accent shadow-sm">
+          <span>💬 {toast}</span>
+          <button type="button" onClick={() => setToast(null)} className="ml-2 font-bold opacity-60 hover:opacity-100">×</button>
+        </div>
+      )}
       <ul className="divide-y divide-line overflow-hidden rounded-xl bg-card shadow-card">
         {tasks.map((t) => {
           const late = !t.done && !!t.due_date && t.due_date < today;
@@ -117,8 +128,13 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                       <button onClick={() => run(() => claimTask(auth, t.id))} className="flex h-8 w-full items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent transition-colors hover:opacity-90">
                         내가 할게
                       </button>
-                      <button type="button" onClick={() => copyHelp(t)} className="text-caption text-muted hover:text-ink">
-                        {copiedId === t.id ? "복사됨" : "도움 요청"}
+                      <button
+                        type="button"
+                        onClick={() => copyHelp(t)}
+                        className={`text-caption transition-colors ${copiedId === t.id ? "font-semibold text-accent" : "text-muted hover:text-ink"}`}
+                        title="가족 단톡방에 보낼 부탁 문구를 복사합니다"
+                      >
+                        {copiedId === t.id ? "복사 완료!" : "카톡 부탁"}
                       </button>
                     </div>
                   )
