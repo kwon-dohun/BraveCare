@@ -115,64 +115,37 @@ export async function askChat(a: Auth, question: string): Promise<ChatAnswer> {
   return verifyAnswer(parseChatJson(raw), sources);
 }
 
-import { searchAdditionalBenefits, type AiBenefitItem } from "@/lib/ai-benefits";
+import { findExtraHelp, extraById, type AiBenefitItem } from "@/lib/ai-benefits";
 
-// ---- AI 지자체 특화 및 민간 재단 추가 지원 탐색 ----
+// ---- 기본 26개 제도 밖의 추가 지원 확인처 (확인된 기관·제도만, AI 생성 없음) ----
 
-export async function searchAdditionalBenefitsAction(a: Auth, extraTags: string[] = [], customKeyword = ""): Promise<AiBenefitItem[]> {
+export async function searchAdditionalBenefitsAction(a: Auth, extraTags: string[] = [], customKeyword = "") {
   const actor = await resolve(a);
-  // 비용 및 악의적 호출 방어: 케이스당 하루 5회 제한
-  await limit(actor.caseId, "ai_benefit_searched", 5, "오늘 AI 추가 탐색 횟수(하루 5회)를 모두 썼어요. 내일 다시 시도하거나 기본 26개 지원을 먼저 챙겨보세요.");
-
   const data = await loadCase(actor.caseId);
-  const nowYear = Number(todaySeoul().slice(0, 4));
-  const age = Math.max(0, nowYear - data.input.birthYear);
-  const diagnosis = data.input.reason;
-
-  const items = await searchAdditionalBenefits({
+  await logEvent(actor.caseId, "extra_help_searched", { tags: extraTags.length, keyword: !!customKeyword.trim() });
+  return findExtraHelp({
     sido: data.input.sido,
     sigungu: data.input.sigungu || undefined,
-    age,
-    diagnosis,
-    living: data.input.living === "alone" ? "독거 (혼자 생활)" : data.input.living === "away" ? "낮 시간 가족 부재(맞벌이)" : "낮 시간 돌볼 가족 있음",
-    income: data.input.income === "basic" ? "기초생활수급·차상위" : data.input.income === "mid" ? "중위소득 100% 이하" : data.input.income === "general" ? "일반 가구" : "소득 미상",
+    reason: data.input.reason,
+    income: data.input.income,
     extraTags,
-    customKeyword: customKeyword.trim() || undefined,
+    customKeyword: customKeyword.slice(0, 50),
   });
-
-  return items;
 }
 
 export async function saveAiBenefitAction(a: Auth, item: AiBenefitItem) {
   const actor = await resolve(a);
-  await db.from("tasks").insert({
+  const e = extraById(item.id); // 화면에서 온 글자를 믿지 않고 목록에서 다시 꺼낸다
+  if (!e) throw new Error("없는 항목이에요");
+  const { error } = await db.from("tasks").insert({
     case_id: actor.caseId,
-    title: `[추가 지원] ${item.organization} ${item.title} 확인하기`,
+    title: `[추가 지원] ${e.organization} ${e.title} 확인하기`,
     kind: "prep",
-    memo: `지원 내용: ${item.summary}\n확인처: ${item.howToCheck}`,
-    source: "ai_explorer",
+    memo: `${e.summary}
+확인처: ${e.howToCheck}`,
+    source: "manual",
   });
-  await act(actor.caseId, `AI가 추천한 ‘${item.title}’을 할 일에 담았어요`, actor.memberId);
+  if (error) throw error;
+  await act(actor.caseId, `${actor.name}님이 ‘${e.title}’ 확인을 할 일에 담았어요`, actor.memberId);
   revalidatePath("/c/[token]", "layout");
-}
-
-export interface ExtraBenefitSuggestion {
-  name: string;
-  agency: string;
-  target: string;
-  content: string;
-  howToApply: string;
-  tip: string;
-}
-
-export async function exploreExtraBenefits(a: Auth): Promise<ExtraBenefitSuggestion[]> {
-  const items = await searchAdditionalBenefitsAction(a, []);
-  return items.map((it) => ({
-    name: it.title,
-    agency: it.organization,
-    target: it.matchReason,
-    content: it.summary,
-    howToApply: it.howToCheck,
-    tip: it.searchQuery,
-  }));
 }

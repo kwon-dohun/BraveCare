@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import { searchAdditionalBenefitsAction, saveAiBenefitAction } from "@/app/scan-actions";
 import type { AiBenefitItem } from "@/lib/ai-benefits";
 import type { Auth } from "@/lib/db";
@@ -15,43 +16,31 @@ const EXTRA_TAGS = [
   "특정 희귀·난치질환",
 ];
 
-const CATEGORY_STYLE: Record<AiBenefitItem["category"], { label: string; badge: string }> = {
-  지자체_조례: { label: "지자체 조례", badge: "bg-[#f3e8ff] text-[#7e22ce] border border-[#d8b4fe]" },
-  민간_공익재단: { label: "민간 공익재단", badge: "bg-[#ffedd5] text-[#c2410c] border border-[#fed7aa]" },
-  특수_바우처: { label: "특수 바우처", badge: "bg-[#dbeafe] text-[#1d4ed8] border border-[#bfdbfe]" },
+const CATEGORY_STYLE: Record<AiBenefitItem["category"], string> = {
+  "상담 창구": "bg-[#f3e8ff] text-[#7e22ce] border border-[#d8b4fe]",
+  공익재단: "bg-[#ffedd5] text-[#c2410c] border border-[#fed7aa]",
+  "공적 제도": "bg-[#dbeafe] text-[#1d4ed8] border border-[#bfdbfe]",
 };
 
 export default function AiBenefitsExplorer({
   auth,
   region,
   reasonLabel,
+  base,
 }: {
   auth: Auth;
+  base: string;
   region: string | null;
   reasonLabel: string;
 }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState(0);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customKeyword, setCustomKeyword] = useState<string>("");
-  const [items, setItems] = useState<AiBenefitItem[] | null>(null);
+  const [result, setResult] = useState<{ items: AiBenefitItem[]; basics: { id: string; name: string }[]; keywordHit: boolean; keyword: string } | null>(null);
+  const items = result?.items ?? null;
   const [savedIds, setSavedIds] = useState<Record<string, boolean>>({});
   const [err, setErr] = useState<string | null>(null);
-
-  // 단계별 로딩 문구 전환 (0~2초, 2~5초, 5초+)
-  useEffect(() => {
-    let t1: NodeJS.Timeout, t2: NodeJS.Timeout;
-    if (loading) {
-      setLoadingStep(0);
-      t1 = setTimeout(() => setLoadingStep(1), 2000);
-      t2 = setTimeout(() => setLoadingStep(2), 5000);
-    }
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [loading]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -64,7 +53,7 @@ export default function AiBenefitsExplorer({
     setErr(null);
     try {
       const res = await searchAdditionalBenefitsAction(auth, selectedTags, customKeyword);
-      setItems(res);
+      setResult({ ...res, keyword: customKeyword.trim() });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "추가 지원 사업을 불러오지 못했어요");
     } finally {
@@ -81,15 +70,6 @@ export default function AiBenefitsExplorer({
     }
   };
 
-  const loadingText =
-    loadingStep === 0
-      ? customKeyword.trim()
-        ? `‘${customKeyword.trim()}’ 관련 특화 지원 사업을 살펴보고 있어요`
-        : `${region || "우리 동네"} 특화 복지 조례를 살펴보고 있어요`
-      : loadingStep === 1
-      ? "공익재단과 민간 의료비 지원 사업을 대조하고 있어요"
-      : "거의 다 찾았어요. 신청 조건을 정리하고 있어요";
-
   return (
     <div className="mt-4 rounded-2xl border border-[#b2e2d0] bg-[#f0faf5] p-4 shadow-sm transition-all">
       {/* 배너 헤더 */}
@@ -97,11 +77,10 @@ export default function AiBenefitsExplorer({
         <Mascot size={44} mood={items ? "cheer" : "idle"} className="mt-0.5 shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="rounded-full bg-[#2fb383] px-2 py-0.5 text-caption font-bold text-white">AI 맞춤 탐색</span>
-            <p className="font-semibold text-ink">지자체 조례 및 민간 재단 추가 지원</p>
+            <p className="font-semibold text-ink">기본 지원 밖에서 더 알아볼 곳</p>
           </div>
           <p className="mt-1 text-xs text-muted leading-relaxed">
-            기본 26개 공공 제도 외에, {region ? <b>{region}</b> : "거주 지역"} 특화 복지 및 공익재단(아산·삼성·혈액암협회 등)의 숨은 지원금을 AI가 찾아드려요.
+            기본 26개 제도 밖에서 우리 조건으로 더 물어볼 수 있는 기관과 제도를 알려드려요. {region ? <b>{region}</b> : "지역"} 자체 사업은 지역마다 달라서 확인하는 방법을 안내해요.
           </p>
 
           {!open && (
@@ -110,7 +89,7 @@ export default function AiBenefitsExplorer({
               onClick={() => setOpen(true)}
               className="mt-3 flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-ink shadow-sm hover:opacity-90"
             >
-              추가 지원 사업 찾아보기
+              더 알아볼 곳 보기
             </button>
           )}
         </div>
@@ -188,7 +167,7 @@ export default function AiBenefitsExplorer({
                   onClick={handleSearch}
                   className="flex-1 flex items-center justify-center rounded-xl bg-primary py-2.5 text-xs font-semibold text-ink shadow-sm hover:opacity-95"
                 >
-                  우리 조건으로 추가 지원 찾기
+                  우리 조건으로 찾기
                 </button>
                 <button
                   type="button"
@@ -207,8 +186,7 @@ export default function AiBenefitsExplorer({
               <span className="mascot-bob">
                 <Mascot size={52} mood="cheer" />
               </span>
-              <p className="mt-3 text-sm font-semibold text-ink animate-pulse">{loadingText}</p>
-              <p className="mt-1 text-caption text-muted">기존 26개 제도와 중복되지 않는 실제 사업만 선별하고 있어요</p>
+              <p className="mt-3 text-sm font-semibold text-ink animate-pulse">조건에 맞는 곳을 고르고 있어요</p>
             </div>
           )}
 
@@ -231,19 +209,36 @@ export default function AiBenefitsExplorer({
             <div className="space-y-3">
               {/* 상단 신뢰 안내 배너 */}
               <div className="rounded-xl bg-[#fff8eb] p-3 text-xs text-[#8a5300] border border-[#f5dfb8]">
-                <p className="font-semibold">💡 AI가 탐색한 추가 참고 정보예요</p>
+                <p className="font-semibold">실제로 있는 기관·제도만 보여드려요</p>
                 <p className="mt-0.5 opacity-90 leading-relaxed">
-                  지자체 조례 및 민간 재단 지원은 예산 소진 여부와 세부 심사에 따라 변동될 수 있습니다. 신청 전 해당 기관에 꼭 문의하세요.
+                  대상이 되는지, 얼마를 받는지는 각 기관의 심사로 정해져요. 내용이 해마다 바뀔 수 있으니 신청 전에 꼭 문의하세요.
                 </p>
               </div>
 
+              {result && result.basics.length > 0 && (
+                <div className="rounded-xl bg-card p-3 text-xs border border-line">
+                  <p className="font-semibold text-ink">‘{result.keyword}’ 관련 지원은 기본 목록에 이미 있어요</p>
+                  <ul className="mt-1.5 space-y-1">
+                    {result.basics.map((b) => (
+                      <li key={b.id}>
+                        <Link href={`${base}/benefits/${b.id}`} className="font-medium text-accent underline underline-offset-2">{b.name}</Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {result && result.keyword && result.basics.length === 0 && !result.keywordHit && (
+                <p className="rounded-xl bg-card p-3 text-xs text-muted border border-line leading-relaxed">
+                  ‘{result.keyword}’에 맞는 확인된 기관·제도는 목록에 없어요. 아래 주민센터·129 상담으로 우리 지역에 있는지 물어보세요.
+                </p>
+              )}
               {items.length === 0 ? (
                 <p className="py-4 text-center text-xs text-muted">
-                  입력하신 조건에 딱 맞는 추가 민간·조례 지원을 찾지 못했어요. 기본 26가지 공공 지원을 먼저 확인해 보세요.
+                  조건에 맞는 곳을 찾지 못했어요. 기본 26가지 공공 지원을 먼저 확인해 보세요.
                 </p>
               ) : (
                 items.map((it) => {
-                  const cat = CATEGORY_STYLE[it.category] || CATEGORY_STYLE.민간_공익재단;
+                  const badge = CATEGORY_STYLE[it.category];
                   const isSaved = savedIds[it.id];
                   const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(it.searchQuery)}`;
 
@@ -251,8 +246,8 @@ export default function AiBenefitsExplorer({
                     <div key={it.id} className="rounded-xl bg-card p-4 shadow-card border border-line">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <span className={`inline-block rounded-full px-2 py-0.5 text-caption font-semibold ${cat.badge}`}>
-                            {cat.label}
+                          <span className={`inline-block rounded-full px-2 py-0.5 text-caption font-semibold ${badge}`}>
+                            {it.category}
                           </span>
                           <h3 className="mt-1.5 text-sm font-semibold text-ink leading-snug">
                             {it.organization} · {it.title}
@@ -264,7 +259,7 @@ export default function AiBenefitsExplorer({
 
                       {/* 판정 근거 박스 */}
                       <div className="mt-2.5 rounded-lg bg-background px-3 py-2 text-xs text-muted">
-                        <span className="font-semibold text-ink">판정 근거 ·</span> {it.matchReason}
+                        <span className="font-semibold text-ink">보여드리는 이유 ·</span> {it.matchReason}
                       </div>
 
                       <p className="mt-2 text-caption text-muted">
@@ -279,7 +274,7 @@ export default function AiBenefitsExplorer({
                           rel="noreferrer noopener"
                           className="inline-flex items-center gap-1 text-xs font-semibold text-accent underline underline-offset-2 hover:opacity-80"
                         >
-                          공식 안내 검색하기 <Icon name="right" size={12} />
+                          검색해서 확인하기 <Icon name="right" size={12} />
                         </a>
 
                         <button
@@ -292,7 +287,7 @@ export default function AiBenefitsExplorer({
                               : "bg-accent-soft text-accent hover:opacity-90"
                           }`}
                         >
-                          {isSaved ? "할 일에 담김 ✓" : "내 지원 목록에 담기"}
+                          {isSaved ? "할 일에 담김 ✓" : "할 일에 담기"}
                         </button>
                       </div>
                     </div>
@@ -302,16 +297,16 @@ export default function AiBenefitsExplorer({
 
               {/* 병원 사회사업실 연계 가이드 */}
               <div className="rounded-xl bg-card/80 p-3 text-caption text-muted border border-line leading-relaxed">
-                <p className="font-semibold text-ink">💡 퇴원 전 병원 원무과·사회사업실에 이 화면을 보여주며 상담해 보세요</p>
+                <p className="font-semibold text-ink">퇴원 전에 병원 의료사회복지팀에 이 화면을 보여주며 상담해 보세요</p>
                 <p className="mt-0.5">
-                  민간 공익재단 의료비 지원은 개인이 직접 신청하는 것보다 병원 의료사회복지사의 추천서가 있을 때 선정 확률이 가장 높습니다.
+                  민간 재단의 의료비 지원은 병원 의료사회복지팀을 거쳐 신청하는 경우가 많아요.
                 </p>
               </div>
 
               <div className="text-center pt-1">
                 <button
                   type="button"
-                  onClick={() => setItems(null)}
+                  onClick={() => setResult(null)}
                   className="text-xs text-muted underline hover:text-ink"
                 >
                   조건 다시 변경해서 찾기

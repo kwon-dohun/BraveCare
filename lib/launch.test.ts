@@ -115,3 +115,18 @@ test("캘린더 파일: 같은 할 일은 같은 UID, DTSTAMP는 일정 날짜�
   assert.notEqual(a.match(/DTSTAMP:(\S+)/)![1], "20261127T000000Z");
   assert.equal(a.match(/UID:\S+/)![0], b.match(/UID:\S+/)![0]);
 });
+
+import { findExtraHelp } from "./ai-benefits.ts";
+test("추가 확인처: 지어낸 사업명·금액 없이 조건으로만 고른다", () => {
+  const p = { sido: "부산", sigungu: "해운대구", reason: "ortho", income: "general", extraTags: [] as string[] };
+  const r = findExtraHelp(p);
+  assert.deepEqual(r.items.map((i) => i.id), ["hospital_sw", "local_center", "call129"]);
+  assert.ok(r.items.every((i) => !/\d+\s*(만\s*)?원|개월/.test(i.summary)));
+  assert.equal(r.items[1].searchQuery, "부산 해운대구 퇴원 환자 지원");
+  const low = findExtraHelp({ ...p, income: "basic", extraTags: ["국가유공자"] }).items.map((i) => i.id);
+  assert.ok(low.includes("asan") && low.includes("chest") && low.includes("veteran"));
+  const kw = findExtraHelp({ ...p, customKeyword: "휠체어 대여" });
+  assert.ok(kw.basics.some((b) => b.id === "assistive_rental"));
+  assert.ok(kw.keywordHit && kw.items.some((i) => i.id === "assistive_device"));
+  assert.equal(findExtraHelp({ ...p, customKeyword: "탈모" }).keywordHit, false);
+});

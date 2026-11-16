@@ -21,8 +21,8 @@ export default async function Benefits(props: PageProps<"/c/[token]/benefits">) 
       <h1 className="text-title font-display leading-snug">우리 가족이 받을 수 있는<br />지원 <span className="text-accent tabular-nums">{high.length}개</span></h1>
       <p className="mt-1 text-sm text-muted">공공 지원 {results.length}가지를 입력한 조건으로 가려냈어요. 특정 업체로 연결하지 않아요.</p>
 
-      {/* AI 맞춤 추가 지원 탐색기 (지자체 특화 조례 사업 및 민간 공익재단 지원) */}
-      <AiBenefitsExplorer auth={auth} region={region || null} reasonLabel={reasonLabel} />
+      {/* 기본 26개 밖의 추가 확인처 (확인된 기관·제도만) */}
+      <AiBenefitsExplorer auth={auth} region={region || null} reasonLabel={reasonLabel} base={base} />
 
       {/* 실시간 탭 필터 및 키워드 검색기 */}
       <BenefitsFilterView
