@@ -113,23 +113,26 @@ function Bot({ children, mascotClass }: { children: React.ReactNode; mascotClass
 }
 
 function ThinkingBubble() {
-  const [step, setStep] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setStep((s) => (s + 1) % 2), 1600);
-    return () => clearInterval(timer);
-  }, []);
+  const [delayed, setDelayed] = useState(false);
 
-  const msg = step === 0 ? "서류와 일정을 찾아보고 있어요" : "자료를 바탕으로 정리하고 있어요";
+  useEffect(() => {
+    const timer = setTimeout(() => setDelayed(true), 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <Bot mascotClass="mascot-bob">
-      <div className="flex items-center gap-2.5 py-1">
-        <div className="flex items-center gap-1" aria-label="답을 찾는 중">
-          <span className="dot-bounce h-2 w-2 rounded-full bg-primary" style={{ animationDelay: "0ms" }} />
-          <span className="dot-bounce h-2 w-2 rounded-full bg-primary" style={{ animationDelay: "150ms" }} />
-          <span className="dot-bounce h-2 w-2 rounded-full bg-primary" style={{ animationDelay: "300ms" }} />
+      <div className="py-1">
+        <div className="flex items-center gap-1.5" aria-label="답을 작성하는 중">
+          <span className="dot-bounce h-2.5 w-2.5 rounded-full bg-primary" style={{ animationDelay: "0ms" }} />
+          <span className="dot-bounce h-2.5 w-2.5 rounded-full bg-primary" style={{ animationDelay: "150ms" }} />
+          <span className="dot-bounce h-2.5 w-2.5 rounded-full bg-primary" style={{ animationDelay: "300ms" }} />
         </div>
-        <span className="text-xs font-medium text-muted transition-opacity duration-300">{msg}</span>
+        {delayed && (
+          <p className="mt-2 text-xs text-muted transition-opacity duration-300">
+            답변을 준비하고 있어요. 조금만 기다려 주세요.
+          </p>
+        )}
       </div>
     </Bot>
   );
