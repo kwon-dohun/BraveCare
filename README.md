@@ -34,7 +34,7 @@
 ### 2.1. 5문항 온보딩 및 2026 복지 룰 엔진
 - **경량 온보딩**: 입원 사유, 퇴원일(미정 허용), 연령 및 거주지, 낮 시간 돌봄 공백, 대략의 소득 구간만 입력받습니다.
 - **26종 공공 복지 매칭**: 2026년 보건복지부·지자체 가이드라인을 기반으로 '대상 가능성 높음', '소득 확인 필요', '해당 없음'을 결정론적으로 판정합니다.
-- **퇴원 필수 서류 체크**: 실손24 지원 여부 기록 및 퇴원 시 챙겨야 할 원무과 서류 4종을 점검합니다.
+- **실손24 공공데이터 자동 판별**: 보험개발원 오픈 API(`recuperation-institutions`)와 연동하여 입원 병원 검색 시 실손24 전산 청구 지원 여부를 실시간 자동 판별하고, 미지원 병원은 만능 서류 4종 패키지를 필수 안내합니다.
 
 ### 2.2. 퇴원 타임라인 및 스마트 캘린더 연동 (.ics)
 - **4단계 회복 사이클**: 퇴원 전 준비 -> 퇴원 당일 -> 집에서 회복 및 첫 외래 -> 정기 외래 및 재활
@@ -164,6 +164,7 @@ npm install
 # NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 # SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 # GPT_API_KEY=your-openai-api-key
+# SILSON24_SERVICE_KEY=your-data-go-kr-service-key    보험개발원 실손24 참여 요양기관 안내 서비스 (공공데이터포털)
 # (선택) 아래 값이 없으면 해당 기능의 버튼이 보이지 않습니다
 # KAKAO_REST_KEY=            카카오 로그인(되찾기). KAKAO_CLIENT_SECRET은 카카오 콘솔에서 켰을 때만
 # NEXT_PUBLIC_KAKAO_JS_KEY=  카카오톡 공유 버튼

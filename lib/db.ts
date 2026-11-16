@@ -2,7 +2,11 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
 // 모든 접근은 서버에서 service role로만. RLS 정책이 없어 공개 키로는 아무것도 못 읽는다.
-export const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+// 빌드 타임 정적 분석 시 환경 변수가 없을 때를 대비해 더미 폴백 제공
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "placeholder-key";
+
+export const db = createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: false },
 });
 
