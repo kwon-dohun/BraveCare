@@ -119,7 +119,7 @@ import { searchAdditionalBenefits, type AiBenefitItem } from "@/lib/ai-benefits"
 
 // ---- AI 지자체 특화 및 민간 재단 추가 지원 탐색 ----
 
-export async function searchAdditionalBenefitsAction(a: Auth, extraTags: string[] = []): Promise<AiBenefitItem[]> {
+export async function searchAdditionalBenefitsAction(a: Auth, extraTags: string[] = [], customKeyword = ""): Promise<AiBenefitItem[]> {
   const actor = await resolve(a);
   // 비용 및 악의적 호출 방어: 케이스당 하루 5회 제한
   await limit(actor.caseId, "ai_benefit_searched", 5, "오늘 AI 추가 탐색 횟수(하루 5회)를 모두 썼어요. 내일 다시 시도하거나 기본 26개 지원을 먼저 챙겨보세요.");
@@ -137,6 +137,7 @@ export async function searchAdditionalBenefitsAction(a: Auth, extraTags: string[
     living: data.input.living === "alone" ? "독거 (혼자 생활)" : data.input.living === "away" ? "낮 시간 가족 부재(맞벌이)" : "낮 시간 돌볼 가족 있음",
     income: data.input.income === "basic" ? "기초생활수급·차상위" : data.input.income === "mid" ? "중위소득 100% 이하" : data.input.income === "general" ? "일반 가구" : "소득 미상",
     extraTags,
+    customKeyword: customKeyword.trim() || undefined,
   });
 
   return items;

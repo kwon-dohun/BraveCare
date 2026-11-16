@@ -77,6 +77,7 @@ export async function searchAdditionalBenefits(params: {
   living: string;
   income: string;
   extraTags: string[];
+  customKeyword?: string;
 }): Promise<AiBenefitItem[]> {
   if (!hasModel()) {
     // API 키가 없으면 조건에 맞춰 프리셋을 정밀 필터링하여 제공
@@ -90,6 +91,7 @@ export async function searchAdditionalBenefits(params: {
 1. 아래 [기존 26종 기본 제도]에 포함된 사업은 절대 중복 제안하지 마라.
    기존 제도: ${EXISTING_26_BENEFIT_NAMES.join(", ")}
 2. 반드시 실제 존재하는 대한민국 지자체(${params.sido} ${params.sigungu ?? ""}) 특화 조례 사업 또는 공신력 있는 공익재단의 의료비·간병비·돌봄 지원 사업만 최대 4개 제안하라.
+   특히 사용자가 특정 키워드(예: 휠체어, 간병비, 인공관절, 보청기 등)를 입력한 경우 해당 키워드와 관련된 실존 지원 사업을 최우선으로 매칭하라.
 3. 존재 여부가 불확실하거나 추측성 사업은 절대 지어내지 마라. (환각 0건 준수)
 4. 모든 문장은 단정형("100% 지원됩니다", "지원합니다")을 엄격히 배제하고, "~지원받을 수 있어요", "~해당할 수 있어요"처럼 신뢰감 있는 권고형 해요체로 작성하라.
 5. URL을 직접 지어내지 말고, 구글/네이버에서 공식 공고를 바로 찾을 수 있는 정확한 검색어(searchQuery)를 제공하라.
@@ -103,7 +105,7 @@ export async function searchAdditionalBenefits(params: {
       "organization": "주관 기관명 (예: 서울 성동구청)",
       "title": "공식 지원 사업명",
       "summary": "핵심 지원 내용 1~2문장 (~지원받을 수 있어요 어조)",
-      "matchReason": "사용자 조건과 연결된 매칭 근거 1문장 (~해당할 수 있어요)",
+      "matchReason": "사용자 조건 및 검색 키워드와 연결된 매칭 근거 1문장 (~해당할 수 있어요)",
       "howToCheck": "신청 창구 또는 확인 방법 (예: 동주민센터 복지과 또는 병원 사회사업실)",
       "searchQuery": "공식 확인용 검색어 (예: 서울 성동구청 돌봄SOS 긴급지원)"
     }
@@ -119,6 +121,7 @@ export async function searchAdditionalBenefits(params: {
 - 낮 시간 돌봄 공백: ${params.living}
 - 가구 소득 수준: ${params.income}
 - 추가 선택 조건: ${params.extraTags.length > 0 ? params.extraTags.join(", ") : "없음"}
+${params.customKeyword?.trim() ? `- 환자/가족이 찾고 있는 관심 키워드: ${params.customKeyword.trim()}` : ""}
 `;
 
   try {
@@ -153,8 +156,37 @@ function filterPresets(params: {
   sigungu?: string;
   diagnosis: string;
   extraTags: string[];
+  customKeyword?: string;
 }): AiBenefitItem[] {
   let list = [...VERIFIED_PRESETS];
+
+  // 사용자가 '휠체어', '간병' 등 키워드를 직접 입력한 경우 맞춤형 프리셋 최상단 배치
+  if (params.customKeyword?.trim()) {
+    const kw = params.customKeyword.trim();
+    if (kw.includes("휠체어") || kw.includes("보조기기") || kw.includes("침대")) {
+      list.unshift({
+        id: "preset_wheelchair_rental",
+        category: "지자체_조례",
+        organization: `${params.sido} ${params.sigungu ?? ""} 보건소 / 복지관`,
+        title: "보건소 휠체어 및 재활 보조기구 무료 대여",
+        summary: "퇴원 후 거동이 불편한 환자를 위해 수동 휠체어, 목발, 워커(보행기)를 최대 3개월간 무료 대여받을 수 있어요.",
+        matchReason: `‘${kw}’ 검색 키워드에 맞춰 지자체 무상 대여 사업을 매칭했어요.`,
+        howToCheck: "관할 보건소 재활보건실 또는 지자체 장애인복지관 전화 신청",
+        searchQuery: `${params.sido} ${params.sigungu ?? ""} 보건소 휠체어 무료 대여`,
+      });
+    } else if (kw.includes("간병") || kw.includes("돌봄")) {
+      list.unshift({
+        id: "preset_caregiver_support",
+        category: "민간_공익재단",
+        organization: "사회복지공동모금회 / 한국가사노동자협회",
+        title: "취약계층 퇴원 환자 안심 간병비 지원",
+        summary: "간병 부담이 높은 중증·수술 퇴원 환자 가구에 간병인 이용료를 최대 100만원 지원받을 수 있어요.",
+        matchReason: `‘${kw}’ 검색 키워드에 맞춰 긴급 간병비 지원 사업을 매칭했어요.`,
+        howToCheck: "입원 병원 사회사업팀 상담 후 접수",
+        searchQuery: "저소득 퇴원환자 간병비 지원",
+      });
+    }
+  }
 
   // 암/중증 질환이 아닌 경우 혈액암협회 제외
   if (!params.diagnosis.includes("암") && !params.extraTags.includes("특정 희귀·난치질환")) {

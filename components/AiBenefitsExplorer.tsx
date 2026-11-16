@@ -34,6 +34,7 @@ export default function AiBenefitsExplorer({
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [customKeyword, setCustomKeyword] = useState<string>("");
   const [items, setItems] = useState<AiBenefitItem[] | null>(null);
   const [savedIds, setSavedIds] = useState<Record<string, boolean>>({});
   const [err, setErr] = useState<string | null>(null);
@@ -62,7 +63,7 @@ export default function AiBenefitsExplorer({
     setLoading(true);
     setErr(null);
     try {
-      const res = await searchAdditionalBenefitsAction(auth, selectedTags);
+      const res = await searchAdditionalBenefitsAction(auth, selectedTags, customKeyword);
       setItems(res);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "추가 지원 사업을 불러오지 못했어요");
@@ -82,7 +83,9 @@ export default function AiBenefitsExplorer({
 
   const loadingText =
     loadingStep === 0
-      ? `${region || "우리 동네"} 특화 복지 조례를 살펴보고 있어요`
+      ? customKeyword.trim()
+        ? `‘${customKeyword.trim()}’ 관련 특화 지원 사업을 살펴보고 있어요`
+        : `${region || "우리 동네"} 특화 복지 조례를 살펴보고 있어요`
       : loadingStep === 1
       ? "공익재단과 민간 의료비 지원 사업을 대조하고 있어요"
       : "거의 다 찾았어요. 신청 조건을 정리하고 있어요";
@@ -151,6 +154,32 @@ export default function AiBenefitsExplorer({
                     </button>
                   );
                 })}
+              </div>
+
+              {/* 원하는 키워드 직접 입력창 */}
+              <div className="mt-3.5">
+                <label htmlFor="custom-kw" className="block text-xs font-semibold text-ink mb-1.5">
+                  특별히 찾고 싶은 키워드가 있나요? (선택)
+                </label>
+                <div className="relative">
+                  <input
+                    id="custom-kw"
+                    type="text"
+                    value={customKeyword}
+                    onChange={(e) => setCustomKeyword(e.target.value)}
+                    placeholder="예: 휠체어 대여, 간병인 비용, 인공관절, 보청기 등"
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-xs placeholder:text-muted focus:border-accent focus:outline-none shadow-xs"
+                  />
+                  {customKeyword && (
+                    <button
+                      type="button"
+                      onClick={() => setCustomKeyword("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted hover:text-ink"
+                    >
+                      지우기
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="mt-4 flex gap-2">
