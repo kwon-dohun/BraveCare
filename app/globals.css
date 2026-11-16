@@ -174,12 +174,9 @@ button.bg-primary:disabled, button.bg-accent-soft:disabled {
   transform: none;
 }
 
-/* 불러오는 동안 자리 표시 */
-.skeleton {
-  background: linear-gradient(90deg, var(--line) 0%, #eef6f2 50%, var(--line) 100%) 0 0 / 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-}
-@keyframes shimmer { to { background-position: -200% 0; } }
+/* 화면을 옮기는 동안 위쪽 얇은 진행 줄. 빠르게 끝나면 아예 안 보이도록 조금 늦게 시작한다 */
+.nav-progress { transform-origin: left; animation: nav-grow 1.2s ease-out 0.15s both; }
+@keyframes nav-grow { from { transform: scaleX(0); } to { transform: scaleX(0.9); } }
 
 /* 입력 커서와 스크롤바도 민트 */
 input, textarea { caret-color: var(--accent); }
@@ -237,5 +234,5 @@ dialog.sheet[open]::backdrop {
 
 @media (prefers-reduced-motion: reduce) {
   a.bg-primary, button.bg-primary, label.bg-primary { transition: none; }
-  dialog.sheet[open], dialog.sheet[open]::backdrop, .mascot-bob, .skeleton, .dot-bounce, .scan-beam, .pulse-bar { animation: none; }
+  dialog.sheet[open], dialog.sheet[open]::backdrop, .mascot-bob, .nav-progress, .dot-bounce, .scan-beam, .pulse-bar { animation: none; }
 }
