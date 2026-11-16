@@ -19,10 +19,10 @@ export interface Actor {
 
 // URL 속 추측 불가능한 토큰이 곧 권한이다. 처음 만든 사람은 케이스 토큰, 참여한 가족은 구성원 ID로 /c/<값>에 들어온다. 권한은 모두 같다.
 export async function actorFromAdminToken(token: string): Promise<Actor | null> {
-  const { data: c } = await db.from("cases").select("id").eq("admin_token", token).maybeSingle();
-  if (!c) return null;
-  const { data: m } = await db.from("members").select("id,name").eq("case_id", c.id).eq("role", "admin").limit(1).single();
-  return m ? { caseId: c.id, memberId: m.id, name: m.name, role: "admin" } : null;
+  // 케이스와 처음 만든 가족을 한 번에 찾는다(DB 왕복 1회)
+  const { data: m } = await db.from("members").select("id,name,case_id,cases!inner(admin_token)")
+    .eq("cases.admin_token", token).eq("role", "admin").limit(1).maybeSingle();
+  return m ? { caseId: m.case_id, memberId: m.id, name: m.name, role: "admin" } : null;
 }
 
 export async function actorFromMemberId(memberId: string): Promise<Actor | null> {

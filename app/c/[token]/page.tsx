@@ -19,8 +19,8 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const isNew = (await props.searchParams).new === "1";
   const { actor, data, auth, base } = await adminPage(token);
   const { input, today, tasks, members, results, status, activity } = data;
-  const unread = await unreadCount(actor.caseId, actor.memberId);
-  const checkedToday = (await loadDaily(actor.caseId)).some((c) => c.check_date === today);
+  const [unread, daily] = await Promise.all([unreadCount(actor.caseId, actor.memberId), loadDaily(actor.caseId)]);
+  const checkedToday = daily.some((c) => c.check_date === today);
 
   // 시점에 따라 맨 위에 올 것이 달라진다: 병원 가는 날 → 퇴원 전 → 집에서 회복
   const visit = tasks.find((t) => t.kind === "schedule" && t.due_date === today);
