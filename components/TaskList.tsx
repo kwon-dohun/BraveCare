@@ -31,16 +31,19 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
     const taskPath = detailBase ? `${detailBase}/${t.id}` : `/c/${auth.v}/tasks`;
     const taskUrl = `${origin}${taskPath}`;
 
-    const dateStr = t.due_date ? `${krDate(t.due_date)}${t.due_time ? ` ${krTime(t.due_time)}` : ""}` : "기한 미정";
-    const memoStr = t.memo ? `\n📝 메모: ${t.memo}` : "";
+    const dateStr = t.due_date ? `${krDate(t.due_date)}${t.due_time ? ` ${krTime(t.due_time)}` : ""}` : "날짜 미정";
+    const memoLine = t.memo ? `• 메모: ${t.memo}\n` : "";
 
-    const text = `[씩씩케어] 가족 돌봄 부탁드려요 🌿
+    const text = `가족 여러분, 씩씩이에요 🌱
 
-📌 할 일: ${t.title}
-🗓 일시: ${dateStr}${memoStr}
+아직 맡은 사람이 없는 일이 있어요!
+시간 되시는 분이 도와주실 수 있나요?
 
-아직 맡은 가족이 없어요.
-시간 되시는 분이 아래 링크에서 '내가 할게'를 눌러주세요!
+• 할 일: ${t.title}
+• 일시: ${dateStr}
+${memoLine}
+아래 링크에서 ‘내가 할게’를 꾹 눌러주시면 돼요.
+오늘도 다 같이 씩씩하게! ✨
 
 👉 바로 확인하고 맡기:
 ${taskUrl}`;
