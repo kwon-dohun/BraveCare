@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { renewShareLink, removeMember } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import Sheet from "./Sheet";
@@ -27,6 +28,7 @@ const TEXT = "가족 퇴원 준비를 씩씩케어에서 같이 나눠서 해요
 export function Invite({ auth, path, expiresAt, expired }: { auth: Auth; path: string; expiresAt: string; expired: boolean }) {
   const [open, setOpen] = useState(false);
   const [msg, setMsg] = useState("");
+  const [qr, setQr] = useState("");
   const { run, pending, err } = useAct();
   const url = () => `${location.origin}${path}`;
   const app = useInApp();
@@ -40,6 +42,11 @@ export function Invite({ auth, path, expiresAt, expired }: { auth: Auth; path: s
     if (app) return void toApp({ t: "share", text: TEXT, url: url() }); // 앱에서는 휴대폰 공유창
     try { await navigator.share({ title: "씩씩케어", text: TEXT, url: url() }); } catch {}
   };
+  // QR은 이 기기 안에서 만든다. 외부 QR 서비스에 맡기면 초대 링크(=열쇠)가 그쪽으로 넘어간다.
+  useEffect(() => {
+    if (!open || expired) return;
+    QRCode.toDataURL(`${location.origin}${path}`, { margin: 1, width: 240, color: { dark: "#0b3d2e", light: "#ffffff" } }).then(setQr).catch(() => setQr(""));
+  }, [open, expired, path]);
   const row = "flex w-full items-center justify-between rounded-xl bg-card shadow-card px-4 py-3 text-left";
 
   return (
@@ -54,6 +61,14 @@ export function Invite({ auth, path, expiresAt, expired }: { auth: Auth; path: s
             {canShare && <button onClick={share} className={row}><span>{KAKAO_KEY && !app ? "다른 앱으로 보내기" : "카카오톡·다른 앱으로 보내기"}</span><Icon name="right" size={18} className="text-muted" /></button>}
             <button onClick={() => { location.href = `sms:?&body=${encodeURIComponent(`${TEXT} ${url()}`)}`; }} className={row}><span>문자로 보내기</span><Icon name="right" size={18} className="text-muted" /></button>
             <button onClick={copy} className={row}><span>링크 복사</span><Icon name="right" size={18} className="text-muted" /></button>
+            {qr && (
+              <details className="rounded-xl bg-card px-4 shadow-card">
+                <summary className="cursor-pointer font-medium">QR 코드로 보여주기</summary>
+                {/* eslint-disable-next-line @next/next/no-img-element -- 이 기기에서 만든 data URL이라 최적화할 것이 없다 */}
+                <img src={qr} alt="가족 초대 QR 코드" width={240} height={240} className="mx-auto my-3 rounded-lg" />
+                <p className="pb-3 text-center text-sm text-muted">가족이 휴대폰 카메라로 비추면 참여 화면이 열려요. 옆에 있는 가족에게 바로 보여줄 때 편해요.</p>
+              </details>
+            )}
           </div>
         )}
         {msg && <p role="status" className="mt-3 break-all text-sm text-accent">{msg}</p>}
