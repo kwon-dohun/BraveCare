@@ -1,247 +1,248 @@
 # 씩씩케어 (BraveCare)
 
-> 수술·입원 후 퇴원 골든타임부터 정기 외래까지, 맞벌이 가족을 위한 회복 관리 및 역할 분담 플랫폼
+> 퇴원 전 준비부터 회복 기록과 정기 외래까지, 환자와 가족이 함께 관리하는 회복·돌봄 협업 서비스
 
-<p align="left">
-  <img src="https://img.shields.io/github/v/release/kwon-dohun/bravecare?style=flat-square&color=blue" alt="Release" />
-  <img src="https://img.shields.io/badge/Next.js-16.0-black?style=flat-square&logo=next.js" alt="Next.js" />
-  <img src="https://img.shields.io/badge/React-19.0-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
-  <img src="https://img.shields.io/badge/React%20Native-Expo%2058-000020?style=flat-square&logo=expo" alt="React Native Expo" />
-  <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/TailwindCSS-v4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white" alt="TailwindCSS" />
-  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase" />
-  <img src="https://img.shields.io/badge/Vercel-Deployed-000000?style=flat-square&logo=vercel" alt="Vercel" />
-</p>
+[웹 서비스](https://bravecare-kr.vercel.app) · [Android APK 받기](https://github.com/kwon-dohun/bravecare/releases/latest)
 
-- 웹 서비스 링크: [https://bravecare-kr.vercel.app](https://bravecare-kr.vercel.app)
-- 안드로이드 앱 다운로드: [GitHub Releases (APK)](https://github.com/kwon-dohun/bravecare/releases/latest)
-- iOS 앱: 출시 준비 중입니다. 앱스토어 등록 전까지는 웹 서비스를 이용해 주세요.
-- 기획 문서 (PRD v3.7): [BraveCare PRD v3.7 (GitHub)](./docs/PRD.md) · [Notion (v3.6 아카이브)](https://app.notion.com/p/BraveCare-419575b2d5528070b2dcd256a85e373c)
-- 모바일 앱 프로젝트: `mobile/` (React Native Expo 앱 셸, Android·iOS)
+> Android는 APK로 직접 설치해 사용한다. Google Play·App Store에는 아직 출시하지 않았으며, iOS 사용자는 웹 서비스를 이용한다.
 
----
+## 소개
 
-## 1. 프로젝트 개요
+퇴원은 치료의 끝이 아니라 일상 회복의 시작이다. 하지만 환자와 가족은 퇴원 안내문, 병원 문자, 약봉투, 외래 일정, 보험 서류, 공공 지원 정보, 가족 간 역할 분담을 동시에 관리해야 한다.
 
-병원은 보통 퇴원 전날(D-1) 오후나 당일 아침에 갑작스럽게 퇴원을 통보합니다. 경황이 없는 환자와 맞벌이 보호자는 원무과 필수 서류, 공공 복지 지원, 퇴원 후 간병 분담 계획을 세우지 못한 채 혼란을 겪습니다.
+**씩씩케어**는 이처럼 흩어진 정보를 하나의 회복 흐름으로 정리한다. 환자의 상황에 맞춰 지원 제도와 할 일을 안내하고, 병원 문서에서 필요한 정보를 추출하며, 가족이 업무를 나누고, 매일의 회복 상태를 외래 리포트로 이어 준다.
 
-씩씩케어(BraveCare)는 회원가입 없이, 단 5문항의 온보딩으로 가족이 받을 수 있는 26종 복지 혜택과 퇴원 타임라인을 매칭하고, 가족 간 역할을 링크 하나로 분담하여 정기 외래 완치까지 함께 회복을 돕는 모바일 헬스케어 플랫폼입니다.
+## 핵심 기능
 
----
+### 맞춤형 퇴원 시작
 
-## 2. 핵심 기능
+- 입원 사유, 퇴원일, 출생연도, 거주 지역, 낮 시간 돌봄 상황, 소득 구간을 묻는 간결한 온보딩
+- 퇴원일이 미정이어도 `퇴원 3일 전`, `퇴원 당일` 같은 상대 일정으로 안내
+- 독거 환자가 직접 사용하는 **셀프 케어 모드**와 가족 공동 관리 모드 제공
+- 퇴원일이 확정·변경되면 상대 일정만 다시 계산하고, 사용자가 직접 등록한 일정은 유지
 
-### 2.1. 5문항 온보딩 및 2026 복지 룰 엔진
-- **경량 온보딩**: 입원 사유, 퇴원일(미정/사후 가입 허용), 연령 및 거주지, 낮 시간 돌봄 공백, 대략의 소득 구간만 입력받습니다.
-- **온보딩 세션 자동 복원 & 키패드 최적화**: 작성 도중 창을 닫아도 `localStorage`에 자동 저장되어 즉시 복구되며, 출생연도는 숫자 키패드(`inputMode="numeric"`)가 바로 호출됩니다.
-- **26종 공공 복지 매칭**: 2026년 보건복지부·지자체 가이드라인을 기반으로 '대상 가능성 높음', '소득 확인 필요', '해당 없음'을 결정론적으로 판정합니다. 만 65세 경계(생일 전후)는 안전하게 '확인 필요'로 분류합니다.
-- **실손24 공공데이터 자동 판별**: 보험개발원 오픈 API(`recuperation-institutions`)와 연동하여 입원 병원 검색 시 실손24 전산 청구 지원 여부를 실시간 자동 판별하고, 미지원 병원은 만능 서류 4종 패키지를 필수 안내합니다.
+### 공공 지원과 신청 관리
 
-### 2.2. 퇴원 타임라인 및 스마트 캘린더 연동 (.ics)
-- **4단계 회복 사이클**: 퇴원 전 준비 -> 퇴원 당일 -> 집에서 회복 및 첫 외래 -> 정기 외래 및 재활
-- **퇴원일 미정/변경 처리**: 날짜가 확정되지 않은 경우 상대 일정(예: '퇴원 3일 전')으로 안내하며, 날짜 변경 시 사용자가 직접 지정한 외래 진료일은 보존하고 상대 일정만 자동으로 재계산합니다.
-- **주말 퇴원 원무과 휴무 사전 경고**: 퇴원일이 월요일인 경우 D-1(일요일) 행정 공백을 반영하여 주말 휴무 사전 경고 배너를 띄웁니다.
-- **스마트 캘린더 피드 (.ics)**: 개별 할 일뿐만 아니라 전체 일정 피드(`feedIcs`)를 지원하며 전날 20:00, 당일 08:30 이중 알람(VALARM)을 등록합니다. 카카오톡 인앱 브라우저 감지 시 1초 외부 브라우저 안내를 제공합니다.
-- **가족 돌봄 캘린더**: 날짜별 할 일·퇴원일·미신청 지원 마감을 색 점으로 보여주고, 그 자리에서 체크·분담·추가합니다.
-- **시간과 반복**: 할 일에 시간(외래 오후 2시)과 반복(매일 소독, 매주 재활)을 붙일 수 있고, 반복 할 일은 끝낼 때 다음 회차가 생깁니다.
+- 연령, 지역, 소득, 입원 사유, 돌봄 상황을 바탕으로 공공 지원 제도 47개(전국·광역 26개 + 시·군·구 21개)를 규칙 기반으로 판정
+- `가능성 높음`, `확인 필요`, `해당 없음`으로 결과를 구분하고 판정 근거·신청 방법·필요 서류·출처를 표시
+- 신청 마감과 상태를 관리하고, 지원 제도를 바로 할 일로 전환
+- 실손24 참여 요양기관을 검색하고, 필요한 보험 청구 서류를 정리
 
-### 2.3. 무가입 가족 역할 분담 (Capability URL)
-- 카카오톡 단톡방 등에 공유 링크(7일 유효)를 전송하면, 다른 가족은 이름만 입력하고 즉시 참여합니다. 앱이 깔려 있으면 링크가 앱으로 열립니다.
-- **동시 배정 충돌 방어**: 0.1초 차이로 같은 할 일의 [내가 할게]를 눌러도 원자적 DB 락으로 선점자에게 배정하고 후발 주자에게 안내합니다.
-- **동명이인 자동 식별**: 가족 내 이름이 겹치면 자동으로 `지은 2`로 구분해 혼선을 차단합니다.
-- **도움 요청 공유**: 담당자 없는 일정은 정중한 시스템 문구로 카톡/문자에 바로 보낼 수 있도록 원클릭 복사 기능을 제공합니다.
-- **가족 모두 같은 권한**: 참여한 가족도 처음 만든 사람과 똑같은 5개 탭 화면(`/c/<구성원 ID>`)을 씁니다. 예외는 전체 삭제(처음 만든 가족만)와 내보내기(처음 만든 가족은 내보낼 수 없음)뿐이고, 참여한 가족은 스스로 나갈 수 있습니다.
-- **새 소식**: 가족이 맡거나 끝낸 일을 날짜별로 모아 보고, 안 본 소식은 홈의 종 아이콘에 표시됩니다.
-- **카카오로 되찾기**(선택): 카카오 계정을 연결해 두면 휴대폰을 바꿔도 내 주소를 다시 찾습니다. 카카오 회원번호만 저장합니다.
+### 병원 문서·문자 정리
 
-### 2.4. 비전 AI 서류 스캔 및 환각 차단 챗봇
-- 퇴원 안내문, 약봉투, 영수증 사진(최대 3장) 및 병원 알림톡 문자를 분석하여 진료 일정과 할 일을 자동 추출합니다.
-- **레이저 스캔 모션 & 핵심 주의사항 뱃지**: 스캔 진행 중 3단계 레이저 스캐닝 카드를 제공하고, 약 보관법(냉장/차광/실온) 및 복약 주의사항(식후/공복/졸음주의/끝까지복용)을 자동 뱃지로 요약합니다.
-- **원문 일치 검증 파이프라인**: AI의 의료 판단을 배제하며, 추출된 텍스트 원문에 실제로 존재하는 문장만 할 일로 등록됩니다. 외래 예약증 중복 스캔 시 자동 디둡 필터가 동작합니다.
-- **응급 키워드 1차 차단**: 흉통·호흡곤란·고열 등 감지 시 AI 응답 대기 없이 Pre-LLM 119 긴급 안내 카드를 즉시 노출합니다.
-- **챗봇 대기 UX**: 카카오톡형 타이핑 점과 2.5초 지연 안내로 자연스러운 대화 대기 경험을 제공합니다.
+- 퇴원 안내문, 약봉투, 영수증, 진단서·확인서, 병원 문자에서 일정과 준비 항목을 추출
+- 사진이 흐리거나 병원 서류가 아닌 경우 재촬영을 안내
+- AI 결과를 자동 확정하지 않고 사용자가 검토·수정한 항목만 일정과 할 일로 반영
+- 원본 사진은 저장하지 않고, 필요한 텍스트만 보관 (글자 인식을 위해 사진을 OpenAI API로 전송하며, 이는 개인정보처리방침에 고지)
 
-### 2.5. 데일리 체크 및 진료실 외래 리포트
-- **데일리 체크 (상시 회복 기록)**: 복약 여부(아침/점심/저녁), 체온, 통증 점수(0~10), 배변 상태를 상시 간편하게 기록합니다. 퇴원 전(입원 중) 환자에게는 불필요한 입력을 강요하지 않고 퇴원 서류 준비에 집중하도록 안내합니다.
-- **어제 기록 불러오기**: 어제 기록이 있는 경우 원탭으로 어제 상태를 즉시 채워 1초 만에 데일리 체크를 끝낼 수 있습니다.
-- **진료실 외래 리포트**: 외래 진료 시 의료진에게 화면을 가로로 돌려 보여줄 수 있는 단일 요약 리포트를 제공합니다.
+### 가족 공동 돌봄
 
-### 2.6. 맥락 감성 라이팅 및 케어 졸업
-- **시간대별·사후 가입자 맞춤 멘트**: 새벽 119 응급 안내, 아침 외래 신분증 챙기기, 데일리 체크 알림 및 퇴원 후 7일 이내 사후 가입자 전용 서류 점검 멘트를 제공합니다.
-- **쉬운 용어 사전 공백 무시 검색**: "실손 24"나 "산정 특례" 등 띄어쓰기 차이에 구애받지 않고 실시간으로 용어를 찾아줍니다.
-- **케어 졸업 카드 & 안전 점검**: 완치 후 케이스 삭제 시 가족의 총 기여도(할 일 N개, 데일리 체크 M일) 요약 카드를 띄우고, 연말정산 장애인증명서 및 실손 청구 서류 보존을 최종 확인합니다.
+- 7일간 유효한 링크 또는 QR 코드로 가족을 초대
+- 할 일 생성, 담당자 배정, 직접 맡기, 완료 처리, 활동 기록 확인
+- 환자 전용 안부 링크를 통해 앱 설치 없이 당일 상태를 기록 가능
+- 가족 활동은 모바일 푸시 알림으로 공유하고, 일정은 `.ics` 캘린더 파일로 내보내기 가능
 
-### 2.6. 네이티브 앱 셸 (`mobile/`)
-화면은 웹 한 벌을 그대로 보여주고, 앱만 할 수 있는 일만 맡습니다.
-- **알림**: 매일 데일리 체크, 내가 맡았거나 담당자 없는 할 일의 전날 저녁·당일, 미신청 지원의 마감 3일 전·당일을 휴대폰에 예약합니다(서버 없이 제시간에 울림). 가족이 일을 맡거나 끝내면 푸시로 알립니다.
-- **앱 링크**: 초대 링크(`/j/…`)와 내 화면 링크(`/c/…`)를 앱으로 엽니다.
-- **외래 리포트 밝기**: 리포트를 여는 동안 화면을 가장 밝게 합니다.
-- **문서 스캐너**: 가장자리를 찾아 반듯하게 잘라 주는 휴대폰 문서 스캐너로 서류를 찍습니다.
-- **공유창·오프라인 화면**: 초대 링크를 휴대폰 공유창으로 보내고, 인터넷이 끊기면 안내 화면을 보여줍니다.
+### 데일리 체크와 외래 리포트
 
----
+- 복약, 체온, 통증, 부작용, 수술 부위 이상, 배변 상태를 매일 기록
+- 누적 기록을 기반으로 통증 변화, 복약 기록, 의료진에게 물어볼 질문을 외래용 리포트로 정리
+- 회복이 안정되면 데일리 체크를 종료하고 필요할 때 다시 시작
 
-## 3. 시스템 아키텍처
+### 근거 중심 돌봄 챗봇
+
+- 저장한 병원 문서, 우리 집 일정·할 일·지원 정보, 쉬운 용어 사전을 우선 근거로 답변
+- 인용한 근거 문장이 실제 자료에 있는지 코드로 다시 확인
+- 처방 변경, 복약 중단, 진단 같은 의료 판단은 하지 않도록 제한
+- 응급 증상·위기 표현은 일반 답변보다 119 또는 109 안내를 우선
+- 식약처 의약품 허가정보와 DUR 정보를 활용해 약물 확인이 필요한 지점을 안내
+
+## 서비스 흐름
+
+```mermaid
+flowchart LR
+  A[퇴원 상황 입력] --> B[맞춤 지원·타임라인 생성]
+  B --> C[병원 문서·문자 정리]
+  C --> D[일정·할 일·서류 관리]
+  D --> E[가족 역할 분담]
+  E --> F[데일리 체크]
+  F --> G[외래 리포트]
+```
+
+## 시스템 구성
 
 ```mermaid
 flowchart TD
-    subgraph Mobile ["Mobile App (Android · iOS)"]
-        ExpoApp["React Native Expo Shell\n(mobile/App.tsx)"]
-        PushNotification["예약 알림 + 푸시\n(expo-notifications)"]
-    end
+  subgraph Client[사용자 환경]
+    WEB[반응형 웹]
+    APP[Android / iOS 앱 셸]
+  end
 
-    subgraph Web ["Frontend & Server (Next.js 16)"]
-        WebViewUI["Responsive Web UI\n(React 19 / Tailwind CSS)"]
-        ServerActions["Next.js Server Actions\n(app/actions.ts, scan-actions.ts)"]
-        WelfareEngine["26 Welfare Rule Engine\n(lib/benefits.ts)"]
-        ICSGenerator["iCalendar Engine\n(lib/ics.ts / VALARM)"]
-    end
+  subgraph Service[씩씩케어 서비스]
+    UI[화면 및 서버 액션]
+    RULE[지원 제도 규칙 엔진]
+    DOC[문서 추출·검증]
+    REPORT[리포트·알림·캘린더]
+  end
 
-    subgraph External ["Cloud & AI Services"]
-        Supabase[("Supabase (PostgreSQL)\n8 Tables")]
-        OpenAI["OpenAI GPT-4o\nVision OCR & Strict Verifier"]
-    end
+  subgraph External[외부 연동]
+    DB[(데이터베이스)]
+    AI[OpenAI API]
+    PUBLIC[식약처·실손24 공공 API]
+    KAKAO[카카오 로그인·공유]
+    PUSH[Expo Push]
+  end
 
-    ExpoApp -->|Webview Container| WebViewUI
-    ExpoApp -->|Native Alarm| PushNotification
-    WebViewUI --> ServerActions
-    ServerActions --> WelfareEngine
-    ServerActions --> ICSGenerator
-    ServerActions -->|Secure Service Role| Supabase
-    ServerActions -->|OCR & Fact Check| OpenAI
+  WEB --> UI
+  APP --> WEB
+  UI --> RULE
+  UI --> DOC
+  UI --> REPORT
+  UI --> DB
+  DOC --> AI
+  UI --> PUBLIC
+  UI --> KAKAO
+  REPORT --> PUSH
 ```
 
----
+## 기술적 핵심
 
-## 4. 디렉터리 구조
+| 영역 | 구현 방식 |
+| --- | --- |
+| 지원 추천 | AI가 아닌 결정론적 규칙 엔진으로 대상 가능성을 판정하고, 불확실한 조건은 `확인 필요`로 표시 |
+| 문서 AI | 구조화된 JSON 응답, 원문 대조 검증, 날짜 모호성 처리, 사용자 확인 단계를 결합 |
+| 챗봇 안전성 | 문서 기반 답변, 인용문 재검증, 응급·위기 표현의 사전 분기, 의료 판단 금지 규약 적용 |
+| 약물 정보 | 식약처 허가정보·e약은요·DUR 데이터를 활용해 병용금기·효능군 중복·노인주의 확인 지원 |
+| 개인정보 | 원본 사진 미저장, 주민등록번호 뒷자리 마스킹, 비활성 케이스 자동 파기, 전체 삭제 지원 |
+| 가족 협업 | 만료되는 초대 링크, 활동 기록, 기기 예약 알림과 가족 활동 푸시 알림 제공 |
+
+## 프로젝트 구조
 
 ```text
 bravecare/
-├── app/                      # Next.js 16 App Router (페이지 및 서버 액션)
-│   ├── actions.ts            # 케이스·가족·할 일·지원·안부 서버 액션
-│   ├── scan-actions.ts       # 서류 글자 옮겨 적기·검증·챗봇 서버 액션
-│   ├── start/                # 5문항 온보딩 위저드
-│   ├── c/[token]/            # 모든 가족이 쓰는 화면. 토큰은 케이스 토큰(처음 만든 사람) 또는 구성원 ID(참여한 가족)
-│   │                         #   홈 · calendar · chat · tasks · more(전체) / benefits · family · daily · report
-│   │                         #   · docs · scan · glossary · help · news · settings
-│   ├── j/[share]/            # 가족 초대 진입 경로
-│   ├── m/[id]/               # 예전 가족 주소. /c/<구성원 ID>로 보낸다
-│   ├── ics/                  # 할 일 .ics 캘린더 파일
-│   ├── api/quick-check/      # 앱 알림 원터치 안부 기록
-│   ├── api/app/              # 앱: 푸시 토큰 등록 + 예약할 알림 목록
-│   ├── api/kakao/            # 카카오 로그인(되찾기) 시작·콜백
-│   ├── .well-known/          # 앱 링크 확인 파일 (Android assetlinks, iOS AASA)
-│   └── privacy/, terms/      # 개인정보처리방침·이용약관 (초안)
-├── components/               # 재사용 UI (Nav, TaskList, Sheet, Mascot, Icon, InviteButton …)
-├── lib/                      # 핵심 로직 (순수 함수는 *.test.ts로 테스트)
-│   ├── benefits.ts           # 복지 룰 엔진 + 제도 5종
-│   ├── benefit-list.ts       # 나머지 제도 21종 (합계 26종)
-│   ├── timeline.ts           # 4단계 타임라인 템플릿, 반복 할 일의 다음 날짜
-│   ├── calendar.ts           # 달력 일정 모으기
-│   ├── reminders.ts          # 앱이 예약할 알림 목록
-│   ├── push.ts               # 가족 활동 기록 + 푸시
-│   ├── brief.ts, glossary.ts, task-help.ts  # 챗봇 자료, 쉬운 용어 사전, '왜 해요?'
-│   ├── report.ts             # 외래 리포트 집계
-│   ├── ics.ts                # 캘린더 .ics 알람 생성기
-│   ├── extract.ts, chat.ts   # 서류 추출·챗봇의 원문 대조 검증
-│   └── app.ts                # 웹 ↔ 앱 통로 (밝기·스캐너·공유)
-├── mobile/                   # Expo 앱 셸
-│   ├── App.tsx               # 웹뷰 + 알림·앱 링크·밝기·스캐너·공유
-│   ├── app.json, eas.json    # 앱 설정, 빌드 설정
-│   └── assets/               # 씩씩이 아이콘
-├── docs/store-listing.md     # 스토어 등록 문구·개인정보 신고 답안
-├── supabase/schema.sql       # 테이블 정의
-└── README.md
+├── app/                 # 페이지, API Route, Server Actions
+│   ├── start/           # 온보딩
+│   ├── c/[token]/       # 케이스별 회복 관리 화면
+│   ├── p/[token]/       # 환자 전용 안부 화면
+│   ├── j/[share]/       # 가족 초대 화면
+│   ├── api/             # 스캔, 알림, 카카오, 실손24, 자동 파기 API
+│   └── ics/             # 캘린더 파일 생성
+├── components/          # 재사용 UI 컴포넌트
+├── lib/                 # 지원 규칙, 문서 검증, 챗봇, 리포트, 알림 등 핵심 로직
+├── mobile/              # Expo 기반 앱 셸
+├── supabase/schema.sql  # 데이터베이스 스키마
+└── public/              # 정적 자산
 ```
 
----
+## 주요 외부 연동
 
-## 5. 설계 및 보안 원칙
+| 서비스 | 용도 |
+| --- | --- |
+| OpenAI API | 병원 문서·문자 추출, 근거 중심 챗봇 |
+| 식약처 의약품 제품 허가정보·e약은요·DUR | 약물 정보 및 안전 확인 |
+| 실손24 참여 요양기관 공공 API | 병원별 전산 청구 참여 여부 검색 |
+| Supabase | 케이스, 가족, 할 일, 문서 텍스트, 데일리 기록 저장 |
+| 카카오 | 계정 연결을 통한 케이스 되찾기 및 초대 링크 공유 |
+| Expo Push | 가족 활동 알림과 모바일 푸시 |
 
-- **AI의 의료 판단 배제**: 서류 추출과 챗봇 모두 모델의 자유 생성을 제한하며, 원문 텍스트에 실제 존재하는 문장만 통과시킵니다(`verifyItems`, `verifyAnswer`).
-- **사진 미저장 (Privacy-by-Design)**: 주민등록번호 뒷자리는 마스킹되며, 원본 사진은 서버에 저장하지 않고 파싱된 텍스트만 보관하여 유출 위험을 차단합니다.
-- **결정론적 룰 엔진**: 복지 제도는 AI의 추론이 아닌 투명한 검증 규칙표(`lib/benefits.ts`)로만 판정합니다. 소득을 모를 경우 불이익 없이 '소득 확인 필요'로 분류합니다.
-- **무가입 Capability Token**: 회원가입 절차 없이 난수 토큰 기반의 URL(`/c/<토큰>`, `/j/<토큰>`) 자체가 접근 보안 키 역할을 수행합니다.
+## 시작하기
 
----
+### 요구 사항
 
-## 6. 개발 및 실행 가이드
+- Node.js 20 이상
+- npm
+- Supabase 프로젝트
+- OpenAI API 키: 문서 인식·챗봇 사용 시 필요
 
-### 6.1. 웹 서비스 (Web)
+### 웹 서비스 실행
 
 ```bash
-# 종속성 설치
+git clone https://github.com/kwon-dohun/BraveCare.git
+cd BraveCare
 npm install
+```
 
-# 환경 변수 설정 (.env.local)
-# NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-# SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-# GPT_API_KEY=your-openai-api-key
-# SILSON24_SERVICE_KEY=your-data-go-kr-service-key    보험개발원 실손24 참여 요양기관 안내 서비스 (공공데이터포털)
-# (선택) 아래 값이 없으면 해당 기능의 버튼이 보이지 않습니다
-# KAKAO_REST_KEY=            카카오 로그인(되찾기). KAKAO_CLIENT_SECRET은 카카오 콘솔에서 켰을 때만
-# NEXT_PUBLIC_KAKAO_JS_KEY=  카카오톡 공유 버튼
-# NEXT_PUBLIC_CONTACT_EMAIL= 도움말의 문의하기
-# NEXT_PUBLIC_PLAY_URL= / NEXT_PUBLIC_APPSTORE_URL=   초대 화면의 '앱 받기'
-# ANDROID_CERT_SHA256= / APPLE_TEAM_ID=               앱 링크 확인 파일
+프로젝트 루트에 `.env.local` 파일을 만들고 필요한 값을 설정한다.
 
-# 개발 서버 실행
+```bash
+# 필수
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# AI 기능 사용 시
+GPT_API_KEY=your-openai-api-key
+
+# 선택: 기본값은 챗봇 gpt-4o, 문서 인식 gpt-4.1-mini
+GPT_MODEL=gpt-4o
+SCAN_MODEL=gpt-4.1-mini
+
+# 선택: 공공·외부 연동
+DATA_GO_KR_KEY=your-data-go-kr-key
+SILSON24_SERVICE_KEY=your-silson24-key
+KAKAO_REST_KEY=your-kakao-rest-key
+KAKAO_CLIENT_SECRET=your-kakao-client-secret
+NEXT_PUBLIC_KAKAO_JS_KEY=your-kakao-js-key
+
+# 선택: 운영·배포
+CRON_SECRET=your-cron-secret
+NEXT_PUBLIC_CONTACT_EMAIL=contact@example.com
+NEXT_PUBLIC_PLAY_URL=https://play.google.com/...
+NEXT_PUBLIC_APPSTORE_URL=https://apps.apple.com/...
+ANDROID_CERT_SHA256=your-android-cert-sha256
+APPLE_TEAM_ID=your-apple-team-id
+```
+
+Supabase 프로젝트에서 [`supabase/schema.sql`](./supabase/schema.sql)을 실행한 뒤 개발 서버를 시작한다.
+
+```bash
 npm run dev
 ```
 
-### 6.2. 모바일 앱
+브라우저에서 [http://localhost:3000](http://localhost:3000)을 연다.
+
+### 모바일 앱 실행
 
 ```bash
 cd mobile
 npm install
-
-# 문서 스캐너·밝기 같은 네이티브 모듈이 있어 Expo Go로는 안 됩니다. 개발 빌드나 EAS 빌드를 쓰세요.
-npx expo run:android                                   # 로컬 개발 빌드
-npx eas-cli@latest build -p android --profile preview  # APK
-npx eas-cli@latest build -p ios --profile production   # iOS (애플 개발자 계정 필요)
+npx expo start
 ```
 
-### 6.3. 단위 테스트
+문서 스캐너와 기기 알림은 네이티브 모듈을 사용하므로 Expo Go 대신 개발 빌드 또는 EAS 빌드를 사용한다.
 
 ```bash
-# 복지 판정, 타임라인·리포트·.ics, 서류 검증, 달력, 챗봇 자료, 알림 예약, 반복 할 일 등 40개 테스트
+# Android 개발 빌드
+npx expo run:android
+
+# 내부 배포용 APK
+npx eas-cli@latest build --platform android --profile preview
+
+# 스토어 제출용 Android App Bundle
+npx eas-cli@latest build --platform android --profile production
+```
+
+## 테스트
+
+```bash
 npm test
 ```
 
----
+자동 테스트 106개가 지원 제도 판정, 문서 추출 검증, 챗봇 근거 검증, 약물 DUR 확인, 알림, 반복 할 일, 캘린더 파일, 외래 리포트 등을 다룬다.
 
-### 6.4. 출시 전에 사람이 해야 하는 설정
+## 개인정보와 의료 안전 원칙
 
-코드는 들어가 있고, 아래 값을 넣어야 켜집니다.
+- 서비스는 의료 진단·처방·복약 변경을 제공하지 않는다.
+- AI 결과는 사용자 확인 전에는 일정이나 할 일로 확정되지 않는다.
+- 병원 문서의 원본 이미지는 보관하지 않는다. 글자 인식을 위한 OpenAI 전송은 개인정보처리방침에 고지한다.
+- 식별 가능 정보는 저장 전에 마스킹한다.
+- 환자 전용 링크는 일일 안부 기록 범위로 접근을 제한한다.
+- 초대 링크는 만료되며 재발급할 수 있다.
+- 마지막 활동 후 365일이 지난 케이스를 자동 파기하도록 구성했다.
 
-| 할 일 | 어디서 | 넣을 곳 |
-| :--- | :--- | :--- |
-| 카카오 앱 등록 (로그인·공유) | developers.kakao.com → 앱 만들기 → 카카오 로그인 켜기, Redirect URI `https://bravecare-kr.vercel.app/api/kakao/callback`, Web 플랫폼 도메인 등록. 동의 항목은 아무것도 고르지 않음(회원번호만 씀) | Vercel 환경 변수 `KAKAO_REST_KEY`, `NEXT_PUBLIC_KAKAO_JS_KEY` |
-| Android 앱 링크 | `npx eas-cli@latest credentials`에서 SHA-256 지문 확인 (Play 앱 서명을 쓰면 Play Console의 지문도) | Vercel `ANDROID_CERT_SHA256` |
-| Android 푸시 | Firebase 프로젝트 → `google-services.json`을 `mobile/`에 두고 `app.json`의 `android.googleServicesFile` 지정, FCM 키를 EAS에 등록 | EAS |
-| iOS 빌드·푸시·링크 | 애플 개발자 계정(연 99달러). 팀 ID | Vercel `APPLE_TEAM_ID`, EAS |
-| 스토어 등록 | `docs/store-listing.md`의 문구와 개인정보 신고 답안 | Play Console, App Store Connect |
-| 스토어 주소 | 출시 뒤 | Vercel `NEXT_PUBLIC_PLAY_URL`, `NEXT_PUBLIC_APPSTORE_URL` |
-| 방침·약관의 [작성 필요] | 시행일, 보호책임자, 장기 미사용 파기 기간. 개인정보보호위원회 작성 도구로 대조 | `app/privacy`, `app/terms` |
+## 배포
 
-푸시 설정 전에도 예약 알림(할 일·지원 마감·저녁 안부)은 동작합니다. 가족 소식 푸시만 설정 뒤에 옵니다.
+- 웹: [bravecare-kr.vercel.app](https://bravecare-kr.vercel.app)
+- Android APK: [GitHub Releases](https://github.com/kwon-dohun/bravecare/releases/latest)
 
----
+## 기여 및 문의
 
-## 7. 기획서(PRD v3.6) 대비 구현 내역
-
-| 항목 | 기획서 (PRD 초안) | 실제 구현 (Production) | 엔지니어링 의사결정 사유 |
-| :--- | :--- | :--- | :--- |
-| 앱 아키텍처 | React Native 네이티브 컴포넌트 이원화 | Next.js 웹 코어 + Expo 네이티브 셸 | 단일 코드베이스로 빠른 UI 개선과 스토어 심사 없는 즉시 업데이트 보장 |
-| 권한 관리 | Supabase Auth + RLS | Server Actions + Capability Token (+ 카카오로 되찾기) | 무가입 환경에 맞춰 공개 키 접근을 차단하고 서버 액션에서 안전하게 검증 |
-| 전체 삭제 | 가족 모두 같은 권한 | 처음 만든 가족만 | 되돌릴 수 없는 일이라 한 사람에게만. 참여한 가족은 '나가기' |
-| 알림 | 앱 푸시로 통일 | 휴대폰 예약 알림 + 가족 소식만 서버 푸시 | 예약 알림은 푸시 서버·시간 지연 없이 정시에 울림 |
-| 오류 수집·사용 분석 | Sentry·Amplitude | 아직 붙이지 않음 | 실제 사용자가 생길 때 트래킹 플랜을 정하고 붙임 |
-| 서류 보관 | 암호화 스토리지 버킷 | 텍스트만 추출 후 원본 즉시 폐기 | 의료 서류 사진 유출 위험을 원천 차단하는 Privacy-by-Design 달성 |
-| 복지 제도 | 기획 25종 | 공식 출처 재검증 26종 | 2026년 상병수당, 서울형 입원비 등 정부 공고 변경 사항을 전수 정밀 반영 |
-
----
-
-## 8. 라이선스
-
-This project is licensed under the MIT License.
+버그 제보와 기능 제안은 [Issues](https://github.com/kwon-dohun/BraveCare/issues)를 이용해 줘.
