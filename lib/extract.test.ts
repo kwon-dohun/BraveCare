@@ -157,3 +157,12 @@ test("영수증 금액 검산: 일부가 합계보다 크면 알리고, 정상·
   assert.ok(receiptNote({ 합계: "2,000,000원", 본인부담: "797,300원", 비급여: "1,460,000원" })); // 둘을 더하면 합계를 넘음
   assert.equal(receiptNote({ 합계: "", 본인부담: "797,300원" }), null);
 });
+
+test("흐림 점수: 평평한 사진은 0, 윤곽이 또렷하면 높다", async () => {
+  const { sharpness, BLUR_MIN } = await import("./blur.ts");
+  const w = 20, h = 20;
+  const flat = new Uint8Array(w * h).fill(128);
+  const checker = Uint8Array.from({ length: w * h }, (_, i) => ((i % w) + Math.floor(i / w)) % 2 ? 255 : 0);
+  assert.equal(sharpness(flat, w, h), 0);
+  assert.ok(sharpness(checker, w, h) > BLUR_MIN * 100);
+});

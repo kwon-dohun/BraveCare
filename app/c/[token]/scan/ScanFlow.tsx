@@ -7,6 +7,7 @@ import type { Auth } from "@/lib/db";
 import Link from "next/link";
 import { DOC_TYPE_LABEL, hasForm, dateWarning, type DocFields, type DocItem, type DocType } from "@/lib/extract";
 import ConfirmCard from "./ConfirmCard";
+import { BLUR_MIN, sharpness } from "@/lib/blur";
 import { toApp, useInApp } from "@/lib/app";
 import Mascot from "@/components/Mascot";
 import Icon from "@/components/Icon";
@@ -14,6 +15,25 @@ import Kept from "./Kept";
 
 const KIND: Record<DocItem["kind"], string> = { schedule: "일정", medication: "복약", caution: "주의사항", contact: "문의처" };
 const MAX = 3; // 한 번에 읽는 사진 수
+
+// 올리기 전에 사진이 너무 흐린지 잰다(640px 폭 회색조). 읽을 수 없는 사진을 몇 초 기다린 뒤에야 알게 되는 일을 줄인다.
+async function isBlurry(file: Blob): Promise<boolean> {
+  try {
+    const bmp = await createImageBitmap(file);
+    const w = 640, h = Math.max(3, Math.round((bmp.height * w) / bmp.width));
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return false;
+    ctx.drawImage(bmp, 0, 0, w, h);
+    const px = ctx.getImageData(0, 0, w, h).data;
+    const gray = new Uint8Array(w * h);
+    for (let i = 0; i < gray.length; i++) gray[i] = (px[i * 4] * 299 + px[i * 4 + 1] * 587 + px[i * 4 + 2] * 114) / 1000;
+    return sharpness(gray, w, h) < BLUR_MIN;
+  } catch {
+    return false; // 재지 못하면 막지 않고 그냥 읽는다
+  }
+}
 
 // 화면에는 영어·오류 코드를 보이지 않는다. 서버가 한글로 준 말은 그대로, 그 밖(연결 끊김·시간 초과 등)은 이유를 풀어 쓴다.
 // retryable: 같은 사진으로 다시 읽어 볼 만한 오류(연결·시간·일시 장애). 서류가 아니라는 판정 같은 건 다시 해도 같으니 false.
@@ -137,9 +157,18 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
 
   const app = useInApp();
 
-  const onFiles = async (list: FileList | Blob[] | null) => {
+  const [blurAsk, setBlurAsk] = useState<Blob[] | null>(null); // 흐린 사진이 있어 읽기 전에 물어보는 중
+
+  const onFiles = async (list: FileList | Blob[] | null, force = false) => {
     const files = [...(list ?? [])].slice(0, MAX);
     if (!files.length) return;
+    setBlurAsk(null);
+    if (!force) {
+      setBusy("사진 확인"); setPhase("prep");
+      const blurry = (await Promise.all(files.map(isBlurry))).some(Boolean);
+      setBusy("");
+      if (blurry) { setBlurAsk(files); return; }
+    }
     setErr(""); setFailedRead(false); setRetry([]); setRows(null); setFound([]); setToConfirm([]);
     const all: Row[] = [];
     const again: Blob[] = [];
@@ -259,6 +288,16 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       {busy ? (
         <ScanningCard key={busy} busyText={busy} phase={phase} live={live} photo={busy !== "병원 문자"} />
       ) : null}
+      {blurAsk && (
+        <section role="alert" className="view-in mt-4 rounded-xl bg-warn-soft p-4">
+          <p className="font-semibold text-ink">사진이 많이 흐려요</p>
+          <p className="mt-1 text-sm leading-relaxed text-warn">흐린 사진은 약 이름이나 숫자를 틀리게 읽을 수 있어요. 밝은 곳에서 종이 전체가 또렷하게 보이게 다시 찍으면 훨씬 정확해요.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={() => setBlurAsk(null)} className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-ink">다시 찍을게요</button>
+            <button type="button" onClick={() => onFiles(blurAsk, true)} className="rounded-full bg-card px-4 py-2.5 text-sm font-semibold shadow-card">그래도 읽기</button>
+          </div>
+        </section>
+      )}
       {err && !failedRead && <p role="alert" className="mt-3 text-warn font-medium leading-relaxed">{err}</p>}
       {err && failedRead && (
         <section role="alert" className="view-in mt-4 rounded-xl bg-warn-soft p-4">
@@ -267,7 +306,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
           <p className="mt-2 text-sm text-muted">사진은 저장되지 않았고, 찍은 내용은 그대로 안전해요.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {retry.length > 0 && (
-              <button type="button" disabled={!!busy} onClick={() => onFiles(retry)} className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-ink">같은 사진으로 다시 읽기</button>
+              <button type="button" disabled={!!busy} onClick={() => onFiles(retry, true)} className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-ink">같은 사진으로 다시 읽기</button>
             )}
             <Link href={`${base}/tasks`} className="flex items-center rounded-full bg-card px-4 py-2.5 text-sm font-semibold shadow-card">일정 직접 추가하기</Link>
           </div>
