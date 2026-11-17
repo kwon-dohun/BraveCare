@@ -1,6 +1,8 @@
 import "server-only";
 
 const MODEL = process.env.GPT_MODEL ?? "gpt-4o"; // 이 모델이 계정에서 안 되면 .env.local에 GPT_MODEL로 바꾼다
+// 서류 사진 읽기는 따로 고른 모델을 쓴다(흐린 사진의 약 이름 정확도 비교에서 gpt-4o 68% → gpt-4.1-mini 89%). 챗봇은 MODEL 그대로.
+const SCAN_MODEL = process.env.SCAN_MODEL ?? "gpt-4.1-mini";
 export const hasModel = () => !!process.env.GPT_API_KEY;
 
 type Part = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string; detail: "high" } };
@@ -12,7 +14,7 @@ export async function streamJson(system: string, user: Part[], onText: (acc: str
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GPT_API_KEY}` },
       body: JSON.stringify({
-        model: MODEL, temperature: 0, response_format: { type: "json_object" }, stream: true,
+        model: SCAN_MODEL, temperature: 0, response_format: { type: "json_object" }, stream: true,
         messages: [{ role: "system", content: system }, { role: "user", content: user }],
       }),
       signal: AbortSignal.timeout(50_000),
