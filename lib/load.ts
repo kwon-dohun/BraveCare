@@ -43,7 +43,8 @@ export const loadCase = cache(async (caseId: string) => {
     input, today, shareToken: c.data.share_token as string, adminToken: c.data.admin_token as string,
     shareExpiresAt: c.data.share_expires_at as string, shareExpired: Date.parse(c.data.share_expires_at) < Date.now(),
     hospital: (c.data.hospital ?? "") as string, silson24: c.data.silson24 as "yes" | "no" | null, packet: (c.data.docs_checked ?? []) as string[],
-    patientToken, isSelfCare,
+    // 환자 본인이 쓰고 아직 아무도 함께하지 않으면 나누기 기능(담당·가족 활동)을 숨긴다. 누가 들어오면 자동으로 열린다.
+    patientToken, isSelfCare, alone: isSelfCare && (m.data ?? []).length <= 1,
     members: (m.data ?? []) as Member[], tasks, status, docsChecked, results,
     activity: (a.data ?? []) as { id: string; text: string; created_at: string }[],
   };

@@ -24,7 +24,7 @@ export default async function Help(props: PageProps<"/c/[token]/help">) {
   const { token } = await props.params;
   const { base, data } = await adminPage(token);
   // 혼자 쓰는 모드에는 가족 초대·참여 이야기를 빼고 보여 준다
-  const faq = data.isSelfCare
+  const faq = data.alone
     ? FAQ.filter(([q]) => !q.includes("가족")).map(([q, a]) => [q, a.replace(" 가족이 일을 맡거나 끝내면 바로 알려줘요.", "").replace("처음 만든 가족이", "").replace(" 참여한 가족은 설정에서 ‘가족에서 나가기’를 할 수 있어요.", "").trim()] as [string, string])
     : FAQ;
   return (

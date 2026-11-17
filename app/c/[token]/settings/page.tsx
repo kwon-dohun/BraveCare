@@ -47,7 +47,7 @@ export default async function Settings(props: PageProps<"/c/[token]/settings">) 
 
       <section className="mt-8" aria-labelledby="s2">
         <h2 id="s2" className="font-semibold">내 씩씩케어 주소</h2>
-        <p className="text-sm text-muted">이 주소가 내 열쇠예요. 다른 기기에서 열려면 복사해 나에게 보내두세요. {data.isSelfCare ? "다른 사람에게는 보내지 마세요." : "이 주소는 나만 쓰고, 가족에게는 ‘가족 초대하기’ 링크를 보내세요."}</p>
+        <p className="text-sm text-muted">이 주소가 내 열쇠예요. 다른 기기에서 열려면 복사해 나에게 보내두세요. {data.alone ? "다른 사람에게는 보내지 마세요." : "이 주소는 나만 쓰고, 가족에게는 ‘가족 초대하기’ 링크를 보내세요."}</p>
         <KeyLink path={base} />
       </section>
 
@@ -67,13 +67,13 @@ export default async function Settings(props: PageProps<"/c/[token]/settings">) 
 
       <section className="mt-8" aria-labelledby="s3">
         <h2 id="s3" className="font-semibold">알림</h2>
-        <p className="text-sm text-muted">씩씩케어 앱에서는 매일 저녁 8시 안부 체크, 맡은 할 일의 전날 저녁과 당일, 지원 신청 마감 3일 전과 당일에 알림이 와요.{data.isSelfCare ? "" : " 가족이 일을 맡거나 끝내면 바로 알려줘요."} 알림을 끄려면 휴대폰 설정 &gt; 알림 &gt; 씩씩케어에서 종류별로 끌 수 있어요. 앱이 없으면 할 일의 ‘내 캘린더에 넣기’로 캘린더 알림을 쓸 수 있어요.</p>
+        <p className="text-sm text-muted">씩씩케어 앱에서는 매일 저녁 8시 안부 체크, 맡은 할 일의 전날 저녁과 당일, 지원 신청 마감 3일 전과 당일에 알림이 와요.{data.alone ? "" : " 가족이 일을 맡거나 끝내면 바로 알려줘요."} 알림을 끄려면 휴대폰 설정 &gt; 알림 &gt; 씩씩케어에서 종류별로 끌 수 있어요. 앱이 없으면 할 일의 ‘내 캘린더에 넣기’로 캘린더 알림을 쓸 수 있어요.</p>
       </section>
 
       {actor.role === "admin" ? (
         <section className="mt-10 border-t border-line pt-6" aria-labelledby="s4">
           <h2 id="s4" className="font-semibold">전체 삭제</h2>
-          <p className="text-sm text-muted">퇴원 정보, 할 일, 매일 기록, 보관한 서류 글자{data.isSelfCare ? "" : ", 가족 참여 기록"}이 서버에서 바로 지워지고 되돌릴 수 없어요.{data.isSelfCare ? "" : " 가족의 링크도 더 이상 열리지 않아요."}</p>
+          <p className="text-sm text-muted">퇴원 정보, 할 일, 매일 기록, 보관한 서류 글자{data.alone ? "" : ", 가족 참여 기록"}이 서버에서 바로 지워지고 되돌릴 수 없어요.{data.alone ? "" : " 가족의 링크도 더 이상 열리지 않아요."}</p>
           <DeleteCase auth={auth} stats={stats} />
         </section>
       ) : (

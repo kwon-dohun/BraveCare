@@ -47,7 +47,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const cheer = timeContextCheer(stage, checkedToday, kstHour, daysSince, data.isSelfCare);
   const weekendWarning = weekendDischargeWarning(input.dischargeDate, today);
   const mood = stage === "recovery" && checkedToday ? "cheer" : "idle";
-  const list = { members, auth, meId: actor.memberId, today, detailBase: `${base}/tasks`, showOwner: !data.isSelfCare };
+  const list = { members, auth, meId: actor.memberId, today, detailBase: `${base}/tasks`, showOwner: !data.alone };
   // 이번 주 띠와 다가오는 일정(할 일 중 병원 일정 + 퇴원일 + 지원 마감)
   const events = buildEvents(data);
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i));
@@ -194,7 +194,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         </section>
       ) : null}
 
-      {!data.isSelfCare && noOwnerVisits > 0 && (
+      {!data.alone && noOwnerVisits > 0 && (
         <Link href={`${base}/tasks?view=list&f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={18} /></Link>
       )}
 
@@ -250,10 +250,10 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         </ul>
       </section>
 
-      {/* 혼자 쓰는 모드에는 가족 활동 대신 아무것도 두지 않는다(새 소식은 위 종 아이콘) */}
-      {!data.isSelfCare && <section className="mt-6" aria-labelledby="h-act">
+      {/* 환자 본인이 혼자 쓰는 동안에는 가족 활동을 두지 않는다(새 소식은 위 종 아이콘) */}
+      {!data.alone && <section className="mt-6" aria-labelledby="h-act">
         <div className="mb-2 flex items-center justify-between">
-          <h2 id="h-act" className="font-semibold">가족 최근 활동{unread > 0 && <span className="ml-1.5 rounded-full bg-[#ffe4ea] px-2 py-0.5 text-caption font-semibold text-[#a3324f]">새 소식 {unread}</span>}</h2>
+          <h2 id="h-act" className="font-semibold">{data.isSelfCare ? "최근 활동" : "가족 최근 활동"}{unread > 0 && <span className="ml-1.5 rounded-full bg-[#ffe4ea] px-2 py-0.5 text-caption font-semibold text-[#a3324f]">새 소식 {unread}</span>}</h2>
           <Link href={`${base}/news`} className="flex min-h-0 items-center py-1 text-sm text-accent">모두 보기</Link>
         </div>
         <ul className="divide-y divide-line rounded-xl bg-card shadow-card">

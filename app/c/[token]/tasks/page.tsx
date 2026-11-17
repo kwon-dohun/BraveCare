@@ -23,7 +23,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
 
   const { actor, data, auth, base } = await adminPage(token);
   const me = actor.memberId;
-  const isSelfCare = !!data.isSelfCare;
+  const isSelfCare = !!data.alone; // 함께하는 사람이 없을 때만 담당 구분을 걷어낸다
   // 기본은 월별 달력, ?view=list 일 때 할 일 목록
   const isList = sp.view === "list";
 

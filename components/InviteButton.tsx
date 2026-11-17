@@ -25,7 +25,7 @@ async function kakaoShare(text: string, url: string) {
 
 const TEXT = "가족 퇴원 준비를 씩씩케어에서 같이 나눠서 해요. 링크로 들어와 이름만 입력하면 돼요.";
 
-export function Invite({ auth, path, expiresAt, expired }: { auth: Auth; path: string; expiresAt: string; expired: boolean }) {
+export function Invite({ auth, path, expiresAt, expired, label = "가족 초대하기" }: { auth: Auth; path: string; expiresAt: string; expired: boolean; label?: string }) {
   const [open, setOpen] = useState(false);
   const [msg, setMsg] = useState("");
   const [qr, setQr] = useState("");
@@ -51,7 +51,7 @@ export function Invite({ auth, path, expiresAt, expired }: { auth: Auth; path: s
 
   return (
     <>
-      <button onClick={() => { setMsg(""); setOpen(true); }} className="flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink">가족 초대하기</button>
+      <button onClick={() => { setMsg(""); setOpen(true); }} className="flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink">{label}</button>
       <Sheet open={open} onClose={() => setOpen(false)} title="초대 링크 보내기">
         {expired ? (
           <p className="rounded-xl bg-warn-soft p-3 text-warn">초대 링크가 만료됐어요. 새 링크를 만들어 보내주세요.</p>

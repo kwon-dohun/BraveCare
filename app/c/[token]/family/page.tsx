@@ -8,7 +8,7 @@ import { dateLabel } from "@/lib/format";
 import Avatar from "@/components/Avatar";
 import PatientInvite from "@/components/PatientInvite";
 
-export const metadata = { title: "가족 · 씩씩케어" };
+export const metadata = { title: "함께 챙기기 · 씩씩케어" };
 
 const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -27,7 +27,7 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
   return (
     <>
       <BackLink href={`${base}/more`}>전체</BackLink>
-      <h1 className="mt-2 text-title font-display">가족</h1>
+      <h1 className="mt-2 text-title font-display">{data.isSelfCare ? "함께 챙기는 사람" : "가족"}</h1>
       <div className="mt-4"><Segmented label="가족 보기" active={tab === "members" ? 0 : 1} items={[{ label: "구성원", href: `${base}/family` }, { label: "돌봄 일정표", href: `${base}/family?tab=schedule` }]} /></div>
 
       <div key={tab} className="view-in">
@@ -50,10 +50,10 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
               );
             })}
           </ul>
-          {members.length < 2 && <p className="mt-3 text-muted">아직 혼자예요. 가족을 초대하면 할 일을 나눠 맡길 수 있어요.</p>}
-          <div className="mt-5"><Invite auth={auth} path={`/j/${data.shareToken}`} expiresAt={data.shareExpiresAt} expired={expired} /></div>
-          <p className="mt-3 text-sm text-muted">초대받은 가족은 이름만 입력하고 참여해요. 참여한 가족은 모두 똑같이 할 일을 맡고, 체크하고, 퇴원 정보를 고칠 수 있어요.</p>
-          {data.patientToken && (
+          {members.length < 2 && <p className="mt-3 text-muted">{data.isSelfCare ? "가까운 사람을 초대하면 병원 동행이나 서류 일을 나눠 맡길 수 있어요. 초대해도 화면은 지금처럼 내 기준으로 보여요." : "아직 혼자예요. 가족을 초대하면 할 일을 나눠 맡길 수 있어요."}</p>}
+          <div className="mt-5"><Invite auth={auth} path={`/j/${data.shareToken}`} expiresAt={data.shareExpiresAt} expired={expired} label={data.isSelfCare ? "함께 챙길 사람 초대하기" : undefined} /></div>
+          <p className="mt-3 text-sm text-muted">{data.isSelfCare ? "초대받은 사람은 이름만 입력하고 참여해요. 참여하면 할 일을 맡고 체크할 수 있어요. 휴대폰을 나란히 두고 QR 코드를 비춰도 돼요." : <>초대받은 가족은 이름만 입력하고 참여해요. 참여한 가족은 모두 똑같이 할 일을 맡고, 체크하고, 퇴원 정보를 고칠 수 있어요.</>}</p>
+          {!data.isSelfCare && data.patientToken && (
             <div className="mt-5">
               <PatientInvite patientToken={data.patientToken} />
             </div>

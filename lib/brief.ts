@@ -10,7 +10,7 @@ interface M { id: string; name: string; role: string }
 
 export function caseBrief(d: {
   input: CaseInput; today: string; tasks: T[]; members: M[]; results: Result[]; status: Record<string, string>;
-  hospital: string; silson24: "yes" | "no" | null; packet: string[]; isSelfCare?: boolean;
+  hospital: string; silson24: "yes" | "no" | null; packet: string[]; alone?: boolean;
 }): string {
   const who = (id: string | null) => d.members.find((m) => m.id === id)?.name ?? "담당자 없음";
   const line = (t: T) => `${t.due_date ? krDate(t.due_date) : "날짜 미정"} ${t.title} (${KIND_LABEL[t.kind]}, ${who(t.assignee_id)})`;
@@ -21,7 +21,7 @@ export function caseBrief(d: {
   out.push(dc ? `퇴원일: ${krDate(dc)} (${dayDiff(dc, d.today) > 0 ? `${dayDiff(dc, d.today)}일 남음` : dayDiff(dc, d.today) === 0 ? "오늘" : `퇴원 ${-dayDiff(dc, d.today)}일째`})` : "퇴원일: 아직 정해지지 않았어요");
   out.push(`오늘: ${krDate(d.today)}`);
   out.push(`입원 이유: ${REASON_LABEL.find(([k]) => k === d.input.reason)?.[1] ?? "입력 안 함"}`);
-  if (!d.isSelfCare) out.push(`가족: ${d.members.map((m) => m.name).join(", ")}`);
+  if (!d.alone) out.push(`가족: ${d.members.map((m) => m.name).join(", ")}`);
 
   const today = open.filter((t) => t.due_date === d.today);
   out.push(today.length ? `오늘 할 일 ${today.length}개:` : "오늘 할 일: 없어요");

@@ -77,7 +77,7 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
             ))}
           </ul>
         )}
-        {!data.isSelfCare && <p className="mt-2 text-sm text-muted">가족 초대 링크로 들어온 가족이나 환자 본인도 자기 화면에서 기록할 수 있어요.</p>}
+        {!data.alone && <p className="mt-2 text-sm text-muted">가족 초대 링크로 들어온 가족이나 환자 본인도 자기 화면에서 기록할 수 있어요.</p>}
       </section>
     </>
   );

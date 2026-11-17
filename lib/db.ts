@@ -44,8 +44,11 @@ export async function resolve(a: Auth): Promise<Actor> {
 
 // 혼자 쓰는 모드면 새로 생기는 할 일은 바로 쓰는 사람의 일로 둔다(담당자 없는 일이 생기지 않게)
 export async function soloOwner(caseId: string, memberId: string): Promise<string | null> {
-  const { data } = await db.from("cases").select("is_self_care").eq("id", caseId).single();
-  return data?.is_self_care ? memberId : null;
+  const [{ data }, { count }] = await Promise.all([
+    db.from("cases").select("is_self_care").eq("id", caseId).single(),
+    db.from("members").select("id", { count: "exact", head: true }).eq("case_id", caseId),
+  ]);
+  return data?.is_self_care && (count ?? 0) <= 1 ? memberId : null;
 }
 
 // 환자 전용 안부 링크(/p/<token>) 식별자. 최소 권한 원칙(Least Privilege)에 따라 서류·가족·설정엔 일절 접근 불가.

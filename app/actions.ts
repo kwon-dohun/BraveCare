@@ -99,7 +99,9 @@ async function switchMode(actor: Actor, solo: boolean) {
   const map = solo ? SELF_CARE_TITLE_MAP : Object.fromEntries(Object.entries(SELF_CARE_TITLE_MAP).map(([a, b]) => [b, a]));
   await Promise.all((rows ?? []).filter((t) => t.source === "template" && map[t.title]).map((t) =>
     db.from("tasks").update({ title: map[t.title] }).eq("id", t.id)));
-  if (solo) await db.from("tasks").update({ assignee_id: actor.memberId }).eq("case_id", actor.caseId).eq("done", false);
+  // 함께하는 사람이 없을 때만 남은 일을 모두 내 일로 옮긴다(이미 나눠 맡은 일은 그대로)
+  const { count } = await db.from("members").select("id", { count: "exact", head: true }).eq("case_id", actor.caseId);
+  if (solo && (count ?? 0) <= 1) await db.from("tasks").update({ assignee_id: actor.memberId }).eq("case_id", actor.caseId).eq("done", false);
   await act(actor.caseId, solo ? "이제 환자 본인이 쓰는 화면으로 바뀌었어요. 할 일과 기록은 그대로 있어요" : "이제 가족이 함께 쓰는 화면으로 바뀌었어요. 할 일과 기록은 그대로 있어요", actor.memberId);
   await logEvent(actor.caseId, "care_mode_changed", { self_care: solo });
 }
@@ -170,7 +172,11 @@ export async function joinCase(shareToken: string, name: string) {
 
   const { data: m, error } = await db.from("members").insert({ case_id: c.id, name: finalName, role: "member" }).select("id").single();
   if (error) throw new Error("참여하지 못했어요. 다시 시도해주세요");
-  await act(c.id, `${finalName}님이 가족으로 참여했어요`, m.id);
+  // 환자 본인이 혼자 쓰던 곳에 처음 누가 들어오면, 숨겨 두었던 나누기 기능이 열린다는 걸 함께 알린다
+  const { data: cs } = await db.from("cases").select("is_self_care").eq("id", c.id).single();
+  await act(c.id, cs?.is_self_care && (count ?? 0) <= 1
+    ? `${finalName}님이 함께하게 됐어요. 이제 할 일을 맡길 수 있고, 누가 맡았는지 할 일마다 보여요`
+    : `${finalName}님이 가족으로 참여했어요`, m.id);
   await logEvent(c.id, "member_joined");
   redirect(`/c/${m.id}`);
 }
