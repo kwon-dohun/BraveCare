@@ -4,7 +4,7 @@ import { taskIcs, feedIcs } from "./ics.ts";
 import { summarize, type Daily } from "./report.ts";
 import { timeContextCheer, weekendDischargeWarning } from "./format.ts";
 import { searchGlossary } from "./glossary.ts";
-import { isEmergency, verifyAnswer, parseChatJson, chips } from "./chat.ts";
+import { isEmergency, isCrisis, verifyAnswer, parseChatJson, chips } from "./chat.ts";
 import { itemsFromText, maskIds } from "./extract.ts";
 import { phaseOf, seedTasks } from "./timeline.ts";
 import { identifyScannedPacketDocs } from "./packet.ts";
@@ -250,4 +250,17 @@ test("한 줄로 붙여 쓴 약 목록도 줄을 나눠 세고, 약 목록이 �
 
 test("챗봇 답의 글자 그대로인 \n은 줄바꿈으로", () => {
   assert.equal(parseChatJson('{"summary":"아침에는 3가지예요.\\n아침: 가정"}').summary, "아침에는 3가지예요.\n아침: 가정");
+});
+
+test("챗봇: '아파요'도 응급으로 잡고, 죽고 싶다는 말은 위기 안내로 분리한다", () => {
+  for (const q of ["가슴이 아파요", "가슴이 아팠어요"]) assert.equal(isEmergency(q), true, q);
+  for (const q of ["너무 힘들어서 죽고 싶다는 생각이 들어", "자살하고 싶어요", "그냥 사라지고 싶다"]) assert.equal(isCrisis(q), true, q);
+  for (const q of ["샤워는 언제부터 돼?", "약 먹고 죽처럼 부드러운 음식 먹어도 돼?", "수술이 힘들었어요"]) assert.equal(isCrisis(q), false, q);
+});
+
+test("챗봇: '적혀 있지 않아요' 답에는 엉뚱한 근거 인용을 붙이지 않는다", () => {
+  const docs = [{ label: "서류", text: "11월 27일 정형외과 외래" }];
+  const a = verifyAnswer({ summary: "다음 CT 검사 날짜는 적혀 있지 않아요.", sourceQuote: "11월 27일 정형외과 외래", advice: "" }, docs);
+  assert.equal(a.sourceQuote, "");
+  assert.equal(a.unverified, false);
 });

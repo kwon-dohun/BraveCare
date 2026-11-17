@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { askChat } from "@/app/scan-actions";
 import { addTask } from "@/app/actions";
 import type { Auth } from "@/lib/db";
-import { isEmergency, type ChatAnswer } from "@/lib/chat";
+import { isEmergency, isCrisis, CRISIS_ANSWER, type ChatAnswer } from "@/lib/chat";
 import Mascot from "@/components/Mascot";
 import Icon from "@/components/Icon";
 
@@ -17,6 +17,7 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
   const [urgent, setUrgent] = useState(false);
+  const [crisis, setCrisis] = useState(false);
   const [addingQ, setAddingQ] = useState(false);
   const [addedQ, setAddedQ] = useState<Record<string, boolean>>({});
   const end = useRef<HTMLDivElement>(null);
@@ -34,6 +35,11 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
   const ask = async (q: string) => {
     q = q.trim();
     if (!q || busy) return;
+    if (isCrisis(q)) { // 모델에 묻지 않고 바로 상담전화를 안내한다
+      setText(""); setCrisis(true);
+      setTurns((t) => [...t, { q, a: CRISIS_ANSWER }]);
+      return;
+    }
     if (isEmergency(q)) setUrgent(true);
     setText("");
     setBusy(true);
@@ -71,6 +77,14 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
 
   return (
     <div className="flex flex-1 flex-col justify-between pt-3">
+      {crisis && (
+        <aside className="mb-4 rounded-xl bg-warn-soft p-4 text-ink" role="alert">
+          <p className="text-sm font-semibold">지금 바로 이야기할 수 있어요</p>
+          <a href="tel:109" className="mt-3 flex items-center justify-center rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-ink">자살예방상담전화 109 (24시간)</a>
+          <a href="tel:119" className="mt-2 flex items-center justify-center rounded-full bg-card px-4 py-2.5 text-sm font-semibold shadow-card">당장 위험하면 119</a>
+        </aside>
+      )}
+
       {/* 위험 신호는 대화보다 먼저 */}
       {urgent && (
         <aside className="mb-4 rounded-xl bg-warn-soft p-4 text-warn" role="alert">

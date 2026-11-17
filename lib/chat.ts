@@ -18,8 +18,17 @@ export interface Source {
 }
 
 // 이런 말이 보이면 답변보다 먼저 응급 안내를 띄운다. 판단이 아니라 안내다.
-const EMERGENCY = /호흡\s*곤란|숨이?\s*(차|막|안\s*쉬)|가슴\s*(통증|이?\s*아프|이?\s*답답)|흉통|의식|쓰러|경련|마비|말이\s*어눌|피를\s*토|출혈이\s*(심|안\s*멈)|고열|3[89](\.\d)?\s*도|4[0-2](\.\d)?\s*도/;
+const EMERGENCY = /호흡\s*곤란|숨이?\s*(차|막|안\s*쉬)|가슴\s*(통증|이?\s*(아프|아파|아팠)|이?\s*답답)|흉통|의식|쓰러|경련|마비|말이\s*어눌|피를\s*토|출혈이\s*(심|안\s*멈)|고열|3[89](\.\d)?\s*도|4[0-2](\.\d)?\s*도/;
 export const isEmergency = (text: string) => EMERGENCY.test(text);
+
+// 스스로 목숨을 끊으려는 마음을 비친 말: 모델 답변 없이 바로 상담전화(109, 24시간)와 119를 안내한다. 환자 본인이든 돌보는 사람이든 같다.
+const CRISIS = /죽고\s*싶|자살|목숨을?\s*끊|살기\s*싫|사라지고\s*싶|극단적\s*(인\s*)?(선택|생각)/;
+export const isCrisis = (text: string) => CRISIS.test(text);
+export const CRISIS_ANSWER: ChatAnswer = {
+  summary: "많이 힘드시군요. 혼자 견디지 않으셔도 돼요. 지금 마음이 너무 힘들다면 자살예방상담전화 109(24시간, 무료)에 바로 이야기해 보세요. 당장 위험하다고 느껴지면 119에 연락해 주세요.",
+  sourceQuote: "",
+  advice: "주치의나 가까운 사람에게도 지금 마음 상태를 꼭 알려 주세요.",
+};
 
 export function buildChatPrompt(isSelfCare = false): string {
   const persona = isSelfCare
@@ -84,7 +93,9 @@ export function fixMedCount(summary: string): string {
 export function verifyAnswer(a: ChatAnswer, sources: Source[] | string[]): ChatAnswer {
   const list: Source[] = sources.map((s) => (typeof s === "string" ? { label: "서류", text: s } : s));
   const q = norm(a.sourceQuote);
-  const hit = q.length >= 2 ? list.find((s) => norm(s.text).includes(q)) : undefined;
+  // "적혀 있지 않아요"라고 답했는데 엉뚱한 인용을 붙이면 근거처럼 보이니 인용을 뺀다
+  const notFound = /적혀 있지 않|나와 있지 않|찾을 수 없|확인되지 않/.test(a.summary);
+  const hit = q.length >= 2 && !notFound ? list.find((s) => norm(s.text).includes(q)) : undefined;
   return {
     // 모델이 확인 권유를 본문에도 되풀이하면 본문 쪽을 지운다
     summary: fixMedCount((a.advice && a.summary.includes(a.advice) ? a.summary.replace(a.advice, "").trim() : a.summary)) || "답을 만들지 못했어요",
@@ -92,7 +103,7 @@ export function verifyAnswer(a: ChatAnswer, sources: Source[] | string[]): ChatA
     source: hit?.label,
     advice: a.advice || (a.summary ? "" : "정확한 내용은 병원 간호사실이나 약국에 확인해 보세요."),
     suggestDoctorQuestion: a.suggestDoctorQuestion,
-    unverified: !!q && !hit,
+    unverified: !!q && !hit && !notFound,
   };
 }
 
