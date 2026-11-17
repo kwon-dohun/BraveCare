@@ -8,7 +8,17 @@ import { WebView } from 'react-native-webview';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import * as Brightness from 'expo-brightness';
-import DocumentScanner, { ResponseType } from 'react-native-document-scanner-plugin';
+
+// Expo Go 등 네이티브 스캐너 모듈이 없는 환경을 위한 안전한 로드
+let DocumentScanner: any = null;
+let ResponseType: any = { Base64: 'base64' };
+try {
+  const mod = require('react-native-document-scanner-plugin');
+  DocumentScanner = mod.default ?? mod;
+  if (mod.ResponseType) ResponseType = mod.ResponseType;
+} catch {
+  // Expo Go에서는 웹 브라우저의 사진 선택(input type=file)으로 자동 대체됨
+}
 
 // 개발 중에는 mobile/.env의 EXPO_PUBLIC_WEB_URL로 바꾼다 (에뮬레이터에서 내 PC는 http://10.0.2.2:3100)
 const BASE = (process.env.EXPO_PUBLIC_WEB_URL ?? 'https://bravecare-kr.vercel.app').replace(/\/$/, '');
@@ -120,6 +130,7 @@ export default function App() {
   // 휴대폰의 문서 스캐너(가장자리를 찾아 반듯하게 잘라 줌)로 찍어 웹 화면에 넘긴다
   const scan = async (max: number) => {
     try {
+      if (!DocumentScanner?.scanDocument) return;
       const r = await DocumentScanner.scanDocument({ maxNumDocuments: max, responseType: ResponseType.Base64, croppedImageQuality: 70 });
       const shots = (r.scannedImages ?? []).slice(0, max);
       if (shots.length) web.current?.injectJavaScript(`window.dispatchEvent(new CustomEvent('bravecare:scan', { detail: ${JSON.stringify(shots)} })); true;`);

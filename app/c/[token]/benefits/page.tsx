@@ -41,10 +41,7 @@ export default async function Benefits(props: PageProps<"/c/[token]/benefits">) 
           : "입력한 나이·소득·돌봄 상황으로는 전국 공통 지원 중 맞는 것이 없어요. 아래 '더 알아볼 곳'에서 지역 자체 지원을 확인해 보고, 상황이 바뀌면 설정에서 고치면 다시 찾아 드려요."}
       </p>
 
-      {/* 기본 26개 밖의 추가 확인처 (확인된 기관·제도만) */}
-      <AiBenefitsExplorer auth={auth} region={region || null} reasonLabel={reasonLabel} base={base} savedExtra={saved.filter((s) => s.startsWith("x:"))} />
-
-      {/* 실시간 탭 필터 및 키워드 검색기 */}
+      {/* 실시간 탭 필터 및 키워드 검색기 (검증된 47종 맞춤 지원 목록) */}
       <BenefitsFilterView
         results={results}
         status={status}
@@ -53,6 +50,11 @@ export default async function Benefits(props: PageProps<"/c/[token]/benefits">) 
         saved={saved}
         initialFilter={v}
       />
+
+      {/* 기본 지원 밖에서 더 알아볼 곳 (AI 추가 지원 탐색기) */}
+      <div className="mt-8">
+        <AiBenefitsExplorer auth={auth} region={region || null} reasonLabel={reasonLabel} base={base} savedExtra={saved.filter((s) => s.startsWith("x:"))} />
+      </div>
 
       <p className="mt-6 text-sm text-muted">최종 대상 여부는 운영 기관에서 결정해요. 각 제도 상세에서 문의처를 확인하세요.</p>
     </>
