@@ -15,6 +15,7 @@ export async function streamJson(system: string, user: Part[], onText: (acc: str
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GPT_API_KEY}` },
       body: JSON.stringify({
         model: SCAN_MODEL, temperature: 0, response_format: { type: "json_object" }, stream: true,
+        max_tokens: 4000, // 정상 서류는 1,000토큰 안쪽. 읽을 게 없거나 엉킨 사진에서 끝없이 쓰는 걸 막는 상한
         messages: [{ role: "system", content: system }, { role: "user", content: user }],
       }),
       signal: AbortSignal.timeout(50_000),

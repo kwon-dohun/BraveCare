@@ -5,7 +5,7 @@ import { extractFromPaste, confirmDocItems } from "@/app/scan-actions";
 import type { ScanResult, ScanProgress } from "@/lib/scan";
 import type { Auth } from "@/lib/db";
 import Link from "next/link";
-import { DOC_TYPE_LABEL, hasForm, type DocFields, type DocItem, type DocType } from "@/lib/extract";
+import { DOC_TYPE_LABEL, hasForm, dateWarning, type DocFields, type DocItem, type DocType } from "@/lib/extract";
 import ConfirmCard from "./ConfirmCard";
 import { toApp, useInApp } from "@/lib/app";
 import Mascot from "@/components/Mascot";
@@ -45,7 +45,7 @@ async function scanImage(auth: Auth, image: string, onProgress: (p: ScanProgress
 
 export interface SavedDoc { id: string; type: DocType; text: string; date: string; fields?: DocFields | null; confirmed: boolean }
 
-interface Row extends DocItem { quote: string; include: boolean }
+interface Row extends DocItem { quote: string; include: boolean; warn?: string | null }
 
 // 스마트폰 고화질 원본(10~20MB)을 1200px / 수백 KB로 전처리 압축하여 Vercel 타임아웃 및 OpenAI 페이로드 초과를 방지
 async function toJpegBase64(file: Blob): Promise<string> {
@@ -103,7 +103,13 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
   const [pending, start] = useTransition();
 
   // 고를 것은 달력에 넣을 날짜(외래·검사)뿐이다. 약 이름·주의사항·문의처는 서류함 글자로만 남기고 할 일로 만들지 않는다
-  const toRows = (items: DocItem[]) => items.filter((i) => i.kind === "schedule").map((i) => ({ ...i, quote: i.text, include: !i.needsCheck }));
+  const toRows = (items: DocItem[]) => {
+    const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
+    return items.filter((i) => i.kind === "schedule").map((i) => {
+      const warn = i.date ? dateWarning(i.date, today) : null; // 지난 날짜·너무 먼 날짜는 체크를 빼 두고 알려 준다
+      return { ...i, quote: i.text, include: !i.needsCheck && !warn, warn };
+    });
+  };
 
   const app = useInApp();
 
@@ -195,6 +201,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       {r.kind === "schedule" && (
         <input type="date" aria-label="날짜" value={r.date ?? ""} onChange={(e) => upd(i, { date: e.target.value || null, include: !!e.target.value })} className="mt-2 w-full rounded-lg border border-line bg-card px-3 py-2" />
       )}
+      {r.warn && <p className="mt-2 text-xs font-medium text-warn">{r.warn}</p>}
       <p className="mt-2 text-xs text-muted">서류에 적힌 그대로: “{r.quote}”</p>
     </li>
   );
@@ -229,6 +236,9 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
         <section role="status" className="view-in mt-4 rounded-xl bg-accent-soft p-4 text-sm text-accent">
           <p className="font-semibold text-ink">{found.map((t) => DOC_TYPE_LABEL[t]).join(", ")}을 읽어서 내 서류함에 넣었어요</p>
           <p className="mt-1">사진은 저장하지 않고 글자만 남겨요. 아래 내 서류함에서 다시 볼 수 있고, 씩씩이에게 물어보면 이 내용으로 답해요.</p>
+          {found.includes("guide") && rows && rows.length === 0 && (
+            <p className="mt-2 text-ink/80">외래·검사 날짜를 찾지 못했어요. 날짜가 보이게 다시 찍거나, 일정 탭에서 직접 추가해 주세요.</p>
+          )}
           {found.includes("receipt") && (
             <p className="mt-2 text-ink/80">영수증은 보험 청구에 쓰는 서류예요. <Link href={`${base}/docs`} className="font-semibold underline">보험 청구 서류</Link>에서 챙긴 서류를 체크해 두세요.</p>
           )}

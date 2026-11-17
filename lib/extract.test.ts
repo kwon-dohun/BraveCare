@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { verifyItems, parseDate, parseModelJson, toDocItems, validateTranscript, verifyFields, progressOf } from "./extract.ts";
+import { verifyItems, parseDate, parseModelJson, toDocItems, validateTranscript, verifyFields, progressOf, dateWarning, receiptNote } from "./extract.ts";
 
 const TRANSCRIPT = "퇴원 안내문\n1. 외래 예약: 2026년 11월 27일 오전 10시 정형외과\n2. 아스피린 100mg 하루 1회 식후 복용\n문의 02-123-4567";
 
@@ -142,4 +142,18 @@ test("질병코드 대조: 점·소문자·O/0 혼동을 바로잡고, 없으면
   assert.equal(findKcd(table, "I10")?.names.length, 2);
   assert.equal(findKcd(table, "Z99.9"), null); // 없는 코드 = 다시 확인
   assert.equal(findKcd(table, "병명"), null);
+});
+
+test("일정 날짜 경고: 지난 날짜·1년 넘게 먼 날짜만", () => {
+  assert.match(dateWarning("2026-11-10", "2026-11-18")!, /지난/);
+  assert.equal(dateWarning("2026-11-18", "2026-11-18"), null);
+  assert.equal(dateWarning("2027-11-18", "2026-11-18"), null);
+  assert.match(dateWarning("2027-11-19", "2026-11-18")!, /1년/);
+});
+
+test("영수증 금액 검산: 일부가 합계보다 크면 알리고, 정상·빈칸은 조용히", () => {
+  assert.equal(receiptNote({ 합계: "5,446,500원", 본인부담: "797,300원", 비급여: "1,460,000원" }), null);
+  assert.ok(receiptNote({ 합계: "544,650원", 본인부담: "797,300원", 비급여: "" }));
+  assert.ok(receiptNote({ 합계: "2,000,000원", 본인부담: "797,300원", 비급여: "1,460,000원" })); // 둘을 더하면 합계를 넘음
+  assert.equal(receiptNote({ 합계: "", 본인부담: "797,300원" }), null);
 });

@@ -222,3 +222,21 @@ export function progressOf(acc: string): ScanProgress {
   };
 }
 
+
+// 일정 날짜가 이상하면 알려 준다(읽은 연도·숫자 오류를 사람이 한 번 더 보게). 막지는 않는다.
+export function dateWarning(date: string, today: string): string | null {
+  if (date < today) return "이미 지난 날짜예요. 서류의 날짜를 다시 확인해 주세요";
+  const limit = new Date(today);
+  limit.setFullYear(limit.getFullYear() + 1);
+  if (date > limit.toISOString().slice(0, 10)) return "1년 넘게 뒤의 날짜예요. 연도가 맞는지 확인해 주세요";
+  return null;
+}
+
+// 영수증 금액 검산: 합계가 그 일부(본인부담·비급여)보다 작을 수는 없다. 한 자리 숫자 오독을 잡는 최소한의 검사라 맞다고 보증하지는 않는다.
+export function receiptNote(values: Record<string, string>): string | null {
+  const won = (s?: string) => { const m = (s ?? "").match(/\d[\d,]*/); return m ? Number(m[0].replace(/,/g, "")) : null; };
+  const total = won(values["합계"]), own = won(values["본인부담"]), non = won(values["비급여"]);
+  if (total === null) return null;
+  if ((own ?? 0) > total || (non ?? 0) > total || (own ?? 0) + (non ?? 0) > total) return "본인부담이나 비급여가 합계보다 커요. 금액을 서류와 다시 비교해 주세요";
+  return null;
+}

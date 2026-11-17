@@ -4,7 +4,7 @@ import { confirmDocument, suggestDrugNames, kcdCheck } from "@/app/scan-actions"
 import { baseName } from "@/lib/drug";
 import type { Auth } from "@/lib/db";
 import type { KcdHit } from "@/lib/kcd";
-import { DOC_TYPE_LABEL, FIELD_LABELS, hasForm, missingCount, type DocFields, type DocType } from "@/lib/extract";
+import { DOC_TYPE_LABEL, FIELD_LABELS, hasForm, missingCount, receiptNote, type DocFields, type DocType } from "@/lib/extract";
 import { useAct } from "@/components/useAct";
 import Icon from "@/components/Icon";
 
@@ -93,6 +93,8 @@ export default function ConfirmCard({ auth, id, type: t0, fields: f0, onDone, on
           ))}
         </div>
       )}
+
+      {type === "receipt" && receiptNote(values) && <p className="mt-3 rounded-xl bg-warn-soft p-3 text-sm text-warn">{receiptNote(values)}</p>}
 
       {type === "certificate" && kcd && (
         kcd.hit ? (
