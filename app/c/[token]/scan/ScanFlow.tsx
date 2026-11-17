@@ -7,6 +7,7 @@ import Link from "next/link";
 import { DOC_TYPE_LABEL, type DocItem, type DocType } from "@/lib/extract";
 import { toApp, useInApp } from "@/lib/app";
 import Mascot from "@/components/Mascot";
+import Icon from "@/components/Icon";
 import Kept from "./Kept";
 
 const KIND: Record<DocItem["kind"], string> = { schedule: "일정", medication: "복약", caution: "주의사항", contact: "문의처" };
@@ -177,7 +178,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       </details>
 
       {busy ? (
-        <ScanningCard busyText={busy} />
+        <ScanningCard key={busy} busyText={busy} />
       ) : null}
       {err && <p role="alert" className="mt-3 text-warn font-medium leading-relaxed">{err}</p>}
       {found.length > 0 && (
@@ -221,54 +222,37 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
   );
 }
 
-const SCAN_STEPS = [
-  "1단계: 서류에 적힌 글자를 그대로 읽어내고 있어요",
-  "2단계: 외래·검사 날짜를 찾고 있어요",
-  "3단계: 원문에 실제로 있는 내용인지 대조하고 있어요",
-];
+const SCAN_STEPS = ["서류 글자를 그대로 읽고 있어요", "외래·검사 날짜를 찾고 있어요", "서류에 실제로 있는 내용인지 맞춰 보고 있어요"];
 
+// 한 장을 읽는 동안 1 → 2 → 3단계로 한 번만 나아가고, 마지막 단계에서 결과가 나올 때까지 기다린다(되돌아가지 않는다)
 function ScanningCard({ busyText }: { busyText: string }) {
-  const [stepIdx, setStepIdx] = useState(0);
-
+  const [step, setStep] = useState(0);
   useEffect(() => {
-    const timer = setInterval(() => {
-      setStepIdx((i) => (i + 1) % SCAN_STEPS.length);
-    }, 2400);
-    return () => clearInterval(timer);
+    const timers = [setTimeout(() => setStep(1), 3000), setTimeout(() => setStep(2), 6500)];
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   return (
-    <section aria-live="polite" className="mt-5 overflow-hidden rounded-2xl bg-card p-5 shadow-card border border-line">
+    <section aria-live="polite" className="view-in mt-5 rounded-2xl bg-card p-5 shadow-card">
       <div className="flex items-center gap-3">
         <Mascot size={40} className="mascot-bob shrink-0" />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-ink">{busyText}</p>
-          <p className="mt-0.5 text-xs font-medium text-accent transition-all duration-300">
-            {SCAN_STEPS[stepIdx]}
-          </p>
-        </div>
+        <p className="text-sm font-semibold">{busyText}</p>
       </div>
-
-      {/* 가상 서류 스캔 비주얼 박스 */}
-      <div className="relative mt-4 h-24 overflow-hidden rounded-xl border border-dashed border-[#c5d9cf] bg-background p-3 flex flex-col justify-around">
-        {/* 스캔 레이저 바 */}
-        <div className="scan-beam absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_8px_#62deae]" />
-        
-        {/* 가상 텍스트 라인 스켈레톤 */}
-        <div className="h-2 w-3/4 rounded-full bg-line" />
-        <div className="h-2 w-1/2 rounded-full bg-line" />
-        <div className="h-2 w-4/5 rounded-full bg-line" />
-        <div className="h-2 w-2/3 rounded-full bg-line" />
+      <ol className="mt-4 space-y-2.5">
+        {SCAN_STEPS.map((label, i) => (
+          <li key={label} className={`flex items-center gap-2.5 text-sm transition-colors duration-300 ${i < step ? "text-muted" : i === step ? "font-semibold text-ink" : "text-muted/60"}`}>
+            <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-caption font-semibold transition-colors duration-300 ${i < step ? "bg-primary text-ink" : i === step ? "bg-accent-soft text-accent ring-[1.5px] ring-primary" : "bg-line text-muted"}`}>
+              {i < step ? <Icon name="check" size={12} /> : i + 1}
+            </span>
+            {label}
+            {i === step && <span className="dot-bounce h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />}
+          </li>
+        ))}
+      </ol>
+      <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-line" aria-hidden>
+        <div className="h-full rounded-full bg-primary transition-[width] duration-[2500ms] ease-out" style={{ width: `${[30, 65, 90][step]}%` }} />
       </div>
-
-      {/* 부드러운 진행 프로그레스 바 */}
-      <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-line">
-        <div className="pulse-bar h-full w-1/2 rounded-full bg-primary" />
-      </div>
-
-      <p className="mt-2 text-center text-xs text-muted">
-        서류 1장당 5~10초 정도 걸려요. 화면을 닫지 말고 잠시만 기다려 주세요.
-      </p>
+      <p className="mt-2 text-center text-xs text-muted">한 장에 5~10초쯤 걸려요. 화면을 닫지 말고 잠시만 기다려 주세요.</p>
     </section>
   );
 }
