@@ -23,7 +23,7 @@ export default async function Chat(props: PageProps<"/c/[token]/chat">) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-title">씩씩이에게 물어보기</h1>
-          <p className="mt-0.5 text-xs text-muted">일정·지원·보관한 서류를 바탕으로 답해요</p>
+          <p className="mt-0.5 text-xs text-muted">일정·지원·내 서류함을 바탕으로 답해요</p>
         </div>
         <Link href={`${base}/scan`} className="flex items-center gap-1 rounded-full bg-card px-3 py-1.5 text-xs font-semibold text-accent shadow-card hover:bg-accent-soft">
           <Icon name="camera" size={14} />서류 찍기
@@ -32,7 +32,7 @@ export default async function Chat(props: PageProps<"/c/[token]/chat">) {
 
       {docs.length > 0 && (
         <details className="mt-3 rounded-xl bg-card shadow-card">
-          <summary className="cursor-pointer px-4 py-2.5 text-xs font-semibold text-muted">보관한 서류 ({docs.length}장) 내용 보기</summary>
+          <summary className="cursor-pointer px-4 py-2.5 text-xs font-semibold text-muted">내 서류함 ({docs.length}장) 내용 보기</summary>
           <ul className="space-y-2 px-4 pb-3">
             {docs.map((d) => (
               <li key={d.id} className="rounded-lg bg-background p-2.5">

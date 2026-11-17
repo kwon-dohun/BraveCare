@@ -4,7 +4,7 @@ import { db, resolve, logEvent, soloOwner, type Auth } from "@/lib/db";
 import { act } from "@/lib/push";
 import { todaySeoul } from "@/lib/load";
 import { askJson, hasModel } from "@/lib/openai";
-import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, extractCautionTags, validateTranscript, type DocItem, type DocType } from "@/lib/extract";
+import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, validateTranscript, type DocItem, type DocType } from "@/lib/extract";
 import { buildChatPrompt, parseChatJson, verifyAnswer, type ChatAnswer, type Source } from "@/lib/chat";
 import { DOC_TYPE_LABEL } from "@/lib/extract";
 import { loadCase } from "@/lib/load";
@@ -26,7 +26,6 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{
   items: DocItem[];
   docType: DocType;
   empty: boolean;
-  cautions: string[];
   transcript: string;
   docId: string | null;
 }> {
@@ -45,7 +44,6 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{
   if (!validateTranscript(parsed.transcript, items.length)) {
     throw new Error("병원 서류(진단서, 퇴원 안내문, 약봉투, 영수증 등)로 읽히지 않았어요. 글자가 잘 보이게 밝은 곳에서 다시 찍어 주세요");
   }
-  const cautions = extractCautionTags(parsed.transcript);
   const { data: inserted, error: saveErr } = await db.from("documents").insert({
     case_id: actor.caseId,
     doc_type: parsed.docType,
@@ -58,8 +56,7 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{
     items,
     docType: parsed.docType,
     empty: items.length === 0,
-    cautions,
-    transcript: parsed.transcript,
+    transcript: maskIds(parsed.transcript).slice(0, 6000),
     docId: inserted?.id ?? null,
   };
 }
@@ -76,7 +73,7 @@ export async function extractFromPaste(a: Auth, text: string): Promise<{ items: 
   }).select("id").maybeSingle();
   if (saveErr) throw new Error("읽은 글자를 보관하지 못했어요. 잠시 뒤 다시 시도해 주세요");
   revalidatePath("/c/[token]", "layout");
-  return { items: itemsFromText(t, todaySeoul()), docId: inserted?.id ?? null, transcript: t };
+  return { items: itemsFromText(t, todaySeoul()), docId: inserted?.id ?? null, transcript: maskIds(t) };
 }
 
 const KIND_MAP = { schedule: "schedule", medication: "prep", caution: "prep", contact: "custom" } as const;

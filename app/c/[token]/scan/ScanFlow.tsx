@@ -12,13 +12,7 @@ import Kept from "./Kept";
 const KIND: Record<DocItem["kind"], string> = { schedule: "일정", medication: "복약", caution: "주의사항", contact: "문의처" };
 const MAX = 3; // 한 번에 읽는 사진 수
 
-export interface SavedDoc {
-  id: string;
-  label: string;
-  preview: string;
-  date: string;
-  cautions?: string[];
-}
+export interface SavedDoc { id: string; label: string; text: string; date: string }
 
 interface Row extends DocItem { quote: string; include: boolean }
 
@@ -64,26 +58,22 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
   const [docs, setDocs] = useState<SavedDoc[]>(initialDocs);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [found, setFound] = useState<DocType[]>([]);
-  const [cautions, setCautions] = useState<string[]>([]);
-  const [scannedDocs, setScannedDocs] = useState<{ docType: DocType; transcript: string; itemsCount: number }[]>([]);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState("");
   const [paste, setPaste] = useState("");
   const [pending, start] = useTransition();
 
-  // 날짜가 있는 일정만 기본으로 넣는다. 약·주의사항·문의처는 보관함에 글자로 남기고, 할 일로 만들지는 사용자가 고른다
-  const toRows = (items: DocItem[]) => items.map((i) => ({ ...i, quote: i.text, include: i.kind === "schedule" && !i.needsCheck }));
+  // 고를 것은 달력에 넣을 날짜(외래·검사)뿐이다. 약 이름·주의사항·문의처는 서류함 글자로만 남기고 할 일로 만들지 않는다
+  const toRows = (items: DocItem[]) => items.filter((i) => i.kind === "schedule").map((i) => ({ ...i, quote: i.text, include: !i.needsCheck }));
 
   const app = useInApp();
 
   const onFiles = async (list: FileList | Blob[] | null) => {
     const files = [...(list ?? [])].slice(0, MAX);
     if (!files.length) return;
-    setErr(""); setRows(null); setFound([]); setCautions([]); setScannedDocs([]);
+    setErr(""); setRows(null); setFound([]);
     const all: Row[] = [];
     const types: DocType[] = [];
-    const allCautions: string[] = [];
-    const newScanned: { docType: DocType; transcript: string; itemsCount: number }[] = [];
 
     for (const [i, f] of files.entries()) {
       setBusy(`${files.length}장 중 ${i + 1}장째 읽는 중… (장당 10초쯤 걸려요)`);
@@ -92,20 +82,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
         const r = await extractFromImage(auth, b64);
         types.push(r.docType);
         all.push(...toRows(r.items));
-        if (r.cautions?.length) allCautions.push(...r.cautions);
-        newScanned.push({ docType: r.docType, transcript: r.transcript, itemsCount: r.items.length });
-        if (r.docId && r.transcript) {
-          setDocs((prev) => [
-            {
-              id: r.docId!,
-              label: DOC_TYPE_LABEL[r.docType] ?? "기타 서류",
-              preview: r.transcript.slice(0, 60),
-              date: "방금",
-              cautions: r.cautions,
-            },
-            ...prev,
-          ]);
-        }
+        if (r.docId) setDocs((prev) => [{ id: r.docId!, label: DOC_TYPE_LABEL[r.docType] ?? "기타 서류", text: r.transcript, date: "방금" }, ...prev]);
       } catch (e) {
         setErr(e instanceof Error ? e.message : "읽지 못했어요. 다시 촬영해주세요");
       }
@@ -113,8 +90,6 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
     setBusy("");
     if (types.length > 0) {
       setFound([...new Set(types)]);
-      setCautions([...new Set(allCautions)]);
-      setScannedDocs(newScanned);
       setRows(all);
       router.refresh();
     }
@@ -131,23 +106,12 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
   });
 
   const onPaste = async () => {
-    setErr(""); setRows(null); setFound([]); setScannedDocs([]); setBusy("읽는 중…");
+    setErr(""); setRows(null); setFound([]); setBusy("읽는 중…");
     try {
       const res = await extractFromPaste(auth, paste);
       setRows(toRows(res.items));
       setFound(["message"]);
-      setScannedDocs([{ docType: "message", transcript: res.transcript, itemsCount: res.items.length }]);
-      if (res.docId) {
-        setDocs((prev) => [
-          {
-            id: res.docId!,
-            label: "병원 문자",
-            preview: res.transcript.slice(0, 60),
-            date: "방금",
-          },
-          ...prev,
-        ]);
-      }
+      if (res.docId) setDocs((prev) => [{ id: res.docId!, label: "병원 문자", text: res.transcript, date: "방금" }, ...prev]);
       router.refresh();
     }
     catch (e) { setErr(e instanceof Error ? e.message : "읽지 못했어요"); }
@@ -186,7 +150,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       {r.kind === "schedule" && (
         <input type="date" aria-label="날짜" value={r.date ?? ""} onChange={(e) => upd(i, { date: e.target.value || null, include: !!e.target.value })} className="mt-2 w-full rounded-lg border border-line bg-card px-3 py-2" />
       )}
-      <p className="mt-2 text-xs text-muted">원문: “{r.quote}”</p>
+      <p className="mt-2 text-xs text-muted">서류에 적힌 그대로: “{r.quote}”</p>
     </li>
   );
 
@@ -217,78 +181,30 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       ) : null}
       {err && <p role="alert" className="mt-3 text-warn font-medium leading-relaxed">{err}</p>}
       {found.length > 0 && (
-        <section role="status" className="mt-4 rounded-xl bg-accent-soft p-4 text-sm text-accent">
-          <p className="font-semibold text-ink">다 읽었어요: {found.map((t) => DOC_TYPE_LABEL[t]).join(", ")}</p>
-          <p className="mt-1 font-medium">
-            사진 원본은 개인정보 보호를 위해 저장하지 않고, <strong>읽어낸 글자만 서류 보관함에 안전하게 저장했어요.</strong>
-          </p>
-          <p className="mt-1 text-xs text-muted">
-            화면 아래 &lsquo;보관한 서류 글자&rsquo;에서 언제든 확인하실 수 있고, 씩씩이에게 질문할 때 답변 근거로 쓰여요.
-          </p>
-          {found.includes("medication") && (
-            <p className="mt-2 text-xs text-ink/80">약봉투는 데일리 체크에서 복약 여부를 챙겨드리므로 별도 할 일로 등록하지 않아요.</p>
-          )}
+        <section role="status" className="view-in mt-4 rounded-xl bg-accent-soft p-4 text-sm text-accent">
+          <p className="font-semibold text-ink">{found.map((t) => DOC_TYPE_LABEL[t]).join(", ")}을 읽어서 내 서류함에 넣었어요</p>
+          <p className="mt-1">사진은 저장하지 않고 글자만 남겨요. 아래 내 서류함에서 다시 볼 수 있고, 씩씩이에게 물어보면 이 내용으로 답해요.</p>
           {found.includes("receipt") && (
-            <p className="mt-2 text-xs text-ink/80">영수증은 보험 청구에 쓰는 서류예요. <Link href={`${base}/docs`} className="font-semibold underline">보험 청구 서류</Link>에서 챙긴 서류를 체크해 두세요.</p>
+            <p className="mt-2 text-ink/80">영수증은 보험 청구에 쓰는 서류예요. <Link href={`${base}/docs`} className="font-semibold underline">보험 청구 서류</Link>에서 챙긴 서류를 체크해 두세요.</p>
           )}
         </section>
       )}
 
-      {scannedDocs.length > 0 && (
-        <div className="mt-3 space-y-3">
-          {scannedDocs.map((s, idx) => (
-            <div key={idx} className="rounded-xl bg-card p-4 shadow-card">
-              <div className="flex items-center justify-between">
-                <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">{DOC_TYPE_LABEL[s.docType]}</span>
-                <span className="text-xs text-muted">보관함에 저장했어요</span>
-              </div>
-              <p className="mt-2 line-clamp-4 whitespace-pre-wrap rounded-lg bg-background p-2.5 text-sm leading-relaxed text-ink/80">
-                {s.transcript}
-              </p>
-              {s.itemsCount === 0 && (
-                <p className="mt-2 text-sm text-muted">이 서류에는 달력에 넣을 날짜가 없어요. 내용이 궁금하면 씩씩이에게 물어보세요.</p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {cautions.length > 0 && (
-        <aside className="mt-3 rounded-xl bg-[#fff4cc] p-3.5 text-sm text-[#7a5a00]" aria-label="약 보관 및 복약 주의사항">
-          <p className="text-xs font-semibold">약 보관 및 복약 주의사항</p>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {cautions.map((c) => (
-              <span key={c} className="rounded-md bg-card px-2 py-0.5 text-xs font-semibold text-[#7a5a00]">{c}</span>
-            ))}
-          </div>
-        </aside>
-      )}
-
-      {rows && rows.some((r) => r.kind === "schedule") && (
-        <section className="mt-5" aria-labelledby="rv">
-          <h2 id="rv" className="font-semibold">서류에서 발견된 일정</h2>
-          <p className="text-sm text-muted">서류에 적힌 날짜 중 캘린더에 넣을 일정을 선택하세요.</p>
-          <ul className="mt-3 space-y-3">{rows.map((r, i) => r.kind === "schedule" && rowItem(r, i))}</ul>
-        </section>
-      )}
-
-      {rows && rows.some((r) => r.kind !== "schedule") && (
-        <details className="mt-5 rounded-xl bg-card p-4 shadow-card">
-          <summary className="cursor-pointer font-semibold">참고 내용 {rows.filter((r) => r.kind !== "schedule").length}개 <span className="text-sm font-normal text-muted">· 보관함에 저장됨</span></summary>
-          <p className="mt-2 text-sm text-muted">약 이름·주의사항·문의처예요. 따로 할 일로 만들 필요는 없어요. 챙겨야 할 것만 체크하면 할 일로 넣어요.</p>
-          <ul className="mt-3 space-y-3">{rows.map((r, i) => r.kind !== "schedule" && rowItem(r, i))}</ul>
-        </details>
-      )}
-
+      {/* 고를 것이 있을 때만: 서류에 적힌 외래·검사 날짜를 달력에 넣을지 */}
       {rows && rows.length > 0 && (
-        <button onClick={confirm} disabled={pending || chosen.length === 0} className="mt-5 w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">
-          {pending ? "넣는 중…" : chosen.length ? `선택한 ${chosen.length}개 넣기` : "넣을 일정이 없어요 (글자는 저장됨)"}
-        </button>
+        <section className="view-in mt-5" aria-labelledby="rv">
+          <h2 id="rv" className="font-semibold">달력에 넣을 병원 일정</h2>
+          <p className="text-sm text-muted">서류에서 찾은 날짜예요. 맞는 것만 체크해서 넣어 주세요.</p>
+          <ul className="mt-3 space-y-3">{rows.map((r, i) => rowItem(r, i))}</ul>
+          <button onClick={confirm} disabled={pending || chosen.length === 0} className="mt-4 w-full rounded-full bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">
+            {pending ? "넣는 중…" : chosen.length ? `${chosen.length}개 달력에 넣기` : "넣을 일정을 체크해 주세요"}
+          </button>
+        </section>
       )}
 
       <section className="mt-8" aria-labelledby="kp">
-        <h2 id="kp" className="font-semibold">보관한 서류 글자 ({docs.length})</h2>
-        <p className="text-sm text-muted">&lsquo;서류 내용 물어보기&rsquo;가 이 글자만 근거로 답해요. 지우면 바로 사라져요.</p>
+        <h2 id="kp" className="font-semibold">내 서류함 <span className="tabular-nums text-muted">{docs.length}</span></h2>
+        <p className="text-sm text-muted">찍은 서류의 글자가 여기 모여요. 눌러서 전체를 볼 수 있고, 씩씩이는 이 내용을 보고 답해요.</p>
         {docs.length > 0 ? (
           <Kept
             auth={auth}
@@ -297,7 +213,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
           />
         ) : (
           <div className="mt-3 rounded-xl bg-card p-4 text-center text-xs text-muted shadow-card">
-            아직 보관한 서류가 없어요. 위에서 서류를 촬영하거나 병원 문자를 붙여넣어 보세요.
+            아직 넣어 둔 서류가 없어요. 위에서 서류를 찍거나 병원 문자를 붙여 넣어 보세요.
           </div>
         )}
       </section>
@@ -307,7 +223,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
 
 const SCAN_STEPS = [
   "1단계: 서류에 적힌 글자를 그대로 읽어내고 있어요",
-  "2단계: 외래 일정과 주의사항을 찾고 있어요",
+  "2단계: 외래·검사 날짜를 찾고 있어요",
   "3단계: 원문에 실제로 있는 내용인지 대조하고 있어요",
 ];
 

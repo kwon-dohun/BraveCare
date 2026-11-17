@@ -120,7 +120,7 @@ export function DeleteCase({ auth, stats }: { auth: Auth; stats?: { doneTasks: n
         <p className="font-bold uppercase tracking-wide">삭제 전 마지막 확인</p>
         <ul className="mt-1 list-disc pl-4 space-y-0.5">
           <li>내년에 쓸 <b>연말정산 장애인증명서</b>와 <b>실손보험 청구 서류</b>는 모두 내려받으셨나요?</li>
-          {stats?.docCount ? <li>보관해 둔 <b>서류 글자 {stats.docCount}건</b>도 영구 삭제되어 다시 열람할 수 없어요.</li> : null}
+          {stats?.docCount ? <li>내 서류함의 <b>서류 {stats.docCount}건</b>도 영구 삭제되어 다시 열람할 수 없어요.</li> : null}
         </ul>
       </aside>
 

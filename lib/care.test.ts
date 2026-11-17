@@ -5,7 +5,7 @@ import { summarize, type Daily } from "./report.ts";
 import { timeContextCheer, weekendDischargeWarning } from "./format.ts";
 import { searchGlossary } from "./glossary.ts";
 import { isEmergency, verifyAnswer, parseChatJson, chips } from "./chat.ts";
-import { itemsFromText, maskIds, extractCautionTags } from "./extract.ts";
+import { itemsFromText, maskIds } from "./extract.ts";
 import { phaseOf, seedTasks } from "./timeline.ts";
 import { identifyScannedPacketDocs } from "./packet.ts";
 
@@ -208,19 +208,6 @@ test("사후 가입자 맞춤 멘트: 퇴원 후 7일 이내 초기 회복기 �
   assert.equal(timeContextCheer("recovery", false, 19, 3), "퇴원 3일째, 데일리 체크를 남겨보세요");
   // 이미 오늘 체크 완료했으면 완료 멘트 우선
   assert.equal(timeContextCheer("recovery", true, 19, 3), "오늘 데일리 체크 완료! 푹 쉬세요");
-});
-
-test("서류 스캔 주의사항 키워드 추출: 보관법, 복약, 운전주의", () => {
-  const text1 = "시럽제는 냉장 보관하시고 식후 30분에 드세요. 항생제는 처방일수대로 끝까지 복용하세요.";
-  const tags1 = extractCautionTags(text1);
-  assert.ok(tags1.includes("냉장 보관"));
-  assert.ok(tags1.includes("식후 복용"));
-  assert.ok(tags1.includes("끝까지 복용(임의 중단 금지)"));
-
-  const text2 = "직사광선을 피하여 차광 보관할 것. 복용 후 졸음이 올 수 있으니 운전 주의.";
-  const tags2 = extractCautionTags(text2);
-  assert.ok(tags2.includes("차광 보관"));
-  assert.ok(tags2.includes("졸음·운전 주의"));
 });
 
 test("서류 보관함 ↔ 원무과 4종 패키지 교차 식별", () => {

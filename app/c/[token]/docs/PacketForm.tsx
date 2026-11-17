@@ -274,9 +274,9 @@ export default function PacketForm({
 
         {scannedDocs.length > 0 && (
           <aside className="mt-3 rounded-xl bg-accent-soft p-3 text-sm text-accent" aria-label="보관함 연동 안내">
-            <p className="font-semibold text-xs tracking-wide uppercase">보관함 자동 확인</p>
+            <p className="font-semibold text-xs tracking-wide uppercase">내 서류함 확인</p>
             <p className="mt-0.5">
-              서류 보관함에 이미 스캔해 둔 서류가 있어요. 남은 서류 위주로 원무과에서 챙기시면 돼요.
+              내 서류함에 이미 찍어 둔 서류가 있어요. 남은 서류 위주로 원무과에서 챙기시면 돼요.
             </p>
           </aside>
         )}
@@ -309,7 +309,7 @@ export default function PacketForm({
                       )}
                       {isScanned && (
                         <span className="rounded-md bg-accent-soft px-2 py-0.5 text-caption font-semibold text-accent">
-                          보관함에 있음
+                          서류함에 있음
                         </span>
                       )}
                     </span>

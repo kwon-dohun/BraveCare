@@ -48,8 +48,9 @@ export default function Nav({ base }: { base: string }) {
   };
   const chatOn = path.startsWith(`${base}/chat`);
 
+  // 휴대폰 크롬은 스크롤할 때 아래 도구막대가 들어가고 나오며 고정 막대가 잠깐 뒤처진다. 그 틈으로 글이 비치지 않게 바탕을 아래로 길게 깐다(after)
   return (
-    <nav aria-label="주요 메뉴" className="fixed inset-x-0 bottom-0 border-t border-line bg-card/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md print:hidden">
+    <nav aria-label="주요 메뉴" className="fixed inset-x-0 bottom-0 border-t border-line bg-card/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md after:absolute after:inset-x-0 after:top-full after:h-32 after:bg-card print:hidden">
       <ul className="mx-auto grid max-w-md grid-cols-5">
         {SIDE.slice(0, 2).map(tab)}
         <li className="flex justify-center">
