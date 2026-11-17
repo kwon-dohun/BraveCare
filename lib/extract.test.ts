@@ -127,3 +127,8 @@ test("스트리밍 진행: 서류 종류와 옮겨 적은 글자 수를 중간 �
   assert.equal(p.sorting, true);
   assert.ok(p.chars >= 9 && p.chars <= 12); // 닫는 따옴표 앞뒤 몇 글자 오차는 허용
 });
+
+test("제목 줄(외래 예약)이 따로 있는 날짜 줄도 일정으로 잡고, '않게 하세요'도 주의사항으로 잡는다", () => {
+  const p = parseModelJson(JSON.stringify({ docType: "guide", transcript: "외래 진료 예약\n11월 27일(금) 10:30 정형외과 3층 진료실\n12월 18일(금) 14:00 재활의학과\n입원일 2026-11-08\n1. 수술 부위는 2주간 물에 닿지 않게 하세요." }));
+  assert.deepEqual(p.items.map((i) => i.kind), ["schedule", "schedule", "caution"]);
+});

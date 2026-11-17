@@ -113,14 +113,15 @@ export function splitTagged(raw: string): { transcript: string; items: RawItem[]
 // 모델이 표시를 빠뜨려도 놓치지 않게, 줄 모양만 보고 확실한 것은 코드가 직접 항목으로 만든다(항목은 항상 원문 줄 그대로)
 const DATE_LIKE = /\d{4}\s*[-./년]\s*\d{1,2}\s*[-./월]\s*\d{1,2}|\d{1,2}\s*월\s*\d{1,2}\s*일|(?<![\d.:])\d{1,2}\s*\/\s*\d{1,2}(?![\d:.])/;
 const VISIT_WORD = /외래|예약|내원|재진|검사|방문/;
-const CAUTION = /마세요|마시고|마십시오|금지|삼가|피하세요|즉시 (내원|병원)/;
+const TIME_WORD = /\d{1,2}\s*:\s*\d{2}|오전|오후|\d{1,2}시(?!행|술|간)/; // "11월 27일 10:30 정형외과"처럼 제목 줄(외래 예약)이 따로 있는 날짜 줄
+const CAUTION = /마세요|마시고|마십시오|않게 하세요|금지|삼가|피하세요|즉시 (내원|병원)/;
 const PHONE = /0\d{1,2}[-\s]\d{3,4}[-\s]\d{4}/;
 const DOSE = /\d\s*(mg|ml|mL|g|㎎|정|캡슐|포)/;
 const HOW = /식후|식전|취침|하루|1일|\d\s*회/;
 export function itemsFromLines(transcript: string): RawItem[] {
   return transcript.split(/\r?\n/).map(norm).flatMap((text): RawItem[] => {
     if (PHONE.test(text)) return [{ kind: "contact", text }];
-    if (DATE_LIKE.test(text) && VISIT_WORD.test(text)) return [{ kind: "schedule", text }];
+    if (DATE_LIKE.test(text) && (VISIT_WORD.test(text) || TIME_WORD.test(text))) return [{ kind: "schedule", text }];
     if (CAUTION.test(text)) return [{ kind: "caution", text }];
     if (DOSE.test(text) && HOW.test(text)) return [{ kind: "medication", text }];
     return [];
