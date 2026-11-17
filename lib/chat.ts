@@ -31,7 +31,7 @@ export function buildChatPrompt(isSelfCare = false): string {
 - [자료]에는 보관한 서류(처방전·약봉투, 진단서·확인서, 진료비 영수증·세부내역서, 퇴원 안내문, 병원 문자), 우리 집 씩씩케어 정보(퇴원일·입원 이유·일정·할 일·받을 수 있는 지원), 쉬운 용어 사전이 있어.
 - 답이 [자료]에 있으면 자료를 근거로 답해. 자료와 일반 상식이 다르면 언제나 자료(병원 안내)를 따라. 서류끼리 다르면 더 최근 서류를 따르고, 다르다는 사실을 advice에 알려.
 - 서류 종류별로:
-  1. 처방전·약봉투: 적힌 복용 횟수·시기(식후 30분 등)는 쉬운 말로 풀어 줘. 적혀 있지 않은 부작용을 단정하거나 양을 늘리거나 끊으라고 하지 마.
+  1. 처방전·약봉투: 약 이름과 먹는 때·양은 서류에 적힌 글자 그대로 써. 약 이름을 한 글자도 바꾸거나 지어내지 마("식사 직후"를 "식사 전"으로 바꾸는 것처럼 시기를 바꾸는 것도 안 돼). 약봉투가 여러 장이면 가장 최근에 넣은 약봉투 하나만 기준으로 해. 약을 여러 개 말할 때 summary는 줄바꿈(\n)으로 나눠서 이 순서로 써: 첫 줄은 질문에 대한 바로 그 답(몇 개냐고 물으면 "모두 ○가지예요", 아침에 뭐 먹냐고 물으면 "아침에는 ○가지예요"처럼 물은 것만. 개수를 말할 때도 아래 목록은 꼭 써), 둘째 줄은 "○월 ○일에 넣은 약봉투 기준이에요", 그다음 먹는 때마다 한 줄씩 "아침 식사 직후: 약 이름, 약 이름". 하루에 여러 번 먹는 약은 이름 뒤에 서류에 적힌 횟수를 괄호로 붙여(예: "애니코프정(1일 3회)"). 전체 약을 물으면 약봉투의 약을 하나도 빠뜨리지 말고, 먹는 때가 딱 정해지지 않은 약(필요할 때, 식전 또는 식후 등)은 "그 밖에: 약 이름(서류에 적힌 때)" 줄에 넣어. 예) "오늘 먹을 약 몇 개야?"면 summary는 "모두 3가지예요.⏎11월 17일에 넣은 약봉투 기준이에요.⏎아침 식사 직후: 가나정, 다라정⏎저녁 식사 직후: 마바정(1일 2회)"처럼 써(⏎는 줄바꿈). 적혀 있지 않은 부작용을 단정하거나 양을 늘리거나 끊으라고 하지 마.
   2. 진단서·확인서: 병명과 질병분류기호(예: S72.0)는 쉬운 말로 풀어 주되, 회복 기간이나 완치 시점은 단정하지 마.
   3. 영수증·세부내역서: 적힌 금액과 급여·비급여 항목은 알려 줘도 돼. 실손보험으로 얼마나 받는지는 보험사 심사로 정해지니 확답하지 말고, 실손24나 보험사에 청구해 보라고 안내해.
   4. 퇴원 안내문: 샤워·식사·운동 같은 주의사항은 안내문에 적힌 그대로를 따르게 해.
@@ -52,7 +52,7 @@ export function parseChatJson(raw: string): ChatAnswer {
     const j = JSON.parse(raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim());
     const s = (v: unknown) => (typeof v === "string" ? v.trim().slice(0, 500) : "");
     return {
-      summary: s(j.summary),
+      summary: s(j.summary).replace(/\\n/g, "\n"), // 모델이 줄바꿈을 글자 그대로 "\n"으로 쓸 때가 있다
       sourceQuote: s(j.sourceQuote),
       advice: s(j.advice),
       suggestDoctorQuestion: s(j.suggestDoctorQuestion) || undefined,
@@ -62,6 +62,21 @@ export function parseChatJson(raw: string): ChatAnswer {
   }
 }
 
+// 약 개수는 모델이 자주 틀리게 센다. "때: 약, 약" 목록이 있으면 첫 줄의 "○가지"를 목록의 서로 다른 약 이름 수로 고친다
+// 모델이 목록을 한 줄로 붙여 쓰면 문장(". ") 단위로 줄을 나눠 읽기 쉽게 만든 뒤 센다. 약 목록이 없는 답은 그대로 둔다.
+export function fixMedCount(summary: string): string {
+  const listLine = /^[^:：.]{1,20}[:：]\s*(.+)$/;
+  const lines = summary.split(/\n|(?<=[.。])\s+/).map((l) => l.trim()).filter(Boolean);
+  const [first, ...rest] = lines;
+  const names = new Set(rest.flatMap((l) => {
+    const m = l.match(listLine);
+    return m ? m[1].replace(/[.。]$/, "").split(/,\s*/).map((n) => n.replace(/\(.*?\)/g, "").trim()).filter(Boolean) : [];
+  }));
+  if (!names.size) return summary;
+  const head = /\d+\s*가지/.test(first) ? first.replace(/\d+(\s*가지)/, `${names.size}$1`) : first;
+  return [head, ...rest.map((l) => (listLine.test(l) ? l.replace(/[.。]$/, "") : l))].join("\n");
+}
+
 // 모델이 내놓은 근거 문장이 자료에 실제로 있을 때만 남기고, 어느 자료에서 왔는지 붙인다
 export function verifyAnswer(a: ChatAnswer, sources: Source[] | string[]): ChatAnswer {
   const list: Source[] = sources.map((s) => (typeof s === "string" ? { label: "서류", text: s } : s));
@@ -69,7 +84,7 @@ export function verifyAnswer(a: ChatAnswer, sources: Source[] | string[]): ChatA
   const hit = q.length >= 2 ? list.find((s) => norm(s.text).includes(q)) : undefined;
   return {
     // 모델이 확인 권유를 본문에도 되풀이하면 본문 쪽을 지운다
-    summary: (a.advice && a.summary.includes(a.advice) ? a.summary.replace(a.advice, "").trim() : a.summary) || "답을 만들지 못했어요",
+    summary: fixMedCount((a.advice && a.summary.includes(a.advice) ? a.summary.replace(a.advice, "").trim() : a.summary)) || "답을 만들지 못했어요",
     sourceQuote: hit ? q : "",
     source: hit?.label,
     advice: a.advice || (a.summary ? "" : "정확한 내용은 병원 간호사실이나 약국에 확인해 보세요."),

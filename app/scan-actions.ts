@@ -9,6 +9,9 @@ import { buildChatPrompt, parseChatJson, verifyAnswer, type ChatAnswer, type Sou
 import { DOC_TYPE_LABEL } from "@/lib/extract";
 import { loadCase } from "@/lib/load";
 import { caseBrief } from "@/lib/brief";
+import { krDate } from "@/lib/format";
+
+const seoulDay = (iso: string) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
 import { glossaryText } from "@/lib/glossary";
 
 
@@ -133,11 +136,15 @@ export async function askChat(a: Auth, question: string): Promise<ChatAnswer> {
 
   // 자료: 보관한 서류 + 우리 집 씩씩케어 정보 + 쉬운 용어 사전. 답의 근거 문장은 이 글자 안에서만 인정한다.
   const [{ data: docs }, data] = await Promise.all([
-    db.from("documents").select("doc_type,transcript").eq("case_id", actor.caseId).order("created_at", { ascending: false }).limit(5),
+    db.from("documents").select("doc_type,transcript,summary,created_at").eq("case_id", actor.caseId).order("created_at", { ascending: false }).limit(5),
     loadCase(actor.caseId),
   ]);
   const sources: Source[] = [
-    ...(docs ?? []).map((d) => ({ label: `서류(${DOC_TYPE_LABEL[d.doc_type as DocType] ?? "기타"})`, text: d.transcript as string })),
+    // 서류마다 넣은 날을 붙이고(최근 것부터), 정리본이 있으면 원문 앞에 둔다. 정리본 값도 원문 글자 그대로라 근거로 인용할 수 있다
+    ...(docs ?? []).map((d) => ({
+      label: `서류(${DOC_TYPE_LABEL[d.doc_type as DocType] ?? "기타"}, ${krDate(seoulDay(d.created_at as string))} 넣음)`,
+      text: [((d.summary ?? []) as SummaryLine[]).map((l) => `${l.label}: ${l.value}`).join("\n"), d.transcript as string].filter(Boolean).join("\n"),
+    })),
     { label: "씩씩케어 정보", text: caseBrief(data) },
     { label: "쉬운 용어 사전", text: glossaryText() },
   ];

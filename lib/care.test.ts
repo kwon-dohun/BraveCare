@@ -229,3 +229,25 @@ test("도움 요청 문구: 열쇠가 든 주소를 넣지 않고 이모지도 �
   assert.ok(!/\/c\/|\/m\//.test(text));
   assert.ok(!/[\u{1F300}-\u{1FAFF}☀-➿]/u.test(text));
 });
+
+test("약 개수는 목록의 서로 다른 약 이름 수로 고친다", async () => {
+  const { fixMedCount } = await import("./chat.ts");
+  const s = "모두 6가지예요.\n11월 17일에 넣은 약봉투 기준이에요.\n아침 식사 직후: 듀비에트정, 광동아스피린장용정, 다이크로짇정\n식후 30분: 애니코프정(1일 3회), 소론도정(1일 3회)\n저녁 식사 직후: 슈가메트서방정\n식전 또는 식후 1시간: 알마겔정";
+  assert.equal(fixMedCount(s).split("\n")[0], "모두 7가지예요.");
+  // 같은 약이 두 때에 나와도 한 번만 센다
+  assert.equal(fixMedCount("아침에는 9가지예요\n아침: 가정, 나정\n점심: 가정").split("\n")[0], "아침에는 2가지예요");
+  // 목록이 없으면 그대로
+  assert.equal(fixMedCount("모두 3가지예요."), "모두 3가지예요.");
+});
+
+test("한 줄로 붙여 쓴 약 목록도 줄을 나눠 세고, 약 목록이 없는 답은 건드리지 않는다", async () => {
+  const { fixMedCount } = await import("./chat.ts");
+  const s = "아침에는 4가지예요. 11월 17일에 넣은 약봉투 기준이에요. 아침 식사 직후: 듀비에트정, 광동아스피린장용정, 다이크로짇정. 식후 30분: 애니코프정(1일 3회), 소론도정(1일 3회)";
+  assert.equal(fixMedCount(s), "아침에는 5가지예요.\n11월 17일에 넣은 약봉투 기준이에요.\n아침 식사 직후: 듀비에트정, 광동아스피린장용정, 다이크로짇정\n식후 30분: 애니코프정(1일 3회), 소론도정(1일 3회)");
+  const prose = "퇴원 후에는 소화가 잘 되는 음식이 좋아요. 예를 들어 죽이나 계란찜이에요.";
+  assert.equal(fixMedCount(prose), prose);
+});
+
+test("챗봇 답의 글자 그대로인 \n은 줄바꿈으로", () => {
+  assert.equal(parseChatJson('{"summary":"아침에는 3가지예요.\\n아침: 가정"}').summary, "아침에는 3가지예요.\n아침: 가정");
+});

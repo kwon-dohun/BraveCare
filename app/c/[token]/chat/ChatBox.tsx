@@ -104,7 +104,7 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
                     <p className="mt-0.5 text-sm leading-relaxed text-ink/80">“{t.a.sourceQuote}”</p>
                   </div>
                 ) : t.a.unverified && (
-                  <p className="mt-2.5 rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">자료에서 근거 문장을 찾지 못했어요. 참고만 하고 꼭 병원에 확인해 주세요.</p>
+                  <p className="mt-2 text-caption text-muted">서류 문장과 정확히 맞춰 보지 못한 답이에요. 중요한 건 서류나 병원에 한 번 더 확인해 주세요.</p>
                 )}
                 {t.a.advice && <p className="mt-2.5 text-sm leading-relaxed text-muted">{t.a.advice}</p>}
 
@@ -182,7 +182,7 @@ function Answer({ a, onGrow, children }: { a: ChatAnswer; onGrow: () => void; ch
   const done = n >= full.length;
   return (
     <Bot>
-      <p className="text-callout leading-relaxed" aria-label={full}>
+      <p className="whitespace-pre-line text-callout leading-relaxed" aria-label={full}>
         <span aria-hidden>{full.slice(0, n)}</span>
       </p>
       {done && <div className="view-in">{children}</div>}
