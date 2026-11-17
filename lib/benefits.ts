@@ -3,6 +3,7 @@
 
 // 낮 시간 돌봄: 혼자 거주 / 가족과 살지만 낮에는 부재(맞벌이) / 낮에도 돌볼 가족이 있음
 import { MORE } from "./benefit-list.ts";
+import { LOCAL } from "./benefit-local.ts";
 
 export type Living = "alone" | "away" | "home";
 export type Reason = "ortho" | "cancer" | "brain" | "heart" | "surgery" | "internal" | "other";
@@ -51,6 +52,7 @@ export interface Benefit {
   fallback: { verdict: Verdict; reason: string };
   source: { label: string; url: string };
   lastVerified: string | null; // 공식 출처로 확인한 날. null이면 화면에 초안으로 표시한다
+  closeRisk?: string; // 예산·재고 소진이나 시범 기간 때문에 접수가 끝났을 수 있는 제도. 사용자에게 보일 한 문장. 있으면 '높음'을 주지 않는다
 }
 
 const BASE: Benefit[] = [
@@ -139,7 +141,7 @@ const BASE: Benefit[] = [
   },
 ];
 
-export const BENEFITS: Benefit[] = [...BASE, ...MORE];
+export const BENEFITS: Benefit[] = [...BASE, ...MORE, ...LOCAL];
 
 export const REASONS: Reason[] = ["ortho", "cancer", "brain", "heart", "surgery", "internal", "other"];
 export const LIVINGS: Living[] = ["alone", "away", "home"];
@@ -194,6 +196,8 @@ export const STATUS_LABEL: Record<string, string> = {
 
 const MS_DAY = 86_400_000;
 export const dayDiff = (a: string, b: string) => Math.round((Date.parse(a) - Date.parse(b)) / MS_DAY);
+// 확인일이 이보다 오래되면(월 1회 점검 + 여유) '높음'을 '확인 필요'로 낮춘다
+export const STALE_DAYS = 45;
 
 // 만 나이를 정확히 모르므로 [lo, hi] 범위로 본다. 경계에 걸리면 확인 필요로 처리하려고 null 반환.
 function ageClass(birthYear: number, year: number): "65+" | "under65" | null {
@@ -211,6 +215,8 @@ export interface Result {
   reason: string;
   apply: Apply;
   deadline: { state: "unknown" | "open" | "closed"; daysLeft?: number; endDate?: string };
+  verifiedAgo: number | null; // 공식 확인 후 지난 날. null이면 초안
+  demoted?: "closeRisk" | "stale" | "draft"; // 접수 마감 위험·오래된 확인일·초안이라 '높음'을 줄 수 없는 이유(확인 필요 뱃지 문구에 쓴다)
 }
 
 export function evaluate(input: CaseInput, today: string): Result[] {
@@ -223,18 +229,22 @@ export function evaluate(input: CaseInput, today: string): Result[] {
     let apply = b.apply;
     let needsIncome = false;
 
-    // 나이가 경계(65세 전후 1년)면 나이 조건이 걸린 규칙은 확인 필요로 돌린다
-    const ageBoundary = age === null && b.rules.some((r) => r.when.age);
+    // 사는 곳 조건(시·도, 시·군·구, 여러 시·도 중 하나)이 맞는지
+    const place = `${input.sido} ${input.sigungu}`;
+    const regionOk = (w: Rule["when"]) =>
+      (!w.sido || (w.sido.startsWith("!") ? input.sido !== w.sido.slice(1) : input.sido === w.sido))
+      && (!w.sigungu || [w.sigungu].flat().some((x) => (x.includes(" ") ? x === place : x === input.sigungu)))
+      && (!w.region || w.region.includes(input.sido));
+
+    // 나이가 경계(65세 전후 1년)면 나이 조건이 걸린 규칙은 확인 필요로 돌린다. 다른 지역 전용 제도에는 적용하지 않는다
+    const ageBoundary = age === null && b.rules.some((r) => r.when.age && regionOk(r.when));
     if (ageBoundary) {
       verdict = "check";
       reason = "만 65세 경계에 있어 정확한 생일 기준 확인이 필요해요";
     } else {
       for (const r of b.rules) {
         const w = r.when;
-        const sidoOk = !w.sido || (w.sido.startsWith("!") ? input.sido !== w.sido.slice(1) : input.sido === w.sido);
-        const place = `${input.sido} ${input.sigungu}`;
-        const sigunguOk = !w.sigungu || [w.sigungu].flat().some((x) => (x.includes(" ") ? x === place : x === input.sigungu));
-        const rest = sidoOk && sigunguOk && (!w.region || w.region.includes(input.sido))
+        const rest = regionOk(w)
           && (w.selfCare === undefined || w.selfCare === !!input.isSelfCare) && (!w.living || w.living.includes(input.living)) && (!w.reason || w.reason.includes(input.reason)) && (!w.age || w.age === age);
         if (!rest) continue;
         if (w.income) {
@@ -255,13 +265,30 @@ export function evaluate(input: CaseInput, today: string): Result[] {
       }
     }
 
+    // 접수가 끝났을 수 있거나 확인한 지 오래된(또는 초안) 제도는 '높음'을 주지 않고, 이유를 판정 근거에 덧붙인다
+    const verifiedAgo = b.lastVerified ? dayDiff(today, b.lastVerified) : null;
+    let demoted: Result["demoted"];
+    if (verdict !== "no") {
+      if (b.closeRisk) {
+        demoted = "closeRisk";
+        reason += ` ${b.closeRisk}`;
+      } else if (verifiedAgo === null) {
+        demoted = "draft";
+        reason += " 공식 확인 전 초안이라 최신 내용을 먼저 확인하세요.";
+      } else if (verifiedAgo > STALE_DAYS) {
+        demoted = "stale";
+        reason += ` 정보를 확인한 지 ${verifiedAgo}일이 지나 최신 내용을 먼저 확인하세요.`;
+      }
+      if (demoted && verdict === "high") verdict = "check";
+    }
+
     let deadline: Result["deadline"] = { state: "unknown" };
     if (b.deadline && input.dischargeDate) {
       const endDate = new Date(Date.parse(input.dischargeDate) + b.deadline.toDaysAfter * MS_DAY).toISOString().slice(0, 10);
       const daysLeft = dayDiff(endDate, today);
       deadline = daysLeft < 0 ? { state: "closed", endDate } : { state: "open", daysLeft, endDate };
     }
-    return { benefit: b, verdict, needsIncome, reason, apply, deadline };
+    return { benefit: b, verdict, needsIncome, reason, apply, deadline, verifiedAgo, demoted };
   });
 }
 

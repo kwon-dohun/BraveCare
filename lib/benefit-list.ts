@@ -63,6 +63,7 @@ export const MORE: Benefit[] = [
     fallback: { verdict: "no", reason: "시범 지역 8곳에 살거나 그 지역 사업장에서 일하는 취업자만 대상이에요" },
     source: { label: "보건복지부 상병수당 시범사업", url: "https://www.mohw.go.kr/menu.es?mid=a10705020300" },
     lastVerified: V,
+    closeRisk: "시범사업이라 시범 기간과 지역이 바뀌거나 끝났을 수 있어요. 신청 전에 지금도 접수하는지 확인하세요.",
   },
   {
     id: "seoul_paid_sick",
@@ -330,6 +331,7 @@ export const MORE: Benefit[] = [
     fallback: { verdict: "no", reason: "거동이 불편해 병원에 가기 어려운 환자가 대상이에요" },
     source: { label: "보건복지부 발표 보도 (더팩트 2026-06-22)", url: "https://news.tf.co.kr/read/life/2334597.htm" },
     lastVerified: V,
+    closeRisk: "시범사업에 참여하는 의원만 가능하고 참여 기관이 바뀔 수 있어요. 가기 전에 지금도 하는지 확인하세요.",
   },
   {
     id: "assistive_rental",
@@ -344,6 +346,7 @@ export const MORE: Benefit[] = [
     fallback: { verdict: "check", reason: "퇴원 후 걷기 불편하다면 이용할 수 있어요" },
     source: { label: "내 손안에 서울 (2023년 안내)", url: "https://mediahub.seoul.go.kr/archives/2009160" },
     lastVerified: null,
+    closeRisk: "기관마다 재고가 달라 지금 빌릴 수 있는지 전화로 먼저 확인하세요.",
   },
   {
     id: "mobility_taxi",
