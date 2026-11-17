@@ -25,7 +25,7 @@ export default async function Family(props: PageProps<"/c/[token]/family">) {
             const all = mine(m.id);
             return (
               <li key={m.id} className="flex items-center justify-between gap-2 px-4 py-3">
-                <Link href={`${base}/tasks?view=list&w=${m.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                <Link href={`${base}/family/${m.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                   <Avatar name={m.name} />
                   <div className="min-w-0">
                     <p className="font-medium">{m.name}{m.id === actor.memberId && <span className="ml-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-caption font-semibold text-accent">나</span>}</p>
