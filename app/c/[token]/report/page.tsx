@@ -4,6 +4,7 @@ import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
 import { summarize, TEMP_LABEL, BOWEL_LABEL } from "@/lib/report";
 import { REASON_LABEL } from "@/lib/options";
+import { krDateYear } from "@/lib/format";
 import AddQuestion from "./AddQuestion";
 import Bright from "@/components/Bright";
 
@@ -43,9 +44,15 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
           <h1 className="text-title font-display">퇴원 후 경과 요약 (외래 리포트)</h1>
           <p className="mt-1 text-sm text-muted leading-relaxed">
             {REASON_LABEL.find(([k]) => k === data.input.reason)?.[1]} · {data.input.birthYear}년생
-            {data.input.dischargeDate ? ` · 퇴원일 ${data.input.dischargeDate}` : ""}
-            {!data.isSelfCare && checks.length > 0 && ` · 환자 직접 기록 ${checks.filter((c) => c.source_role === "patient").length}일, 가족 기록 ${checks.filter((c) => c.source_role !== "patient").length}일`}
+            {data.input.dischargeDate ? ` · ${krDateYear(data.input.dischargeDate)} 퇴원` : ""}
           </p>
+          {checks.length > 0 && (
+            <p className="text-sm text-muted">
+              기록 {checks.length}일
+              {!data.isSelfCare && checks.some((c) => c.source_role === "patient") ? ` · 환자 직접 ${checks.filter((c) => c.source_role === "patient").length}일` : ""}
+              {!data.isSelfCare && checks.some((c) => c.source_role !== "patient") ? ` · 가족 ${checks.filter((c) => c.source_role !== "patient").length}일` : ""}
+            </p>
+          )}
         </div>
 
         {s.days === 0 ? (
@@ -74,17 +81,15 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
             </section>
           </div>
         ) : (
-          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="mt-5 space-y-4">
             {/* 1. 약 복용 */}
             <section className={box} aria-labelledby="r1">
               <div className="flex items-center justify-between">
                 <h2 id="r1" className="font-semibold text-ink">약 복용 이행률</h2>
                 <span className="text-xs text-muted">{s.days}일 기록</span>
               </div>
-              <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
-                <span className="shrink-0 whitespace-nowrap text-display font-display text-accent">{s.adherence}%</span>
-                <span className="text-sm text-muted">(퇴원 후 {s.span}일 중 기록한 날 기준)</span>
-              </div>
+              <p className="mt-1 whitespace-nowrap text-display font-display text-accent">{s.adherence}%</p>
+              <p className="text-sm text-muted">퇴원 후 {s.span}일 중 기록한 날 기준이에요</p>
               {s.sideEffects.length > 0 ? (
                 <p className="mt-2 text-sm text-warn font-medium">약 먹고 불편했던 날: {s.sideEffects.map(md).join(", ")}</p>
               ) : (
@@ -124,19 +129,19 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
             <section className={box} aria-labelledby="r3">
               <h2 id="r3" className="font-semibold text-ink">체온 · 상처 부위 · 배변</h2>
               <ul className="mt-2 divide-y divide-line/60 text-sm">
-                <li className="flex justify-between py-1.5">
+                <li className="flex justify-between gap-4 py-2">
                   <span className="text-muted">발열 여부</span>
                   <span className={s.fevers.length ? "font-semibold text-warn" : "text-ink"}>
                     {s.fevers.length ? s.fevers.map((f) => `${md(f.date)} ${TEMP_LABEL[f.temp]}`).join(", ") : "기록일 정상 체온"}
                   </span>
                 </li>
-                <li className="flex justify-between py-1.5">
+                <li className="flex justify-between gap-4 py-2">
                   <span className="text-muted">수술 부위 진물·벌어짐</span>
                   <span className={s.wounds.length ? "font-semibold text-warn" : "text-ink"}>
                     {s.wounds.length ? `${s.wounds.map(md).join(", ")} 확인됨` : "이상 없음"}
                   </span>
                 </li>
-                <li className="flex justify-between py-1.5">
+                <li className="flex justify-between gap-4 py-2">
                   <span className="text-muted">배변 상태</span>
                   <span className="text-ink">
                     {s.bowel.length ? s.bowel.map((b) => `${md(b.date)} ${BOWEL_LABEL[b.bowel]}`).join(", ") : "이상 없음"}
@@ -165,7 +170,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
 
             {/* 5. 보호자 특이사항 메모 (전체 폭) */}
             {checks.some((c) => c.notes) && (
-              <section className={`${box} sm:col-span-2`} aria-labelledby="r5">
+              <section className={box} aria-labelledby="r5">
                 <h2 id="r5" className="font-semibold text-ink">날짜별 메모</h2>
                 <ul className="mt-2 space-y-2 text-sm">
                   {checks.filter((c) => c.notes).slice(0, 5).map((c) => (

@@ -34,7 +34,7 @@ export default async function Help(props: PageProps<"/c/[token]/help">) {
       <ul className="mt-5 divide-y divide-line rounded-xl bg-card shadow-card">
         {faq.map(([q, a]) => (
           <li key={q}>
-            <details className="px-4">
+            <details name="faq" className="px-4">
               <summary className="cursor-pointer py-1 font-medium">{q}</summary>
               <p className="pb-4 text-callout leading-relaxed text-muted">{a}</p>
             </details>

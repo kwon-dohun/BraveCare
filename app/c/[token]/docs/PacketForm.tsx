@@ -132,120 +132,10 @@ export default function PacketForm({
 
   return (
     <>
-      <section className="mt-6" aria-labelledby="p1">
-        <h2 id="p1" className="font-semibold">1. 실손24 전산 청구가 되는 병원인가요?</h2>
-        <p className="mt-1 text-sm text-muted">입원한 병원을 검색하면 실손24 참여 여부를 바로 확인해 드려요 (공공데이터 기준)</p>
-
-        <label htmlFor="hn" className="mt-3 block text-sm font-medium">입원한 병원</label>
-        <div className="mt-1 flex gap-2">
-          <input
-            id="hn"
-            value={name}
-            maxLength={40}
-            onChange={(e) => {
-              setName(e.target.value);
-              setSearchResults(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleSearch();
-              }
-            }}
-            onBlur={() => name !== hospital && save(name, s24, sel, customList)}
-            placeholder="예: 서울대병원, 아산병원, 창원경상대병원"
-            className="min-w-0 flex-1 rounded-xl border border-line bg-card px-4 py-3 text-ink outline-none focus:border-accent"
-          />
-          <button
-            type="button"
-            onClick={handleSearch}
-            disabled={searching}
-            className="shrink-0 rounded-xl bg-primary px-4 py-3 font-semibold text-ink shadow-sm active:opacity-80 disabled:opacity-50"
-          >
-            {searching ? "조회 중…" : "실손24 조회"}
-          </button>
-        </div>
-
-        {searchMsg && (
-          <p role="status" className={`mt-2 rounded-xl p-3 text-sm ${s24 === "yes" ? "bg-accent-soft text-accent" : s24 === "no" ? "bg-warn-soft text-warn" : "bg-card text-muted shadow-card"}`}>
-            {searchMsg}
-          </p>
-        )}
-
-        {/* 검색 결과 다건 목록 */}
-        {searchResults && searchResults.length > 1 && (
-          <div className="mt-2 divide-y divide-line rounded-xl border border-line bg-card shadow-card">
-            <p className="px-3 py-2 text-xs font-medium text-muted">검색된 실손24 참여 병원 중 선택해 주세요:</p>
-            {searchResults.map((h, idx) => (
-              <button
-                key={`${h.name}-${idx}`}
-                type="button"
-                onClick={() => pickHospital(h)}
-                className="flex w-full flex-col items-start px-3 py-2.5 text-left hover:bg-accent-soft/50"
-              >
-                <span className="font-semibold text-ink">{h.name} <span className="ml-1 text-xs text-accent">[{h.type || "참여 요양기관"}]</span></span>
-                {h.address && <span className="text-xs text-muted">{h.address}</span>}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {s24 === "yes" && (
-          <p role="status" className="mt-3 rounded-xl bg-accent-soft p-3 text-sm text-accent">
-            [전산 청구 지원] 퇴원 후 실손24 앱에서 종이 서류 없이 간편하게 청구할 수 있어요. 그래도 진료비 영수증과 세부내역서는 다른 보험이나 지원금 신청을 위해 챙겨두면 안전해요.
-          </p>
-        )}
-        {s24 === "no" && (
-          <p role="status" className="mt-3 rounded-xl bg-warn-soft p-3 text-sm text-warn font-medium">
-            {post
-              ? "[전산 청구 미지원] 종이 서류로 청구해야 해요. 아래 서류를 병원에서 발급받아 보험사에 내세요."
-              : "[전산 청구 미지원] 퇴원 날 원무과에서 아래 서류들을 떼지 않으면 보험금을 받지 못하고 병원을 다시 찾아야 해요!"}
-          </p>
-        )}
-        {s24 === "" && (
-          <p className="mt-3 text-sm text-muted">
-            확인이 어렵다면 아래 서류를 받아 두는 쪽이 안전해요.
-          </p>
-        )}
-
-        {/* 조회가 되면 자동으로 정해지므로 직접 고르는 버튼과 공식 사이트는 접어 둔다 */}
-        <details className="mt-3 rounded-xl bg-card shadow-card">
-          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">조회가 안 되면 직접 알려주기</summary>
-          <div className="px-4 pb-4">
-            <div role="radiogroup" aria-label="실손24 지원 여부" className="grid grid-cols-3 gap-2">
-              {S24.map(([v, l]) => (
-                <button
-                  key={l}
-                  role="radio"
-                  aria-checked={s24 === v}
-                  onClick={() => {
-                    setS24(v);
-                    save(name, v, sel, customList);
-                  }}
-                  className={`rounded-xl px-2 py-3 text-sm transition-all ${
-                    s24 === v ? "bg-accent-soft font-semibold text-accent ring-[1.5px] ring-primary" : "bg-background"
-                  }`}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-            <a
-              href={SILSON24_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 flex items-center justify-center rounded-full bg-background px-4 py-2.5 text-sm font-medium text-muted hover:text-ink"
-            >
-              실손24 공식 사이트에서 직접 확인하기 ↗
-            </a>
-          </div>
-        </details>
-      </section>
-
-      <section className="mt-8" aria-labelledby="p2">
+      <section className="mt-6" aria-labelledby="p2">
         <div className="flex items-center justify-between gap-2">
           <h2 id="p2" className="font-semibold text-headline">
-            2. {post ? "병원에 요청할 서류" : "원무과에서 받을 서류"} ({sel.length}/{totalCount})
+            {post ? "병원에 요청할 서류" : "원무과에서 받을 서류"} ({sel.length}/{totalCount})
           </h2>
           <button type="button" onClick={() => setShow(true)} className="shrink-0 rounded-full bg-accent-soft px-3 py-1.5 text-xs font-semibold text-accent">
             {post ? "요청할 때 보여주기" : "창구에서 보여주기"}
@@ -393,6 +283,143 @@ export default function PacketForm({
 
         {err && <p role="alert" className="mt-2 text-warn">{err}</p>}
       </section>
+
+      {/* 이미 퇴원한 사람이 병원에서 서류를 받는 방법(온라인 → 전화 → 방문 순) */}
+      {(() => {
+        const body = (
+          <ol className="space-y-2.5 text-sm leading-relaxed">
+            <li><b className="font-semibold">1. 온라인</b> 병원 홈페이지나 앱의 &lsquo;증명서 발급&rsquo; 메뉴에서 받을 수 있는 병원이 많아요. 가장 빨라요.</li>
+            <li><b className="font-semibold">2. 전화</b> 온라인이 안 되면 원무과에 전화해서 방문 발급이나 우편 발급이 되는지 물어보세요.</li>
+            <li><b className="font-semibold">3. 방문</b> 환자 본인 신분증을 챙기세요. 가족이 대신 가면 필요한 서류를 전화로 먼저 확인하세요 (병원마다 달라요).</li>
+          </ol>
+        );
+        return post ? (
+          <section className="mt-6 rounded-xl bg-card p-4 shadow-card">
+            <h2 className="mb-2 font-semibold">이미 퇴원했어도 받을 수 있어요</h2>
+            {body}
+          </section>
+        ) : (
+          <details className="mt-6 rounded-xl bg-card shadow-card">
+            <summary className="cursor-pointer px-4 py-3 font-semibold">이미 퇴원했다면 이렇게 받아요</summary>
+            <div className="px-4 pb-4">{body}</div>
+          </details>
+        );
+      })()}
+
+      <details className="mt-6 rounded-xl bg-card shadow-card">
+        <summary className="cursor-pointer px-4 py-3.5">
+          <span className="font-semibold">실손24 전산 청구 확인</span>
+          <span className="ml-2 text-sm text-muted">{s24 === "yes" ? "청구할 수 있는 병원이에요" : s24 === "no" ? "전산 청구가 안 되는 병원이에요" : "아직 확인하지 않았어요"}</span>
+        </summary>
+        <div className="px-4 pb-4">
+        <p className="text-sm text-muted">입원한 병원을 검색하면 실손24 참여 여부를 바로 확인해 드려요 (공공데이터 기준)</p>
+
+        <label htmlFor="hn" className="mt-3 block text-sm font-medium">입원한 병원</label>
+        <div className="mt-1 flex gap-2">
+          <input
+            id="hn"
+            value={name}
+            maxLength={40}
+            onChange={(e) => {
+              setName(e.target.value);
+              setSearchResults(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSearch();
+              }
+            }}
+            onBlur={() => name !== hospital && save(name, s24, sel, customList)}
+            placeholder="예: 서울대병원, 아산병원, 창원경상대병원"
+            className="min-w-0 flex-1 rounded-xl border border-line bg-card px-4 py-3 text-ink outline-none focus:border-accent"
+          />
+          <button
+            type="button"
+            onClick={handleSearch}
+            disabled={searching}
+            className="shrink-0 rounded-xl bg-primary px-4 py-3 font-semibold text-ink shadow-sm active:opacity-80 disabled:opacity-50"
+          >
+            {searching ? "조회 중…" : "실손24 조회"}
+          </button>
+        </div>
+
+        {searchMsg && (
+          <p role="status" className={`mt-2 rounded-xl p-3 text-sm ${s24 === "yes" ? "bg-accent-soft text-accent" : s24 === "no" ? "bg-warn-soft text-warn" : "bg-card text-muted shadow-card"}`}>
+            {searchMsg}
+          </p>
+        )}
+
+        {/* 검색 결과 다건 목록 */}
+        {searchResults && searchResults.length > 1 && (
+          <div className="mt-2 divide-y divide-line rounded-xl border border-line bg-card shadow-card">
+            <p className="px-3 py-2 text-xs font-medium text-muted">검색된 실손24 참여 병원 중 선택해 주세요:</p>
+            {searchResults.map((h, idx) => (
+              <button
+                key={`${h.name}-${idx}`}
+                type="button"
+                onClick={() => pickHospital(h)}
+                className="flex w-full flex-col items-start px-3 py-2.5 text-left hover:bg-accent-soft/50"
+              >
+                <span className="font-semibold text-ink">{h.name} <span className="ml-1 text-xs text-accent">[{h.type || "참여 요양기관"}]</span></span>
+                {h.address && <span className="text-xs text-muted">{h.address}</span>}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {s24 === "yes" && (
+          <p role="status" className="mt-3 rounded-xl bg-accent-soft p-3 text-sm text-accent">
+            [전산 청구 지원] 퇴원 후 실손24 앱에서 종이 서류 없이 간편하게 청구할 수 있어요. 그래도 진료비 영수증과 세부내역서는 다른 보험이나 지원금 신청을 위해 챙겨두면 안전해요.
+          </p>
+        )}
+        {s24 === "no" && (
+          <p role="status" className="mt-3 rounded-xl bg-warn-soft p-3 text-sm text-warn font-medium">
+            {post
+              ? "[전산 청구 미지원] 종이 서류로 청구해야 해요. 아래 서류를 병원에서 발급받아 보험사에 내세요."
+              : "[전산 청구 미지원] 퇴원 날 원무과에서 아래 서류들을 떼지 않으면 보험금을 받지 못하고 병원을 다시 찾아야 해요!"}
+          </p>
+        )}
+        {s24 === "" && (
+          <p className="mt-3 text-sm text-muted">
+            확인이 어렵다면 아래 서류를 받아 두는 쪽이 안전해요.
+          </p>
+        )}
+
+        {/* 조회가 되면 자동으로 정해지므로 직접 고르는 버튼과 공식 사이트는 접어 둔다 */}
+        <details className="mt-3 rounded-xl bg-background">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">조회가 안 되면 직접 알려주기</summary>
+          <div className="px-4 pb-4">
+            <div role="radiogroup" aria-label="실손24 지원 여부" className="grid grid-cols-3 gap-2">
+              {S24.map(([v, l]) => (
+                <button
+                  key={l}
+                  role="radio"
+                  aria-checked={s24 === v}
+                  onClick={() => {
+                    setS24(v);
+                    save(name, v, sel, customList);
+                  }}
+                  className={`rounded-xl px-2 py-3 text-sm transition-all ${
+                    s24 === v ? "bg-accent-soft font-semibold text-accent ring-[1.5px] ring-primary" : "bg-card shadow-card"
+                  }`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+            <a
+              href={SILSON24_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 flex items-center justify-center rounded-full bg-card px-4 py-2.5 text-sm font-medium text-muted shadow-card hover:text-ink"
+            >
+              실손24 공식 사이트에서 직접 확인하기 ↗
+            </a>
+          </div>
+        </details>
+        </div>
+      </details>
 
       {/* 병원 직원에게 그대로 보여 주는 전체 화면: 아직 못 받은 서류만 큰 글씨로 */}
       <Sheet open={show} onClose={() => setShow(false)} title={post ? "병원에 이렇게 요청하세요" : "창구 직원에게 보여주세요"}>
