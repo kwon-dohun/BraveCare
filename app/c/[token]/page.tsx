@@ -32,10 +32,13 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   // 아직 신청하지 않은 지원. 신청함으로 바꾸면 홈에서 빠진다.
   const open = results.filter((r) => r.verdict !== "no" && r.deadline.state !== "closed" && (status[r.benefit.id] ?? "none") === "none");
 
-  // 늦게 시작했거나 놓친 일은 사라지지 않고 '지금이라도 챙길 일'로 넘어온다
-  const carried = tasks.filter((t) => !t.done && t.due_date && t.due_date < today);
-  const todo = tasks.filter((t) => !t.done && (t.due_date ? t.due_date === today : !input.dischargeDate));
-  const next = tasks.find((t) => !t.done && t.due_date && t.due_date > today);
+  // 의료진에게 물어볼 질문은 날짜가 지나도 '놓친 일'이 아니다(외래 리포트·물어볼 것에서 다룬다). 할 일만 센다
+  const work = tasks.filter((t) => t.kind !== "question");
+  // 놓친 일은 사라지지 않지만 오늘 할 일을 밀어내지 않게: 오늘 일 먼저, 남는 자리에 가장 최근에 놓친 일 1~2개
+  const carried = work.filter((t) => !t.done && t.due_date && t.due_date < today).sort((a, b) => b.due_date!.localeCompare(a.due_date!));
+  const todo = work.filter((t) => !t.done && (t.due_date ? t.due_date === today : !input.dischargeDate));
+  const next = work.find((t) => !t.done && t.due_date && t.due_date > today);
+  const shownCarried = carried.slice(0, Math.max(0, Math.min(2, 4 - todo.length)));
   const noOwnerVisits = tasks.filter((t) => !t.done && t.kind === "schedule" && !t.assignee_id && (!t.due_date || t.due_date >= today)).length;
   const doneCount = tasks.filter((t) => t.done).length;
   const highCount = results.filter((r) => r.verdict === "high").length;
@@ -198,7 +201,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         <Link href={`${base}/tasks?view=list&f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={18} /></Link>
       )}
 
-      {/* 오늘 할 일: 놓친 일 먼저, 최대 4개 */}
+      {/* 오늘 할 일: 오늘 일 먼저(최대 4개), 남는 자리에 놓친 일 1~2개, 나머지는 한 줄로 모아 보기 */}
       <section className="mt-6" aria-labelledby="h-today">
         <div className="mb-2 flex items-end justify-between">
           <div>
@@ -208,9 +211,14 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           <Link href={`${base}/tasks`} className="flex items-center text-sm font-medium text-accent">전체 보기<span className="sr-only"> 할 일</span></Link>
         </div>
         <TaskList
-          tasks={[...carried, ...todo].slice(0, 4)} {...list}
+          tasks={[...todo.slice(0, 4), ...shownCarried]} {...list}
           emptyText={next ? `오늘은 할 일이 없어요. 다음 할 일은 ${dateLabel(next.due_date, next.rel_day, today)}이에요` : "오늘은 할 일이 없어요"}
         />
+        {carried.length > shownCarried.length && (
+          <Link href={`${base}/tasks?view=list`} className="mt-2 flex items-center justify-between rounded-xl bg-card px-4 py-3 text-sm shadow-card">
+            <span>날짜가 지난 일 <b className="tabular-nums">{carried.length}개</b> 모아 보기</span><Icon name="right" size={16} className="text-muted" />
+          </Link>
+        )}
       </section>
 
       {/* 이번 주: 오늘부터 7일 달력 띠 (홈에서 바로 날짜별 일정 확인) */}

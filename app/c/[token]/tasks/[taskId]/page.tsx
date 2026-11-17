@@ -46,7 +46,7 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
       </dl>
       {help && <p className="mt-3 rounded-xl bg-accent-soft p-3 text-sm leading-relaxed text-accent"><span className="font-semibold">왜 해요? </span>{help}</p>}
       {t.source_quote && <p className="mt-3 rounded-xl bg-background p-3 text-sm">안내문 원문: “{t.source_quote}”</p>}
-      <TaskActions auth={auth} id={t.id} done={t.done} canClaim={!data.alone && !t.assignee_id} />
+      <TaskActions auth={auth} id={t.id} done={t.done} canClaim={!data.alone && !t.assignee_id} mine={!data.alone && t.assignee_id === actor.memberId} />
       {(data.alone || t.assignee_id === actor.memberId) && !t.done && t.due_date && (
         <CalSyncLink
           href={`/ics/${auth.k}/${auth.v}/${t.id}`}

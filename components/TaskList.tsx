@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { toggleTask, claimTask, unclaimTask, rescheduleTaskToToday } from "@/app/actions";
+import { toggleTask, claimTask, rescheduleTaskToToday } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import { KIND_LABEL, REPEAT_LABEL } from "@/lib/timeline";
 import { EVENT_STYLE, KIND } from "@/lib/calendar";
@@ -142,19 +142,9 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                 {showOwner && !t.done && (
                   <div className="flex w-16 shrink-0 justify-center">
                     {t.assignee_id ? (
-                      <div className="flex w-14 flex-col items-center gap-0.5" title={`담당: ${owner ?? ""}`}>
-                        <Avatar name={owner ?? "?"} size={26} />
+                      <div className="flex w-14 flex-col items-center gap-1" title={`담당: ${owner ?? ""}`}>
+                        <Avatar name={owner ?? "?"} size={28} />
                         <span className={`max-w-full truncate text-caption leading-none ${t.assignee_id === meId ? "font-semibold text-accent" : "text-muted"}`}>{t.assignee_id === meId ? "나" : owner}</span>
-                        {t.assignee_id === meId && (
-                          <button
-                            type="button"
-                            onClick={() => run(() => unclaimTask(auth, t.id))}
-                            className="min-h-0 py-0.5 text-caption text-muted underline underline-offset-2 hover:text-warn"
-                            title="담당을 취소하고 다시 미배정 상태로 돌립니다"
-                          >
-                            담당 취소
-                          </button>
-                        )}
                       </div>
                     ) : (
                       <button onClick={() => run(() => claimTask(auth, t.id))} className="flex h-9 min-h-0 w-full items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent transition-colors hover:opacity-90">
