@@ -382,6 +382,24 @@ export async function createBenefitTask(a: Auth, benefitId: string, dueDate?: st
   refresh();
 }
 
+// 지원 신청 할 일의 날짜를 마감 안에서 바꾼다(날짜를 직접 정하면 퇴원일 변경을 따라가지 않는다)
+export async function setTaskDue(a: Auth, taskId: string, dueDate: string) {
+  const actor = await resolve(a);
+  if (!isDate(dueDate)) throw new Error("날짜를 다시 골라 주세요");
+  const { data: t } = await db.from("tasks").select("id,title,source,benefit_id").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
+  const bid = t ? benefitIdOfTask(t) : null;
+  if (!t || !bid) throw new Error("할 일을 찾을 수 없어요");
+  const data = await loadCase(actor.caseId);
+  const r = data.results.find((x) => x.benefit.id === bid);
+  const today = todaySeoul();
+  const end = r?.deadline.state === "open" ? r.deadline.endDate : undefined;
+  let due = dueDate < today ? today : dueDate;
+  if (end && due > end) due = end >= today ? end : today;
+  await db.from("tasks").update({ due_date: due, rel_day: null }).eq("id", taskId).eq("case_id", actor.caseId);
+  await act(actor.caseId, `${actor.name}님이 "${t.title}" 날짜를 ${krDate(due)}로 바꿨어요`, actor.memberId);
+  refresh();
+}
+
 export async function setDocsChecked(a: Auth, benefitId: string, checked: string[]) {
   const actor = await resolve(a);
   const b = BENEFITS.find((x) => x.id === benefitId);

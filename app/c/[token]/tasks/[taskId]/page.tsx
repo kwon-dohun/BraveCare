@@ -12,6 +12,7 @@ import Link from "next/link";
 import { DocsChecklist } from "@/components/StatusPicker";
 import { applyWays, benefitIdOfTask, callScript } from "@/lib/benefit-task";
 import ApplyGuide from "@/components/ApplyGuide";
+import BenefitDue from "@/components/BenefitDue";
 import Icon from "@/components/Icon";
 
 export const metadata = { title: "할 일 · 씩씩케어" };
@@ -54,6 +55,7 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
           </div>
         ))}
       </dl>
+      {br && !t.done && <BenefitDue auth={auth} taskId={t.id} today={data.today} endDate={br.deadline.state === "open" ? br.deadline.endDate : undefined} current={t.due_date} />}
       {help && <p className="mt-3 rounded-xl bg-accent-soft p-3 text-sm leading-relaxed text-accent"><span className="font-semibold">왜 해요? </span>{help}</p>}
       {t.source_quote && <p className="mt-3 rounded-xl bg-background p-3 text-sm">안내문 원문: “{t.source_quote}”</p>}
       {br && (

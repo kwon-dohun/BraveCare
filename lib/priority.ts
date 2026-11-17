@@ -13,9 +13,10 @@ export function openDeadlines(results: Result[]): Map<string, number> {
   return m;
 }
 
-const BENEFIT_SUFFIX = " 신청 알아보기";
+// 예전에 자동으로 만든 "○○ 신청 알아보기"와 지금 사용자가 넣는 "○○ 신청하기" 둘 다 지원 이름만 뗀다
+const benefitName = (title: string) => title.replace(/ 신청( 알아보기|하기)$/, "");
 export function priorityOf(t: T, deadlines: Map<string, number>): Priority {
-  if (t.source === "benefit" && deadlines.has(t.title.replace(BENEFIT_SUFFIX, ""))) return 0;
+  if (t.source === "benefit" && deadlines.has(benefitName(t.title))) return 0;
   if (t.kind === "question") return 2;
   if (t.kind === "schedule" || t.rel_day === 0) return 1;
   if (t.rel_day !== null && t.rel_day >= 30) return 3;
@@ -31,7 +32,7 @@ export function sortTasks<X extends T>(tasks: X[], deadlines: Map<string, number
 // 목록 행에 붙일 짧은 배지(없으면 생략). 담당이 없을 때만 '구한다'는 말을 쓴다.
 export function badgeFor(t: T & { assignee_id: string | null }, deadlines: Map<string, number>, today: string): string | null {
   const p = priorityOf(t, deadlines);
-  if (p === 0) { const d = deadlines.get(t.title.replace(BENEFIT_SUFFIX, ""))!; return d === 0 ? "오늘 마감" : `마감 D-${d}`; }
+  if (p === 0) { const d = deadlines.get(benefitName(t.title))!; return d === 0 ? "오늘 마감" : `마감 D-${d}`; }
   if (p === 1 && !t.assignee_id && t.due_date && dayDiff(t.due_date, today) >= 0) return "같이 할 사람이 필요해요";
   return null;
 }

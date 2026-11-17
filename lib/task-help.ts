@@ -51,7 +51,7 @@ const SOLO: Record<string, string> = {
 };
 
 export const taskHelp = (title: string, solo = false): string | null =>
-  (solo ? SOLO[title] : undefined) ?? HELP[title] ?? (title.endsWith(" 신청 알아보기") ? "입력한 조건에 맞을 가능성이 높은 지원이에요. '지원' 화면에서 신청 방법과 필요한 서류를 볼 수 있어요." : null);
+  (solo ? SOLO[title] : undefined) ?? HELP[title] ?? (/ 신청( 알아보기|하기)$/.test(title) ? "입력한 조건에 맞을 가능성이 높은 지원이에요. '지원' 화면에서 신청 방법과 필요한 서류를 볼 수 있어요." : null);
 
 // 단톡방에 붙일 도움 요청 문구. 주소에는 열쇠를 넣지 않는다(내 주소를 붙이면 누구나 내 화면으로 들어온다).
 // 앱 첫 화면 주소만 넣어 두면, 이미 참여한 가족은 자기 기기에서 '이어서 보기'로 들어온다.

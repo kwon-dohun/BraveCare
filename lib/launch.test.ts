@@ -139,3 +139,12 @@ test("찜: 목록에 있는 지원만 받는다", () => {
   assert.equal(isValidSaved("x:asan:extra"), false);
   assert.equal(isValidSaved("z:seoul_sos"), false);
 });
+
+test("우선순위: 사용자가 넣은 '○○ 신청하기'도 마감 있는 지원이면 골든타임", async () => {
+  const { priorityOf, badgeFor, openDeadlines } = await import("./priority.ts");
+  void openDeadlines;
+  const dl = new Map([["긴급복지 의료지원", 3]]);
+  const t = { id: "x", title: "긴급복지 의료지원 신청하기", kind: "admin", source: "benefit", rel_day: null, due_date: "2026-11-20", assignee_id: null };
+  assert.equal(priorityOf(t, dl), 0);
+  assert.equal(badgeFor(t, dl, "2026-11-18"), "마감 D-3");
+});

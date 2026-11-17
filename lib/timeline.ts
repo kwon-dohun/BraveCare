@@ -74,13 +74,10 @@ export const SELF_CARE_TITLE_MAP: Record<string, string> = {
   "계단 이용과 샤워가 언제부터 가능한지 물어보기": "회진 때 의사 선생님께 '샤워 언제부터 되나요?' 여쭤보기",
 };
 
-export function seedTasks(input: CaseInput, results: Result[]): TaskSeed[] {
+export function seedTasks(input: CaseInput, _results: Result[]): TaskSeed[] {
   const byReason = (BY_REASON[input.reason] ?? []).map((t) => ({ ...t, source: "template" as const }));
-  // 가능성 높은 지원만 할 일로 만든다(확인 필요까지 넣으면 타임라인이 지원 목록으로 덮인다). 마감 있는 건 퇴원 전날, 없는 건 퇴원 다음 날.
-  const benefit: TaskSeed[] = results
-    .filter((r) => r.verdict === "high")
-    .map((r) => ({ rel: r.benefit.deadline ? -1 : 1, kind: "admin" as const, source: "benefit" as const, benefitId: r.benefit.id, title: `${r.benefit.name} 신청 알아보기` }));
-  const all = [...COMMON, ...byReason, ...benefit].sort((a, b) => a.rel - b.rel);
+  // 지원은 시작할 때 할 일로 만들지 않는다. 신청 날짜는 사용자가 지원 상세에서 마감 안에서 직접 골라 넣는다(홈의 '받을 수 있는 지원'과 달력의 마감 표시는 그대로).
+  const all = [...COMMON, ...byReason].sort((a, b) => a.rel - b.rel);
   if (input.isSelfCare) {
     return all.map((t) => ({ ...t, title: SELF_CARE_TITLE_MAP[t.title] ?? t.title }));
   }
