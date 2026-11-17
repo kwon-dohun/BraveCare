@@ -21,6 +21,10 @@ export default async function News(props: PageProps<"/c/[token]/news">) {
   const list = rows ?? [];
   const isNew = (r: (typeof list)[number]) => !!me && r.created_at > me.seen_at && r.member_id !== actor.memberId;
   const days = [...new Set(list.map((r) => seoulDay(r.created_at)))];
+  const newCount = list.filter(isNew).length;
+  const cut = (t: string) => t.indexOf(": ");
+  const head = (t: string) => (cut(t) > 0 ? t.slice(0, cut(t)) : t);
+  const body = (t: string) => (cut(t) > 0 ? t.slice(cut(t) + 2) : "");
 
   return (
     <>
@@ -28,6 +32,7 @@ export default async function News(props: PageProps<"/c/[token]/news">) {
       <BackLink href={base}>홈</BackLink>
       <h1 className="mt-2 font-display text-title">새 소식</h1>
       <p className="mt-1 text-sm text-muted">맡거나 끝낸 일, 바뀐 일정 같은 소식이 여기에 모여요. 앱을 쓰면 알림으로도 받아요.</p>
+      {newCount > 0 && <p className="mt-3 rounded-xl bg-accent-soft px-4 py-2.5 text-sm font-medium text-accent">새 소식 {newCount}개를 모두 읽음으로 바꿨어요. 점은 다음에 열면 사라져요.</p>}
       {list.length === 0 && (
         <p className="mt-5 flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card"><Mascot size={40} mood="rest" />아직 소식이 없어요</p>
       )}
@@ -36,9 +41,16 @@ export default async function News(props: PageProps<"/c/[token]/news">) {
           <h2 className="mb-2 text-sm font-semibold text-muted">{d === data.today ? "오늘" : krDate(d)}</h2>
           <ul className="divide-y divide-line rounded-xl bg-card shadow-card">
             {list.filter((r) => seoulDay(r.created_at) === d).map((r) => (
-              <li key={r.id} className="flex items-start gap-2 px-4 py-3 text-sm">
-                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${isNew(r) ? "bg-[#e0517a]" : "bg-transparent"}`} aria-hidden />
-                <span className="flex-1">{isNew(r) && <span className="sr-only">새 소식: </span>}{r.text}</span>
+              <li key={r.id} className="flex items-start gap-3 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  {/* '누가 무엇을 했어요: 할 일 이름'은 두 줄로: 무슨 일이 있었는지 먼저, 대상은 아래 작게 */}
+                  <p className="flex items-start gap-1.5 text-sm">
+                    {isNew(r) && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#e0517a]" aria-hidden />}
+                    {isNew(r) && <span className="sr-only">새 소식: </span>}
+                    <span>{head(r.text)}</span>
+                  </p>
+                  {body(r.text) && <p className={`mt-0.5 truncate text-xs text-muted ${isNew(r) ? "pl-3.5" : ""}`}>{body(r.text)}</p>}
+                </div>
                 <span className="shrink-0 text-xs text-muted tabular-nums">{seoulTime(r.created_at)}</span>
               </li>
             ))}
