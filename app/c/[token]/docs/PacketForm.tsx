@@ -6,6 +6,7 @@ import { PACKET, SILSON24_URL } from "@/lib/packet";
 import type { Reason } from "@/lib/benefits";
 import type { SilsonHospital } from "@/lib/silson";
 import { useAct } from "@/components/useAct";
+import Sheet from "@/components/Sheet";
 
 const S24 = [["yes", "전산 청구가 돼요"], ["no", "안 돼요"], ["", "아직 몰라요"]] as const;
 
@@ -25,6 +26,7 @@ export default function PacketForm({
   scannedDocs = [],
   customDocs = [],
   patientReason = "other",
+  post = false,
 }: {
   auth: Auth;
   hospital: string;
@@ -33,6 +35,7 @@ export default function PacketForm({
   scannedDocs?: string[];
   customDocs?: string[];
   patientReason?: Reason;
+  post?: boolean; // 이미 퇴원한 뒤(온라인·전화·방문 발급)인지
 }) {
   const [name, setName] = useState(hospital);
   const [s24, setS24] = useState<string>(silson24 ?? "");
@@ -42,6 +45,7 @@ export default function PacketForm({
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<SilsonHospital[] | null>(null);
   const [searchMsg, setSearchMsg] = useState<string | null>(null);
+  const [show, setShow] = useState(false); // 창구에서 보여주기 화면
 
   const { run, pending, err } = useAct();
   const save = (h: string, s: string, c: string[], cl?: string[]) =>
@@ -129,11 +133,8 @@ export default function PacketForm({
   return (
     <>
       <section className="mt-6" aria-labelledby="p1">
-        <div className="flex items-center justify-between">
-          <h2 id="p1" className="font-semibold">1. 실손24 전산 청구가 되는 병원인가요?</h2>
-          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent">공공데이터 연동</span>
-        </div>
-        <p className="mt-1 text-sm text-muted">입원한 병원을 검색하면 실손24 참여 여부를 1초 만에 확인해 드려요.</p>
+        <h2 id="p1" className="font-semibold">1. 실손24 전산 청구가 되는 병원인가요?</h2>
+        <p className="mt-1 text-sm text-muted">입원한 병원을 검색하면 실손24 참여 여부를 바로 확인해 드려요 (공공데이터 기준)</p>
 
         <label htmlFor="hn" className="mt-3 block text-sm font-medium">입원한 병원</label>
         <div className="mt-1 flex gap-2">
@@ -189,25 +190,6 @@ export default function PacketForm({
           </div>
         )}
 
-        <div role="radiogroup" aria-label="실손24 지원 여부" className="mt-3 grid grid-cols-3 gap-2">
-          {S24.map(([v, l]) => (
-            <button
-              key={l}
-              role="radio"
-              aria-checked={s24 === v}
-              onClick={() => {
-                setS24(v);
-                save(name, v, sel, customList);
-              }}
-              className={`rounded-xl px-2 py-3 text-sm transition-all ${
-                s24 === v ? "bg-accent-soft font-semibold text-accent ring-[1.5px] ring-primary" : "bg-card shadow-card"
-              }`}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
-
         {s24 === "yes" && (
           <p role="status" className="mt-3 rounded-xl bg-accent-soft p-3 text-sm text-accent">
             [전산 청구 지원] 퇴원 후 실손24 앱에서 종이 서류 없이 간편하게 청구할 수 있어요. 그래도 진료비 영수증과 세부내역서는 다른 보험이나 지원금 신청을 위해 챙겨두면 안전해요.
@@ -215,68 +197,67 @@ export default function PacketForm({
         )}
         {s24 === "no" && (
           <p role="status" className="mt-3 rounded-xl bg-warn-soft p-3 text-sm text-warn font-medium">
-            [전산 청구 미지원] 퇴원 날 원무과에서 아래 서류들을 떼지 않으면 보험금을 받지 못하고 병원을 다시 찾아야 해요!
+            {post
+              ? "[전산 청구 미지원] 종이 서류로 청구해야 해요. 아래 서류를 병원에서 발급받아 보험사에 내세요."
+              : "[전산 청구 미지원] 퇴원 날 원무과에서 아래 서류들을 떼지 않으면 보험금을 받지 못하고 병원을 다시 찾아야 해요!"}
           </p>
         )}
         {s24 === "" && (
           <p className="mt-3 text-sm text-muted">
-            확인이 어렵다면 공식 사이트에서 검색해 보시거나, 퇴원 시 아래 서류를 받아두는 쪽이 안전해요.
+            확인이 어렵다면 아래 서류를 받아 두는 쪽이 안전해요.
           </p>
         )}
 
-        <a
-          href={SILSON24_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-3 flex items-center justify-center rounded-full bg-card border border-line px-4 py-2.5 text-xs font-medium text-muted hover:text-ink shadow-sm"
-        >
-          실손24 공식 사이트에서 직접 확인하기 ↗
-        </a>
+        {/* 조회가 되면 자동으로 정해지므로 직접 고르는 버튼과 공식 사이트는 접어 둔다 */}
+        <details className="mt-3 rounded-xl bg-card shadow-card">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">조회가 안 되면 직접 알려주기</summary>
+          <div className="px-4 pb-4">
+            <div role="radiogroup" aria-label="실손24 지원 여부" className="grid grid-cols-3 gap-2">
+              {S24.map(([v, l]) => (
+                <button
+                  key={l}
+                  role="radio"
+                  aria-checked={s24 === v}
+                  onClick={() => {
+                    setS24(v);
+                    save(name, v, sel, customList);
+                  }}
+                  className={`rounded-xl px-2 py-3 text-sm transition-all ${
+                    s24 === v ? "bg-accent-soft font-semibold text-accent ring-[1.5px] ring-primary" : "bg-background"
+                  }`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+            <a
+              href={SILSON24_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 flex items-center justify-center rounded-full bg-background px-4 py-2.5 text-sm font-medium text-muted hover:text-ink"
+            >
+              실손24 공식 사이트에서 직접 확인하기 ↗
+            </a>
+          </div>
+        </details>
       </section>
 
       <section className="mt-8" aria-labelledby="p2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h2 id="p2" className="font-semibold text-headline">
-            2. 원무과에서 받을 서류 ({sel.length}/{totalCount})
+            2. {post ? "병원에 요청할 서류" : "원무과에서 받을 서류"} ({sel.length}/{totalCount})
           </h2>
-          <span className="text-xs text-muted">챙긴 서류를 체크하세요</span>
+          <button type="button" onClick={() => setShow(true)} className="shrink-0 rounded-full bg-accent-soft px-3 py-1.5 text-xs font-semibold text-accent">
+            {post ? "요청할 때 보여주기" : "창구에서 보여주기"}
+          </button>
         </div>
-
-        {/* 창구 제출용 요약 카드 (병원 직원에게 바로 보여주는 화면) */}
-        <div className="mt-3 rounded-2xl border-2 border-primary bg-accent-soft/30 p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-accent tracking-wide uppercase">병원 원무과 창구 제출용</span>
-            <span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs font-semibold text-accent">
-              {unissuedTotal.length > 0 ? `발급 요청 ${unissuedTotal.length}건` : "모두 수령 완료"}
-            </span>
-          </div>
-          <p className="mt-2 text-sm font-semibold text-ink">
-            &ldquo;퇴원 정산하면서 아래 서류 발급 부탁드립니다.&rdquo;
-          </p>
-          {unissuedTotal.length > 0 ? (
-            <ul className="mt-2.5 space-y-1.5 text-sm">
-              {unissuedTotal.map((item, idx) => (
-                <li key={idx} className="flex items-center gap-2 font-medium text-ink">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-ink">
-                    {idx + 1}
-                  </span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-muted">필요한 모든 서류를 챙기셨어요!</p>
-          )}
-          <p className="mt-2.5 text-xs text-muted border-t border-line/60 pt-2">
-            퇴원 창구에서 이 화면을 직원에게 그대로 보여 주면 한 번에 받기 쉬워요.
-          </p>
-        </div>
+        <p className="mt-1 text-xs text-muted">받은 서류는 체크해 두세요</p>
 
         {scannedDocs.length > 0 && (
           <aside className="mt-3 rounded-xl bg-accent-soft p-3 text-sm text-accent" aria-label="보관함 연동 안내">
             <p className="font-semibold text-xs tracking-wide uppercase">내 서류함 확인</p>
             <p className="mt-0.5">
-              내 서류함에 이미 찍어 둔 서류가 있어요. 남은 서류 위주로 원무과에서 챙기시면 돼요.
+              내 서류함에 이미 찍어 둔 서류가 있어요. 남은 서류 위주로 {post ? "병원에 요청하시면" : "원무과에서 챙기시면"} 돼요.
             </p>
           </aside>
         )}
@@ -359,60 +340,79 @@ export default function PacketForm({
           })}
         </ul>
 
-        {/* 서류 추가 편집 섹션 */}
-        <div className="mt-4 rounded-xl border border-line bg-card p-4 shadow-card">
-          <label htmlFor="new-doc" className="text-sm font-semibold">
-            + 내가 필요한 서류 추가하기
-          </label>
-          <p className="mt-0.5 text-xs text-muted">
-            지원받으려는 사업이나 개인 보험에 필요한 추가 서류가 있다면 여기에 적어두세요.
-          </p>
+        {/* 서류 추가: 대부분은 안 쓰므로 접어 둔다 */}
+        <details className="mt-3 rounded-xl bg-card shadow-card">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">+ 필요한 서류 더 추가하기</summary>
+          <div className="px-4 pb-4">
+            <p className="text-xs text-muted">
+              지원받으려는 사업이나 개인 보험에 필요한 추가 서류가 있다면 여기에 적어두세요.
+            </p>
+            <div className="mt-2.5 flex gap-2">
+              <input
+                id="new-doc"
+                aria-label="추가할 서류 이름"
+                value={newDocText}
+                maxLength={50}
+                onChange={(e) => setNewDocText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddCustom(newDocText);
+                  }
+                }}
+                placeholder="예: 수술확인서, 의사소견서 등"
+                className="min-w-0 flex-1 rounded-xl border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddCustom(newDocText)}
+                disabled={!newDocText.trim()}
+                className="shrink-0 rounded-xl bg-primary px-3.5 py-2 text-sm font-semibold text-ink disabled:opacity-40"
+              >
+                추가
+              </button>
+            </div>
 
-          <div className="mt-2.5 flex gap-2">
-            <input
-              id="new-doc"
-              value={newDocText}
-              maxLength={50}
-              onChange={(e) => setNewDocText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddCustom(newDocText);
-                }
-              }}
-              placeholder="예: 수술확인서, 의사소견서 등"
-              className="min-w-0 flex-1 rounded-xl border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:border-accent"
-            />
-            <button
-              type="button"
-              onClick={() => handleAddCustom(newDocText)}
-              disabled={!newDocText.trim()}
-              className="shrink-0 rounded-xl bg-primary px-3.5 py-2 text-sm font-semibold text-ink disabled:opacity-40"
-            >
-              추가
-            </button>
-          </div>
-
-          {/* 추천 추가 서류 칩 */}
-          <div className="mt-3">
-            <span className="text-xs font-medium text-muted">자주 찾는 추가 서류:</span>
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {QUICK_DOC_SUGGESTIONS.filter((s) => !customList.includes(s)).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => handleAddCustom(s)}
-                  className="rounded-full border border-line bg-card px-2.5 py-1 text-xs text-ink hover:bg-accent-soft hover:border-accent transition-colors"
-                >
-                  + {s}
-                </button>
-              ))}
+            <div className="mt-3">
+              <span className="text-xs font-medium text-muted">자주 찾는 추가 서류:</span>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {QUICK_DOC_SUGGESTIONS.filter((s) => !customList.includes(s)).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => handleAddCustom(s)}
+                    className="rounded-full border border-line bg-card px-2.5 py-1 text-xs text-ink hover:bg-accent-soft hover:border-accent transition-colors"
+                  >
+                    + {s}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        </details>
 
         {err && <p role="alert" className="mt-2 text-warn">{err}</p>}
       </section>
+
+      {/* 병원 직원에게 그대로 보여 주는 전체 화면: 아직 못 받은 서류만 큰 글씨로 */}
+      <Sheet open={show} onClose={() => setShow(false)} title={post ? "병원에 이렇게 요청하세요" : "창구 직원에게 보여주세요"}>
+        <p className="text-callout font-semibold leading-relaxed">
+          &ldquo;{post ? "퇴원한 환자인데 아래 서류 발급 부탁드립니다." : "퇴원 정산하면서 아래 서류 발급 부탁드립니다."}&rdquo;
+        </p>
+        {unissuedTotal.length > 0 ? (
+          <ol className="mt-4 space-y-3">
+            {unissuedTotal.map((item, idx) => (
+              <li key={item} className="flex items-start gap-3 text-lg font-semibold text-ink">
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-ink">{idx + 1}</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="mt-4 text-muted">필요한 서류를 모두 챙기셨어요!</p>
+        )}
+        <p className="mt-4 text-sm text-muted">이미 받은 서류는 목록에서 빠져 있어요</p>
+      </Sheet>
     </>
   );
 }
