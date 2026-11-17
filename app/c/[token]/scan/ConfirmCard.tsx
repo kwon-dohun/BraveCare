@@ -101,7 +101,7 @@ export default function ConfirmCard({ auth, id, type: t0, fields: f0, onDone, on
               <p className="font-semibold text-accent">병명이 질병코드 {kcd.hit.code}와 맞아요</p>
             ) : (
               <>
-                <p>질병코드 <b>{kcd.hit.code}</b>의 공식 병명이에요 <span className="text-xs text-muted">심평원 상병마스터 기준{kcd.hit.exact ? "" : ", 뒷자리는 서류 그대로 두세요"}. 맞으면 눌러서 병명에 넣어요</span></p>
+                <p>질병코드 <b>{kcd.hit.code}</b>의 공식 병명이에요 <span className="text-xs text-muted">출처: 건강보험심사평가원 상병마스터{kcd.hit.exact ? "" : ", 뒷자리는 서류 그대로 두세요"}. 맞으면 눌러서 병명에 넣어요</span></p>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {kcd.hit.names.map((n) => (
                     <button key={n} type="button" onClick={() => setValues((v) => ({ ...v, 병명: n }))} className="min-h-0 rounded-full bg-accent-soft px-3 py-1.5 font-semibold text-accent">{n}</button>
