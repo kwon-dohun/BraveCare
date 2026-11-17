@@ -132,3 +132,14 @@ test("제목 줄(외래 예약)이 따로 있는 날짜 줄도 일정으로 잡�
   const p = parseModelJson(JSON.stringify({ docType: "guide", transcript: "외래 진료 예약\n11월 27일(금) 10:30 정형외과 3층 진료실\n12월 18일(금) 14:00 재활의학과\n입원일 2026-11-08\n1. 수술 부위는 2주간 물에 닿지 않게 하세요." }));
   assert.deepEqual(p.items.map((i) => i.kind), ["schedule", "schedule", "caution"]);
 });
+
+test("질병코드 대조: 점·소문자·O/0 혼동을 바로잡고, 없으면 상위 코드, 아예 없으면 null", async () => {
+  const { normCode, findKcd } = await import("./kcd.ts");
+  const table = { S720: ["대퇴골 경부의 골절"], S72: ["대퇴골의 골절"], I10: ["본태성(원발성) 고혈압", "고혈압"] };
+  assert.equal(normCode("s72.0O"), "S7200");
+  assert.deepEqual(findKcd(table, "S72.0"), { code: "S720", names: ["대퇴골 경부의 골절"], exact: true });
+  assert.deepEqual(findKcd(table, "S72.00"), { code: "S720", names: ["대퇴골 경부의 골절"], exact: false }); // 5자리는 상위 코드로
+  assert.equal(findKcd(table, "I10")?.names.length, 2);
+  assert.equal(findKcd(table, "Z99.9"), null); // 없는 코드 = 다시 확인
+  assert.equal(findKcd(table, "병명"), null);
+});

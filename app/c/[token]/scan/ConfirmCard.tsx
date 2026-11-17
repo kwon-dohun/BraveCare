@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { confirmDocument, suggestDrugNames } from "@/app/scan-actions";
+import { confirmDocument, suggestDrugNames, kcdCheck } from "@/app/scan-actions";
 import { baseName } from "@/lib/drug";
 import type { Auth } from "@/lib/db";
+import type { KcdHit } from "@/lib/kcd";
 import { DOC_TYPE_LABEL, FIELD_LABELS, hasForm, missingCount, type DocFields, type DocType } from "@/lib/extract";
 import { useAct } from "@/components/useAct";
 import Icon from "@/components/Icon";
@@ -24,6 +25,16 @@ export default function ConfirmCard({ auth, id, type: t0, fields: f0, onDone, on
   const save = () => run(async () => onDone(type, await confirmDocument(auth, id, type, { values, meds })));
   // 처음 열 때 한 번: 읽은 약 이름을 식약처 허가 목록과 맞춰 보고, 한두 글자 다르면 공식 이름을 제안한다
   const [suggest, setSuggest] = useState<Record<string, string[]>>({});
+  // 진단서: 질병코드는 사진에서 병명보다 정확히 읽히니, 코드로 공식 병명을 찾아 보여 주고 사람이 고른다
+  const [kcd, setKcd] = useState<{ asked: string; hit: KcdHit | null } | null>(null);
+  const checkKcd = (code: string) => {
+    if (type !== "certificate" || !code.trim()) return setKcd(null);
+    kcdCheck(auth, code).then((hit) => setKcd({ asked: code.trim(), hit })).catch(() => {});
+  };
+  useEffect(() => {
+    if (t0 === "certificate") checkKcd(f0.values["질병코드"] ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 처음 읽은 코드로 한 번만
+  }, []);
   useEffect(() => {
     if (t0 !== "medication" || !f0.meds.length) return;
     suggestDrugNames(auth, f0.meds.map((m) => m.name)).then(setSuggest).catch(() => {});
@@ -77,10 +88,31 @@ export default function ConfirmCard({ auth, id, type: t0, fields: f0, onDone, on
         <div className="mt-3 space-y-2.5">
           {FIELD_LABELS[type].map((k) => (
             <label key={k} className="block text-sm font-semibold">{k}
-              <input value={values[k] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [k]: e.target.value }))} placeholder="못 읽었어요. 서류를 보고 써 주세요" className={`${field(!(values[k] ?? "").trim())} font-normal`} />
+              <input value={values[k] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [k]: e.target.value }))} onBlur={k === "질병코드" ? (e) => checkKcd(e.target.value) : undefined} placeholder="못 읽었어요. 서류를 보고 써 주세요" className={`${field(!(values[k] ?? "").trim())} font-normal`} />
             </label>
           ))}
         </div>
+      )}
+
+      {type === "certificate" && kcd && (
+        kcd.hit ? (
+          <div className="mt-3 rounded-xl bg-background p-3 text-sm">
+            {kcd.hit.names.some((n) => n === (values["병명"] ?? "").trim()) ? (
+              <p className="font-semibold text-accent">병명이 질병코드 {kcd.hit.code}와 맞아요</p>
+            ) : (
+              <>
+                <p>질병코드 <b>{kcd.hit.code}</b>의 공식 병명이에요 <span className="text-xs text-muted">심평원 상병마스터 기준{kcd.hit.exact ? "" : ", 뒷자리는 서류 그대로 두세요"}. 맞으면 눌러서 병명에 넣어요</span></p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {kcd.hit.names.map((n) => (
+                    <button key={n} type="button" onClick={() => setValues((v) => ({ ...v, 병명: n }))} className="min-h-0 rounded-full bg-accent-soft px-3 py-1.5 font-semibold text-accent">{n}</button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <p className="mt-3 rounded-xl bg-warn-soft p-3 text-sm text-warn">‘{kcd.asked}’는 질병코드 목록에 없어요. 서류의 코드를 다시 확인해 주세요.</p>
+        )
       )}
 
       {err && <p role="alert" className="mt-2 text-sm text-warn">{err}</p>}

@@ -5,6 +5,7 @@ import { act } from "@/lib/push";
 import { todaySeoul } from "@/lib/load";
 import { askJson, hasModel } from "@/lib/openai";
 import { limit } from "@/lib/scan";
+import { kcdLookup, type KcdHit } from "@/lib/kcd";
 import { itemsFromText, maskIds, cleanFields, fieldLines, DOC_TYPES, type DocFields, type DocItem, type DocType } from "@/lib/extract";
 import { buildChatPrompt, parseChatJson, verifyAnswer, type ChatAnswer, type Source } from "@/lib/chat";
 import { DOC_TYPE_LABEL } from "@/lib/extract";
@@ -68,6 +69,12 @@ export async function confirmDocItems(a: Auth, items: { kind: DocItem["kind"]; t
 }
 
 // 확인 카드: 사진에서 읽은 약 이름이 식약처 허가 목록과 한두 글자 다르면 공식 이름을 제안한다
+// 진단서 확인 카드: 읽은 질병코드의 공식 병명을 심평원 상병마스터에서 찾는다(없는 코드면 null)
+export async function kcdCheck(a: Auth, code: string): Promise<KcdHit | null> {
+  await resolve(a);
+  return kcdLookup(String(code).slice(0, 20));
+}
+
 export async function suggestDrugNames(a: Auth, names: string[]): Promise<Record<string, string[]>> {
   await resolve(a);
   const list = names.filter((n) => typeof n === "string" && n.trim()).slice(0, 30).map((n) => n.slice(0, 60));
