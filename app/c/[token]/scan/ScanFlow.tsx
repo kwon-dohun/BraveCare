@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { extractFromImage, extractFromPaste, confirmDocItems } from "@/app/scan-actions";
+import { extractFromPaste, confirmDocItems } from "@/app/scan-actions";
+import type { ScanResult, ScanProgress } from "@/lib/scan";
 import type { Auth } from "@/lib/db";
 import Link from "next/link";
 import { DOC_TYPE_LABEL, hasForm, type DocFields, type DocItem, type DocType } from "@/lib/extract";
@@ -13,6 +14,34 @@ import Kept from "./Kept";
 
 const KIND: Record<DocItem["kind"], string> = { schedule: "일정", medication: "복약", caution: "주의사항", contact: "문의처" };
 const MAX = 3; // 한 번에 읽는 사진 수
+
+// 서류 사진을 읽는 동안 서버가 흘려 주는 진행 상황(서류 종류, 옮겨 적은 글자 수)을 받아 화면에 알리고, 끝나면 결과를 돌려준다
+async function scanImage(auth: Auth, image: string, onProgress: (p: ScanProgress) => void): Promise<ScanResult> {
+  const res = await fetch("/api/scan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ auth, image }) });
+  if (!res.ok || !res.body) throw new Error("서류를 읽지 못했어요. 잠시 뒤 다시 시도해 주세요");
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  let result: ScanResult | null = null;
+  const take = (line: string) => {
+    if (!line.trim()) return;
+    const m = JSON.parse(line);
+    if (m.err) throw new Error(m.err);
+    if (m.p) onProgress(m.p);
+    if (m.done) result = m.done;
+  };
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop() ?? "";
+    lines.forEach(take);
+  }
+  take(buf);
+  if (!result) throw new Error("읽다가 끊겼어요. 다시 촬영해 주세요");
+  return result;
+}
 
 export interface SavedDoc { id: string; type: DocType; text: string; date: string; fields?: DocFields | null; confirmed: boolean }
 
@@ -69,6 +98,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState("");
   const [phase, setPhase] = useState<"prep" | "read">("read"); // 지금 실제로 하고 있는 일
+  const [live, setLive] = useState<ScanProgress>({ chars: 0, sorting: false });
   const [paste, setPaste] = useState("");
   const [pending, start] = useTransition();
 
@@ -90,7 +120,8 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       try {
         const b64 = await toJpegBase64(f);
         setPhase("read");
-        const r = await extractFromImage(auth, b64);
+        setLive({ chars: 0, sorting: false });
+        const r = await scanImage(auth, b64, setLive);
         types.push(r.docType);
         all.push(...toRows(r.items));
         if (r.docId) {
@@ -191,7 +222,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       </details>
 
       {busy ? (
-        <ScanningCard key={busy} busyText={busy} phase={phase} photo={busy !== "병원 문자"} />
+        <ScanningCard key={busy} busyText={busy} phase={phase} live={live} photo={busy !== "병원 문자"} />
       ) : null}
       {err && <p role="alert" className="mt-3 text-warn font-medium leading-relaxed">{err}</p>}
       {found.length > 0 && (
@@ -246,14 +277,19 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
 
 // 실제로 처리 중인 단계만 보여준다: 폰에서 사진 줄이기 → 서버에서 글자 읽기(날짜 찾기·원문 대조까지 한 번에).
 // 서버 안의 세부 단계는 밖에서 알 수 없어서 시간으로 꾸며 내지 않는다. 대신 막대는 계속 흘러 멈춘 느낌이 없게 한다.
-function ScanningCard({ busyText, phase, photo }: { busyText: string; phase: "prep" | "read"; photo: boolean }) {
+function ScanningCard({ busyText, phase, live, photo }: { busyText: string; phase: "prep" | "read"; live: ScanProgress; photo: boolean }) {
   const [slow, setSlow] = useState(false);
   useEffect(() => {
     const id = setTimeout(() => setSlow(true), 12000);
     return () => clearTimeout(id);
   }, []);
   const steps: [string, boolean, boolean][] = photo
-    ? [["사진을 읽기 좋게 줄이는 중", phase === "read", phase === "prep"], ["글자를 읽고 날짜를 찾는 중", false, phase === "read"]]
+    ? [
+        ["사진을 읽기 좋게 줄이는 중", phase === "read", phase === "prep"],
+        [live.docType ? DOC_TYPE_LABEL[live.docType] + "로 보여요" : "어떤 서류인지 보는 중", !!live.docType, phase === "read" && !live.docType],
+        [live.chars > 0 ? "글자를 옮겨 적는 중 · " + live.chars + "자" : "글자를 옮겨 적는 중", live.sorting, !!live.docType && !live.sorting],
+        ["일정·약 이름을 정리하는 중", false, live.sorting],
+      ]
     : [["문자에서 날짜를 찾는 중", false, true]];
 
   return (
@@ -263,8 +299,8 @@ function ScanningCard({ busyText, phase, photo }: { busyText: string; phase: "pr
         <p className="text-sm font-semibold">{busyText} 읽는 중</p>
       </div>
       <ol className="mt-4 space-y-2.5">
-        {steps.map(([label, done, now]) => (
-          <li key={label} className={`flex items-center gap-2.5 text-sm transition-colors duration-300 ${now ? "font-semibold text-ink" : "text-muted"}`}>
+        {steps.map(([label, done, now], i) => (
+          <li key={i} className={`flex items-center gap-2.5 text-sm transition-colors duration-300 ${now ? "font-semibold text-ink" : "text-muted"}`}>
             <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors duration-300 ${done ? "bg-primary text-ink" : now ? "bg-accent-soft ring-[1.5px] ring-primary" : "bg-line"}`}>
               {done ? <Icon name="check" size={12} /> : now ? <span className="dot-bounce h-1.5 w-1.5 rounded-full bg-accent" /> : null}
             </span>

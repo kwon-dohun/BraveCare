@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { verifyItems, parseDate, parseModelJson, toDocItems, validateTranscript, verifyFields } from "./extract.ts";
+import { verifyItems, parseDate, parseModelJson, toDocItems, validateTranscript, verifyFields, progressOf } from "./extract.ts";
 
 const TRANSCRIPT = "퇴원 안내문\n1. 외래 예약: 2026년 11월 27일 오전 10시 정형외과\n2. 아스피린 100mg 하루 1회 식후 복용\n문의 02-123-4567";
 
@@ -118,4 +118,12 @@ test("퇴원 안내문 칸은 고른 줄로 채워지고, 원문에 없는 줄�
   assert.equal(f["외래 일정"], "2026-11-27 외래");
   assert.equal(f["문의"], "문의 02-123-4567");
   assert.equal(verifyFields("원문", "guide", { fields: { 문의: "없는 줄" } }).values["문의"], "");
+});
+
+test("스트리밍 진행: 서류 종류와 옮겨 적은 글자 수를 중간 출력에서 읽는다", () => {
+  assert.deepEqual(progressOf('{"docType": "med'), { docType: undefined, chars: 0, sorting: false });
+  assert.deepEqual(progressOf('{"docType": "medication", "transcript": "환자 홍길'), { docType: "medication", chars: 5, sorting: false });
+  const p = progressOf('{"docType": "guide", "transcript": "abc\n def", "fields": {"a"');
+  assert.equal(p.sorting, true);
+  assert.ok(p.chars >= 9 && p.chars <= 12); // 닫는 따옴표 앞뒤 몇 글자 오차는 허용
 });

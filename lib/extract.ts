@@ -207,3 +207,17 @@ export function toDocItems(items: RawItem[], today: string): DocItem[] {
 }
 
 
+
+// 모델이 글자를 쓰는 동안 화면에 보여줄 진짜 진행 상황: 서류 종류가 정해진 때, 옮겨 적은 글자 수, 칸을 채우기 시작한 때
+export type ScanProgress = { docType?: DocType; chars: number; sorting: boolean };
+export function progressOf(acc: string): ScanProgress {
+  const t = acc.indexOf('"transcript"');
+  const q = t < 0 ? -1 : acc.indexOf('"', acc.indexOf(":", t) + 1);
+  const f = acc.indexOf('"fields"');
+  return {
+    docType: acc.match(/"docType"\s*:\s*"(\w+)"/)?.[1] as DocType | undefined,
+    chars: q < 0 ? 0 : (f > q ? f : acc.length) - q - 1,
+    sorting: f > 0,
+  };
+}
+
