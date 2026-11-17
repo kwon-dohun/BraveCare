@@ -5,6 +5,7 @@ import TaskList from "@/components/TaskList";
 import Mascot from "@/components/Mascot";
 import Icon from "@/components/Icon";
 import AddTask from "./AddTask";
+import AddTaskButton from "./AddTaskButton";
 import Segmented from "@/components/Segmented";
 import CalSyncLink from "@/components/CalSyncLink";
 import { openDeadlines, sortTasks, badgeFor } from "@/lib/priority";
@@ -83,14 +84,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
               오늘
             </Link>
           )}
-          <details className="relative">
-            <summary aria-label={isList ? "할 일 추가" : "병원 일정이나 할 일 추가"} className="flex h-8 cursor-pointer items-center justify-center gap-1 whitespace-nowrap rounded-full bg-card px-3 text-xs font-semibold shadow-card text-ink hover:text-accent after:hidden">
-              <Icon name="plus" size={14} />추가
-            </summary>
-            <div className="absolute right-0 top-9 z-20 w-80 rounded-2xl bg-card p-4 shadow-card ring-1 ring-line">
-              <AddTask auth={auth} defaultVisit={!isList} />
-            </div>
-          </details>
+          <AddTaskButton auth={auth} defaultVisit={!isList} label={isList ? "할 일 추가" : "병원 일정이나 할 일 추가"} members={data.members} solo={data.alone} />
         </div>
       </div>
 
@@ -311,7 +305,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
                   <Icon name="plus" size={16} />이 날에 외래 일정 또는 할 일 추가
                 </span>
               </summary>
-              <div className="px-4 pb-4"><AddTask auth={auth} defaultDate={sel} defaultVisit={true} plain /></div>
+              <div className="px-4 pb-4"><AddTask auth={auth} defaultDate={sel} defaultVisit={true} plain members={data.members} solo={data.alone} /></div>
             </details>
           </section>
 

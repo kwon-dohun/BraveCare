@@ -278,13 +278,19 @@ export async function unclaimTask(a: Auth, taskId: string) {
 }
 
 // schedule은 병원 방문 일정(그날 홈에 외래 리포트가 먼저 나온다), question은 외래 때 의료진에게 물어볼 것.
-export async function addTask(a: Auth, title: string, dueDate: string | null, kind: "custom" | "schedule" | "question" = "custom", dueTime: string | null = null) {
+export async function addTask(a: Auth, title: string, dueDate: string | null, kind: "custom" | "schedule" | "question" = "custom", dueTime: string | null = null, extra?: { repeat?: string | null; assigneeId?: string | null; memo?: string }) {
   const actor = await resolve(a);
   const t = title.trim().slice(0, 100);
   if (!t) throw new Error("내용을 입력해주세요");
   if (!["custom", "schedule", "question"].includes(kind)) throw new Error("잘못된 요청이에요");
   if (kind === "schedule" && !isDate(dueDate)) throw new Error("병원 일정은 날짜가 필요해요");
-  await db.from("tasks").insert({ case_id: actor.caseId, title: t, kind, source: "manual", assignee_id: await soloOwner(actor.caseId, actor.memberId), due_date: isDate(dueDate) ? dueDate : null, due_time: isDate(dueDate) && isTime(dueTime) ? dueTime : null });
+  const due = isDate(dueDate) ? dueDate : null;
+  const repeat = due && kind !== "schedule" && (extra?.repeat === "daily" || extra?.repeat === "weekly") ? extra.repeat : null; // 날짜가 있어야 반복할 수 있다
+  const { data: row } = await db.from("tasks").insert({
+    case_id: actor.caseId, title: t, kind, source: "manual", assignee_id: await soloOwner(actor.caseId, actor.memberId),
+    due_date: due, due_time: due && isTime(dueTime) ? dueTime : null, repeat, memo: (extra?.memo ?? "").trim().slice(0, 500) || null,
+  }).select("id").single();
+  if (row && extra?.assigneeId) await assignTask(a, row.id, extra.assigneeId); // 담당을 정하면 가족에게 알린다(가족인지도 여기서 확인)
   refresh();
 }
 
