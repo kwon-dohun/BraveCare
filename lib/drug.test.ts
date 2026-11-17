@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { baseName, pickSuggestion, editDistance } from "./drug.ts";
+import { baseName, pickSuggestions, editDistance } from "./drug.ts";
 
 test("약 이름: 용량·성분 괄호·영문을 떼고 제품 이름만", () => {
   assert.equal(baseName("다이크로짇정 25mg"), "다이크로짇정");
@@ -11,10 +11,16 @@ test("약 이름: 용량·성분 괄호·영문을 떼고 제품 이름만", () 
 
 test("약 이름 제안: 허가 목록과 한두 글자 다를 때만, 정확히 있으면 제안 안 함", () => {
   assert.equal(editDistance("다이크로진정", "다이크로짇정"), 1);
-  assert.equal(pickSuggestion("다이크로진정 25mg", ["다이크로짇정(히드로클로로티아지드)"]), "다이크로짇정");
-  assert.equal(pickSuggestion("다이크로짇정 25mg", ["다이크로짇정(히드로클로로티아지드)"]), null);
-  assert.equal(pickSuggestion("타이레놀정", ["다이크로짇정"]), null); // 너무 다르면 제안 안 함
-  assert.equal(pickSuggestion("다이크로진정", []), null);
+  assert.deepEqual(pickSuggestions("다이크로진정 25mg", ["다이크로짇정(히드로클로로티아지드)"]), ["다이크로짇정"]);
+  assert.deepEqual(pickSuggestions("다이크로짇정 25mg", ["다이크로짇정(히드로클로로티아지드)"]), []);
+  assert.deepEqual(pickSuggestions("타이레놀정", ["다이크로짇정"]), []); // 너무 다르면 제안 안 함
+  assert.deepEqual(pickSuggestions("다이크로진정", []), []);
+});
+
+test("약 이름 후보: 가까운 순으로 여러 개, 같은 제품 이름은 한 번만, 최대 3개", () => {
+  const list = ["프로프정", "모프졸정10mg", "모프졸정20mg", "모프롤정", "오프몬정", "모프졸캡슐", "아주다른약"];
+  assert.deepEqual(pickSuggestions("오프졸정", list), ["모프졸정", "오프몬정", "모프롤정"]);
+  assert.deepEqual(pickSuggestions("모프졸정", list), []); // 이미 허가 이름이면 제안 안 함
 });
 
 test("DUR: 서류함 약끼리 병용금기·효능군중복, 65세 이상만 노인주의", async () => {

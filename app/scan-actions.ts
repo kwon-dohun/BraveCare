@@ -11,7 +11,7 @@ import { DOC_TYPE_LABEL } from "@/lib/extract";
 import { loadCase } from "@/lib/load";
 import { caseBrief } from "@/lib/brief";
 import { krDate } from "@/lib/format";
-import { baseName, drugInfo, suggestName, durMeds, durFindings } from "@/lib/drug";
+import { baseName, drugInfo, suggestNames, durMeds, durFindings } from "@/lib/drug";
 
 const seoulDay = (iso: string) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
 import { glossaryText } from "@/lib/glossary";
@@ -68,11 +68,11 @@ export async function confirmDocItems(a: Auth, items: { kind: DocItem["kind"]; t
 }
 
 // 확인 카드: 사진에서 읽은 약 이름이 식약처 허가 목록과 한두 글자 다르면 공식 이름을 제안한다
-export async function suggestDrugNames(a: Auth, names: string[]): Promise<Record<string, string>> {
+export async function suggestDrugNames(a: Auth, names: string[]): Promise<Record<string, string[]>> {
   await resolve(a);
   const list = names.filter((n) => typeof n === "string" && n.trim()).slice(0, 30).map((n) => n.slice(0, 60));
-  const pairs = await Promise.all(list.map(async (n) => [n, await suggestName(n)] as const));
-  return Object.fromEntries(pairs.filter((p): p is readonly [string, string] => !!p[1]));
+  const pairs = await Promise.all(list.map(async (n) => [n, await suggestNames(n)] as const));
+  return Object.fromEntries(pairs.filter((p) => p[1].length));
 }
 
 // 찍은 뒤 확인 카드에서 '맞아요'를 누르면: 사람이 고친 칸과 서류 종류를 저장하고 확인한 시각을 남긴다

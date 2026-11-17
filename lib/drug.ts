@@ -34,20 +34,21 @@ export function editDistance(a: string, b: string): number {
   return d[a.length][b.length];
 }
 
-// 사진에서 읽은 약 이름이 허가 목록에 없으면, 앞부분이 같은 제품 중 한두 글자만 다른 이름을 제안한다
-export function pickSuggestion(name: string, official: string[]): string | null {
+// 사진에서 읽은 약 이름이 허가 목록에 없으면, 한두 글자만 다른 제품 이름을 가까운 순으로 최대 max개 돌려준다
+export function pickSuggestions(name: string, official: string[], max = 3): string[] {
   const b = baseName(name);
   const names = [...new Set(official.map(baseName).filter(Boolean))];
-  if (b.length < 2 || names.includes(b)) return null;
-  const best = names.map((n) => [n, editDistance(b, n)] as const).sort((x, y) => x[1] - y[1])[0];
-  return best && best[1] <= 2 ? best[0] : null;
+  if (b.length < 2 || names.includes(b)) return [];
+  return names.map((n) => [n, editDistance(b, n)] as const).filter((x) => x[1] <= 2).sort((x, y) => x[1] - y[1] || x[0].localeCompare(y[0])).slice(0, max).map((x) => x[0]);
 }
 
-export async function suggestName(name: string): Promise<string | null> {
+// 허가 목록 검색은 이름에 그 글자가 들어 있으면 찾아 준다. 틀린 글자가 한 개일 때 어느 위치든 피해 가도록 짧은 조각 3개(앞 두 글자, 가운데, 끝 두 글자)로 찾는다.
+export async function suggestNames(name: string): Promise<string[]> {
   const b = baseName(name);
-  if (b.length < 3) return null;
-  const list = await call("getDrugPrdtPrmsnInq08", b.slice(0, Math.max(2, b.length - 2)), 30); // 끝 글자 오타도 잡게 앞부분으로 찾는다
-  return pickSuggestion(name, list.map((x) => x.ITEM_NAME));
+  if (b.length < 3) return [];
+  const queries = [...new Set([b.slice(0, 2), b.slice(1, 3), b.slice(-2)])];
+  const lists = await Promise.all(queries.map((q) => call("getDrugPrdtPrmsnInq08", q, 50)));
+  return pickSuggestions(name, lists.flat().map((x) => x.ITEM_NAME));
 }
 
 const text = (xml = "") => xml.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/<ARTICLE title="([^"]+)"/g, "\n$1\n<").replace(/<[^>]+>/g, " ").replace(/[ \t]+/g, " ").replace(/\s*\n\s*/g, "\n").trim();
