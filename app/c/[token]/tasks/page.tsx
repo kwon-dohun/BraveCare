@@ -57,6 +57,9 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
 
   // 2) 할 일 목록 계산
   const f = sp.f === "none" || sp.f === "mine" ? sp.f : "";
+  // 가족 화면에서 구성원을 누르고 들어오면 그 사람이 맡은 일만 모아 보여 준다
+  const w = typeof sp.w === "string" && data.members.some((m) => m.id === sp.w) ? sp.w : "";
+  const wName = data.members.find((m) => m.id === w)?.name ?? "";
   const common = { members: data.members, auth, meId: me, today: data.today, detailBase: `${base}/tasks`, badges, showOwner: !isSelfCare };
   const activeOpen = open.filter((t) => !t.due_date || t.due_date >= data.today);
   const pastTasks = open.filter((t) => t.due_date && t.due_date < data.today);
@@ -64,7 +67,8 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
   const needOwner = sort(activeOpen.filter((t) => !t.assignee_id));
   const others = sort(activeOpen.filter((t) => t.assignee_id && t.assignee_id !== me));
   // 필터(내 일/맡을 사람 필요)를 켜도 기한 지난 일이 사라지지 않게 같은 기준으로 거른다
-  const sortedPast = sort(pastTasks.filter((t) => f === "none" ? !t.assignee_id : f === "mine" ? t.assignee_id === me : true));
+  const sortedPast = sort(pastTasks.filter((t) => w ? t.assignee_id === w : f === "none" ? !t.assignee_id : f === "mine" ? t.assignee_id === me : true));
+  const theirs = w ? sort(activeOpen.filter((t) => t.assignee_id === w)) : [];
 
   const head = (title: string, n: number, hint?: string, tone = "") => (
     <div className="mb-2 flex items-end justify-between gap-2">
@@ -336,6 +340,11 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
             </div>
           </section>
 
+          {w && (
+            <Link href={`${base}/tasks?view=list`} className="mt-3 flex items-center justify-between rounded-xl bg-card px-4 py-2 text-sm text-accent shadow-card">
+              {w === me ? "내가" : `${wName}님이`} 맡은 일만 보는 중<span className="font-semibold">전체 보기</span>
+            </Link>
+          )}
           {f && (
             <Link href={`${base}/tasks?view=list`} className="mt-3 flex items-center justify-between rounded-xl bg-card px-4 py-2 text-sm text-accent shadow-card">
               {f === "none" ? "맡을 사람이 필요한 일만 보는 중" : "내가 맡은 일만 보는 중"}<span className="font-semibold">전체 보기</span>
@@ -344,7 +353,24 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
           {open.length === 0 && <p className="mt-4 flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card"><Mascot size={40} mood="cheer" />남은 일이 없어요. 수고했어요!</p>}
 
           {/* 셀프 케어 모드: 가족 분담 없이 하나의 깔끔한 체크리스트 */}
-          {isSelfCare ? (
+          {w ? (
+            <section className="mt-6" aria-label={`${wName}님이 맡은 일`}>
+              {head(w === me ? "내가 맡은 일" : `${wName}님이 맡은 일`, theirs.length, theirs.length ? "마감이 가까운 일부터 먼저 나와요" : undefined)}
+              {theirs.length ? (
+                <>
+                  <TaskList tasks={theirs.slice(0, SHOW_FIRST)} {...common} />
+                  {theirs.length > SHOW_FIRST && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {theirs.length - SHOW_FIRST}개 보기</summary>
+                      <div className="mt-2"><TaskList tasks={theirs.slice(SHOW_FIRST)} {...common} /></div>
+                    </details>
+                  )}
+                </>
+              ) : (
+                <p className="rounded-xl bg-card p-4 text-sm text-muted shadow-card">맡은 일이 아직 없어요.</p>
+              )}
+            </section>
+          ) : isSelfCare ? (
             <section className="mt-6" aria-label="할 일 목록">
               {head("챙길 일", activeOpen.length, "마감이 가까운 일부터 먼저 나와요")}
               {activeOpen.length > 0 ? (
