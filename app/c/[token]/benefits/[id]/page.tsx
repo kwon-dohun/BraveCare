@@ -37,7 +37,10 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
         <p className="mt-1">{r.reason}</p>
       </section>
 
-      {active && <div className="mt-5"><StatusPicker auth={auth} benefitId={b.id} current={data.status[b.id] ?? "none"} /></div>}
+      <section className="mt-6">
+        <h2 className="font-semibold">비용</h2>
+        <p className="mt-1">{b.cost}</p>
+      </section>
 
       <section className="mt-6">
         <h2 className="font-semibold">신청 방법</h2>
@@ -51,11 +54,6 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
         <a href={b.source.url} target="_blank" rel="noreferrer" className="mt-2 flex items-center justify-center rounded-xl bg-card shadow-card px-5 py-3">
           공식 안내 보기 ({b.source.label})
         </a>
-      </section>
-
-      <section className="mt-6">
-        <h2 className="font-semibold">비용</h2>
-        <p className="mt-1">{b.cost}</p>
       </section>
 
       <section className="mt-6">
@@ -77,6 +75,8 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
           </ul>
         )}
       </section>
+
+      {active && <div className="mt-6"><StatusPicker auth={auth} benefitId={b.id} current={data.status[b.id] ?? "none"} /></div>}
 
       <p className="mt-6 text-sm text-muted">
         정보 마지막 확인: {b.lastVerified ? dotDate(b.lastVerified) : "공식 확인 전 초안이에요"}
