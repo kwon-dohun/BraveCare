@@ -99,12 +99,12 @@ export default function WeekStrip({
                 const href = e.taskId ? `${base}/tasks/${e.taskId}` : e.benefitId ? `${base}/benefits/${e.benefitId}` : null;
                 const inner = (
                   <>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-caption font-semibold ${EVENT_STYLE[e.kind].chip}`}>{EVENT_STYLE[e.kind].label}</span>
-                    <span className={`min-w-0 flex-1 truncate ${e.done ? "line-through opacity-50" : ""}`}>{e.title}</span>
-                    {href && <Icon name="right" size={16} className="shrink-0 text-muted" />}
+                    <span className={`mt-px shrink-0 rounded-full px-2 py-0.5 text-caption font-semibold ${EVENT_STYLE[e.kind].chip}`}>{EVENT_STYLE[e.kind].label}</span>
+                    <span className={`min-w-0 flex-1 leading-snug ${e.done ? "line-through opacity-50" : ""}`}>{e.title}</span>
+                    {href && <Icon name="right" size={16} className="mt-0.5 shrink-0 text-muted" />}
                   </>
                 );
-                const row = "flex items-center gap-2 rounded-lg bg-background/60 p-2 text-sm";
+                const row = "flex items-start gap-2 rounded-lg bg-background/60 p-2.5 text-sm";
                 return (
                   <li key={idx + e.title}>
                     {href ? <Link href={href} className={`${row} min-h-11`}>{inner}</Link> : <div className={row}>{inner}</div>}
