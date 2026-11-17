@@ -145,9 +145,13 @@ test("안전장치: closeRisk·확인일 만료·초안은 높음 → 확인 필
   }
 });
 
-test("안전장치: 시범사업·재고 제도에는 closeRisk가 달려 있어 높음이 나오지 않는다", () => {
-  for (const id of ["sickness_benefit", "home_visit_doctor", "assistive_rental"]) assert.ok(BENEFITS.find((b) => b.id === id)!.closeRisk, id);
-  assert.notEqual(by(evaluate({ ...worker, reason: "ortho" }, T), "assistive_rental").verdict, "high");
+test("휠체어 무료 대여: 정형외과·뇌혈관 수술 환자는 대상 가능성 높음으로 판정", () => {
+  assert.equal(by(evaluate({ ...worker, reason: "ortho" }, T), "assistive_rental").verdict, "high");
+  assert.equal(by(evaluate({ ...worker, reason: "brain" }, T), "assistive_rental").verdict, "high");
+});
+
+test("안전장치: 시범사업(상병수당 등)은 closeRisk가 달려 있어 확인 필요로 처리", () => {
+  assert.ok(BENEFITS.find((b) => b.id === "sickness_benefit")!.closeRisk);
 });
 
 test("안전장치: 오늘이 확인일에서 45일을 넘으면 실제 제도도 높음이 확인 필요로 내려간다", () => {
