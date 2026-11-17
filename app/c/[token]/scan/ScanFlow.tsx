@@ -15,9 +15,31 @@ import Kept from "./Kept";
 const KIND: Record<DocItem["kind"], string> = { schedule: "일정", medication: "복약", caution: "주의사항", contact: "문의처" };
 const MAX = 3; // 한 번에 읽는 사진 수
 
+// 화면에는 영어·오류 코드를 보이지 않는다. 서버가 한글로 준 말은 그대로, 그 밖(연결 끊김·시간 초과 등)은 이유를 풀어 쓴다.
+// retryable: 같은 사진으로 다시 읽어 볼 만한 오류(연결·시간·일시 장애). 서류가 아니라는 판정 같은 건 다시 해도 같으니 false.
+function friendly(e: unknown): { msg: string; retryable: boolean } {
+  const m = e instanceof Error ? e.message : "";
+  if (m === "TIMEOUT") return { msg: "읽는 시간이 너무 오래 걸려서 멈췄어요. 서류에 글자가 아주 많거나 연결이 느릴 때 생겨요.", retryable: true };
+  if (!/[가-힣]/.test(m)) return { msg: "인터넷 연결이 끊겨서 읽지 못했어요. 화면을 켜 둔 채 연결을 확인하고 다시 읽어 주세요.", retryable: true };
+  return { msg: m, retryable: /^(지금은 서류 인식이 어려워요|읽는 도중|서류를 읽지 못했어요)/.test(m) };
+}
+
 // 서류 사진을 읽는 동안 서버가 흘려 주는 진행 상황(서류 종류, 옮겨 적은 글자 수)을 받아 화면에 알리고, 끝나면 결과를 돌려준다
 async function scanImage(auth: Auth, image: string, onProgress: (p: ScanProgress) => void): Promise<ScanResult> {
-  const res = await fetch("/api/scan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ auth, image }) });
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 55_000);
+  try {
+    return await readScan(auth, image, onProgress, ctl.signal);
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "AbortError") throw new Error("TIMEOUT");
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function readScan(auth: Auth, image: string, onProgress: (p: ScanProgress) => void, signal: AbortSignal): Promise<ScanResult> {
+  const res = await fetch("/api/scan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ auth, image }), signal });
   if (!res.ok || !res.body) throw new Error("서류를 읽지 못했어요. 잠시 뒤 다시 시도해 주세요");
   const reader = res.body.getReader();
   const dec = new TextDecoder();
@@ -39,7 +61,7 @@ async function scanImage(auth: Auth, image: string, onProgress: (p: ScanProgress
     lines.forEach(take);
   }
   take(buf);
-  if (!result) throw new Error("읽다가 끊겼어요. 다시 촬영해 주세요");
+  if (!result) throw new Error("읽는 도중 연결이 끊겼어요. 같은 사진으로 다시 읽어 볼 수 있어요");
   return result;
 }
 
@@ -96,6 +118,8 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
     setToConfirm((ids) => ids.filter((x) => x !== id));
   };
   const [err, setErr] = useState("");
+  const [failedRead, setFailedRead] = useState(false); // 사진 읽기에서 난 오류(전용 안내 카드)
+  const [retry, setRetry] = useState<Blob[]>([]); // 다시 읽어 볼 만한 사진(성공한 것은 빼서 중복 저장 방지)
   const [busy, setBusy] = useState("");
   const [phase, setPhase] = useState<"prep" | "read">("read"); // 지금 실제로 하고 있는 일
   const [live, setLive] = useState<ScanProgress>({ chars: 0, sorting: false });
@@ -116,8 +140,9 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
   const onFiles = async (list: FileList | Blob[] | null) => {
     const files = [...(list ?? [])].slice(0, MAX);
     if (!files.length) return;
-    setErr(""); setRows(null); setFound([]); setToConfirm([]);
+    setErr(""); setFailedRead(false); setRetry([]); setRows(null); setFound([]); setToConfirm([]);
     const all: Row[] = [];
+    const again: Blob[] = [];
     const types: DocType[] = [];
 
     for (const [i, f] of files.entries()) {
@@ -135,10 +160,13 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
           if (hasForm(r.docType)) setToConfirm((ids) => [...ids, r.docId!]);
         }
       } catch (e) {
-        setErr(e instanceof Error ? e.message : "읽지 못했어요. 다시 촬영해주세요");
+        const { msg, retryable } = friendly(e);
+        setErr(msg); setFailedRead(true);
+        if (retryable) again.push(f);
       }
     }
     setBusy("");
+    setRetry(again);
     if (types.length > 0) {
       setFound([...new Set(types)]);
       setRows(all);
@@ -231,7 +259,21 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       {busy ? (
         <ScanningCard key={busy} busyText={busy} phase={phase} live={live} photo={busy !== "병원 문자"} />
       ) : null}
-      {err && <p role="alert" className="mt-3 text-warn font-medium leading-relaxed">{err}</p>}
+      {err && !failedRead && <p role="alert" className="mt-3 text-warn font-medium leading-relaxed">{err}</p>}
+      {err && failedRead && (
+        <section role="alert" className="view-in mt-4 rounded-xl bg-warn-soft p-4">
+          <p className="font-semibold text-ink">서류를 읽지 못했어요</p>
+          <p className="mt-1 text-sm leading-relaxed text-warn">{err}</p>
+          <p className="mt-2 text-sm text-muted">사진은 저장되지 않았고, 찍은 내용은 그대로 안전해요.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {retry.length > 0 && (
+              <button type="button" disabled={!!busy} onClick={() => onFiles(retry)} className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-ink">같은 사진으로 다시 읽기</button>
+            )}
+            <Link href={`${base}/tasks`} className="flex items-center rounded-full bg-card px-4 py-2.5 text-sm font-semibold shadow-card">일정 직접 추가하기</Link>
+          </div>
+          <p className="mt-3 text-xs leading-relaxed text-muted">계속 안 되면 밝은 곳에서 종이 전체가 보이게 다시 찍어 보세요. 병원 문자는 아래 ‘병원 문자·알림톡 붙여넣기’로 바로 일정을 만들 수 있어요.</p>
+        </section>
+      )}
       {found.length > 0 && (
         <section role="status" className="view-in mt-4 rounded-xl bg-accent-soft p-4 text-sm text-accent">
           <p className="font-semibold text-ink">{found.map((t) => DOC_TYPE_LABEL[t]).join(", ")}을 읽어서 내 서류함에 넣었어요</p>
@@ -289,9 +331,11 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
 // 서버 안의 세부 단계는 밖에서 알 수 없어서 시간으로 꾸며 내지 않는다. 대신 막대는 계속 흘러 멈춘 느낌이 없게 한다.
 function ScanningCard({ busyText, phase, live, photo }: { busyText: string; phase: "prep" | "read"; live: ScanProgress; photo: boolean }) {
   const [slow, setSlow] = useState(false);
+  const [long, setLong] = useState(false);
   useEffect(() => {
     const id = setTimeout(() => setSlow(true), 12000);
-    return () => clearTimeout(id);
+    const id2 = setTimeout(() => setLong(true), 30000);
+    return () => { clearTimeout(id); clearTimeout(id2); };
   }, []);
   const steps: [string, boolean, boolean][] = photo
     ? [
@@ -322,7 +366,7 @@ function ScanningCard({ busyText, phase, live, photo }: { busyText: string; phas
         <div className="pulse-bar h-full w-1/2 rounded-full bg-primary" />
       </div>
       <p className="mt-2 text-center text-xs text-muted">
-        {slow ? "조금 더 걸리고 있어요. 글자가 많은 서류는 20초쯤 걸릴 수 있어요." : "한 장에 5~10초쯤 걸려요. 화면을 닫지 말고 잠시만 기다려 주세요."}
+        {long ? "많이 오래 걸리고 있어요. 1분이 지나면 멈추고 다시 읽을 수 있게 알려 드릴게요." : slow ? "조금 더 걸리고 있어요. 글자가 많은 서류는 20초쯤 걸릴 수 있어요." : "한 장에 5~10초쯤 걸려요. 화면을 닫지 말고 잠시만 기다려 주세요."}
       </p>
     </section>
   );
