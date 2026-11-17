@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
-import { confirmDocument } from "@/app/scan-actions";
+import { useEffect, useState } from "react";
+import { confirmDocument, suggestDrugNames } from "@/app/scan-actions";
+import { baseName } from "@/lib/drug";
 import type { Auth } from "@/lib/db";
 import { DOC_TYPE_LABEL, FIELD_LABELS, hasForm, missingCount, type DocFields, type DocType } from "@/lib/extract";
 import { useAct } from "@/components/useAct";
@@ -21,6 +22,13 @@ export default function ConfirmCard({ auth, id, type: t0, fields: f0, onDone, on
   const field = (empty: boolean) => `mt-1 w-full rounded-xl border bg-card px-3 py-2.5 ${empty ? "border-warn/50 bg-warn-soft/40" : "border-line"}`;
   const setMed = (i: number, p: Partial<{ name: string; how: string }>) => setMeds((ms) => ms.map((m, j) => (j === i ? { ...m, ...p } : m)));
   const save = () => run(async () => onDone(type, await confirmDocument(auth, id, type, { values, meds })));
+  // 처음 열 때 한 번: 읽은 약 이름을 식약처 허가 목록과 맞춰 보고, 한두 글자 다르면 공식 이름을 제안한다
+  const [suggest, setSuggest] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (t0 !== "medication" || !f0.meds.length) return;
+    suggestDrugNames(auth, f0.meds.map((m) => m.name)).then(setSuggest).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 처음 읽은 이름으로 한 번만
+  }, []);
 
   return (
     <section className="view-in mt-4 rounded-xl bg-card p-4 shadow-card">
@@ -47,6 +55,12 @@ export default function ConfirmCard({ auth, id, type: t0, fields: f0, onDone, on
                   <input aria-label={`${i + 1}번째 약 이름`} value={m.name} onChange={(e) => setMed(i, { name: e.target.value })} placeholder="약 이름" className={`${field(!m.name.trim())} mt-0 font-semibold`} />
                   <button type="button" aria-label={`${m.name || "이"} 약 빼기`} onClick={() => setMeds((ms) => ms.filter((_, j) => j !== i))} className="flex h-11 w-11 shrink-0 items-center justify-center text-muted"><Icon name="close" size={16} /></button>
                 </div>
+                {suggest[m.name] && (
+                  <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-sm text-ink">
+                    혹시 &lsquo;{suggest[m.name]}&rsquo;인가요? <span className="text-xs text-muted">식약처 허가 목록 기준</span>
+                    <button type="button" onClick={() => setMed(i, { name: m.name.replace(baseName(m.name), suggest[m.name]) })} className="min-h-0 py-1 font-semibold text-accent underline underline-offset-2">바꾸기</button>
+                  </p>
+                )}
                 <input aria-label={`${m.name || "약"} 먹는 법`} value={m.how} onChange={(e) => setMed(i, { how: e.target.value })} placeholder="못 읽었어요. 먹는 법을 써 주세요 (예: 1일 1회 아침식사 직후)" className={field(!m.how.trim())} />
               </li>
             ))}

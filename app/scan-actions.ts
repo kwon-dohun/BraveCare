@@ -10,6 +10,7 @@ import { DOC_TYPE_LABEL } from "@/lib/extract";
 import { loadCase } from "@/lib/load";
 import { caseBrief } from "@/lib/brief";
 import { krDate } from "@/lib/format";
+import { baseName, drugInfo, suggestName } from "@/lib/drug";
 
 const seoulDay = (iso: string) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
 import { glossaryText } from "@/lib/glossary";
@@ -120,6 +121,14 @@ export async function confirmDocItems(a: Auth, items: { kind: DocItem["kind"]; t
   revalidatePath("/c/[token]", "layout");
 }
 
+// 확인 카드: 사진에서 읽은 약 이름이 식약처 허가 목록과 한두 글자 다르면 공식 이름을 제안한다
+export async function suggestDrugNames(a: Auth, names: string[]): Promise<Record<string, string>> {
+  await resolve(a);
+  const list = names.filter((n) => typeof n === "string" && n.trim()).slice(0, 30).map((n) => n.slice(0, 60));
+  const pairs = await Promise.all(list.map(async (n) => [n, await suggestName(n)] as const));
+  return Object.fromEntries(pairs.filter((p): p is readonly [string, string] => !!p[1]));
+}
+
 // 찍은 뒤 확인 카드에서 '맞아요'를 누르면: 사람이 고친 칸과 서류 종류를 저장하고 확인한 시각을 남긴다
 export async function confirmDocument(a: Auth, id: string, docType: string, fields: unknown) {
   const actor = await resolve(a);
@@ -167,6 +176,12 @@ export async function askChat(a: Auth, question: string): Promise<ChatAnswer> {
     { label: "씩씩케어 정보", text: caseBrief(data) },
     { label: "쉬운 용어 사전", text: glossaryText() },
   ];
+  // 서류함에 있는 약 이름이 질문에 나오면, 그 약의 식약처 허가정보(효능·주의사항)를 근거로 더한다(최대 2개)
+  const medNames = [...new Set((docs ?? []).flatMap((d) => ((d.fields as DocFields | null)?.meds ?? []).map((m) => m.name)))];
+  const asked = medNames.filter((n) => { const b = baseName(n); return b.length >= 2 && q.includes(b); }).slice(0, 2);
+  for (const info of await Promise.all(asked.map(drugInfo))) {
+    if (info) sources.push({ label: `식약처 의약품 허가정보(${info.name})`, text: info.text });
+  }
   const prompt = buildChatPrompt(!!data.isSelfCare);
   const raw = await askJson(prompt, [{ type: "text", text: `[자료]\n${sources.map((s) => `--- ${s.label} ---\n${s.text}`).join("\n")}\n\n[질문]\n${q}` }]);
   if (raw === null) throw new Error("지금은 답을 만들지 못했어요. 잠시 뒤에 다시 물어봐 주세요");
