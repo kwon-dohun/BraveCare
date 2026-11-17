@@ -125,15 +125,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
                     </Link>
                   );
                 })()
-              ) : (
-                <Link href={`${base}/scan`} className="flex items-center justify-between rounded-2xl bg-card p-3 text-muted shadow-card hover:opacity-90">
-                  <div>
-                    <p className="text-caption font-semibold">다음 외래 일정</p>
-                    <p className="text-xs">예약증 찍어 등록</p>
-                  </div>
-                  <Icon name="camera" size={16} className="text-muted" />
-                </Link>
-              )}
+              ) : null}
             </div>
           )}
 
