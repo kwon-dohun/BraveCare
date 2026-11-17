@@ -45,7 +45,7 @@ test("일정인데 날짜가 불분명하면 확인 필요", () => {
 
 test("모델 JSON 파싱: 코드펜스 제거, 깨진 JSON은 빈 결과", () => {
   assert.equal(parseModelJson('```json\n{"transcript":"a","items":[{"kind":"caution","text":"b"},{"kind":"x","text":"c"}]}\n```').items.length, 1);
-  assert.deepEqual(parseModelJson("죄송합니다"), { docType: "other", transcript: "", items: [], summary: [] });
+  assert.deepEqual(parseModelJson("죄송합니다"), { docType: "other", transcript: "", items: [], fields: {}, meds: [] });
 });
 
 test("진단서·확인서 문서 파싱", () => {
@@ -71,20 +71,19 @@ test("서버 방어막 validateTranscript: 의료 키워드 및 길이 검증", 
   assert.equal(validateTranscript(""), false);
 });
 
-test("서류함 정리본: 원문에 그대로 있는 값만 남긴다", async () => {
-  const { verifySummary } = await import("./extract.ts");
-  const t = "필독약국\n슈가메트서방정 35/1000mg\n1일 1회 저녁식사 직후 1정 복용\n합계\n34,300원";
-  const out = verifySummary(t, [
-    { label: "슈가메트서방정 35/1000mg", value: "1일 1회 저녁식사 직후 1정 복용" },
-    { label: "합계", value: "34,300원" },
-    { label: "타이레놀", value: "1일 3회" }, // 원문에 없는 약
-    { label: "본인부담", value: "1,000원" }, // 원문에 없는 금액
-    { label: "약 효능", value: "필독약국" }, // 이름표가 원문에도 허용 목록에도 없음
-    { label: "합계", value: "34,300원" }, // 중복
-  ]);
-  assert.deepEqual(out, [
-    { label: "슈가메트서방정 35/1000mg", value: "1일 1회 저녁식사 직후 1정 복용" },
-    { label: "합계", value: "34,300원" },
-  ]);
-  assert.deepEqual(verifySummary(t, "아님"), []);
+test("서류 양식: 원문에 있는 값만 채우고 없으면 빈칸, 사람이 고친 값은 양식 칸만 받는다", async () => {
+  const { verifyFields, cleanFields, missingCount, fieldLines } = await import("./extract.ts");
+  const t = "필독약국\n슈가메트서방정 35/1000mg\n1일 1회 저녁식사 직후 1정 복용\n알마겔정\n조제일 2020.02.07";
+  const f = verifyFields(t, "medication", {
+    fields: { 조제일: "2020.02.07", 며칠분: "7일분", 약국: "필독약국", 합계: "34,300원" },
+    meds: [{ name: "슈가메트서방정", how: "1일 1회 저녁식사 직후 1정 복용" }, { name: "알마겔정", how: "1일 3회" }, { name: "타이레놀", how: "1일 3회" }, { name: "슈가메트서방정", how: "" }],
+  });
+  assert.deepEqual(f.values, { 조제일: "2020.02.07", 며칠분: "", 약국: "필독약국" }); // 원문에 없는 '7일분'은 빈칸, 양식 밖 '합계'는 버림
+  assert.deepEqual(f.meds, [{ name: "슈가메트서방정", how: "1일 1회 저녁식사 직후 1정 복용" }, { name: "알마겔정", how: "" }]); // 지어낸 약·복용법은 버림, 중복 제거
+  assert.equal(missingCount("medication", f), 2); // 며칠분 + 알마겔정 먹는 법
+  assert.deepEqual(fieldLines("medication", f).slice(0, 2), ["슈가메트서방정: 1일 1회 저녁식사 직후 1정 복용", "알마겔정: 먹는 법 못 읽음"]);
+  const c = cleanFields("receipt", { values: { 합계: " 34,300원 ", 엉뚱한칸: "x" }, meds: [{ name: "a" }] });
+  assert.equal(c.values.합계, "34,300원");
+  assert.equal("엉뚱한칸" in c.values, false);
+  assert.deepEqual(c.meds, []);
 });

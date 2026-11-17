@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { extractFromImage, extractFromPaste, confirmDocItems } from "@/app/scan-actions";
 import type { Auth } from "@/lib/db";
 import Link from "next/link";
-import { DOC_TYPE_LABEL, type DocItem, type DocType, type SummaryLine } from "@/lib/extract";
+import { DOC_TYPE_LABEL, hasForm, type DocFields, type DocItem, type DocType } from "@/lib/extract";
+import ConfirmCard from "./ConfirmCard";
 import { toApp, useInApp } from "@/lib/app";
 import Mascot from "@/components/Mascot";
 import Icon from "@/components/Icon";
@@ -13,7 +14,7 @@ import Kept from "./Kept";
 const KIND: Record<DocItem["kind"], string> = { schedule: "일정", medication: "복약", caution: "주의사항", contact: "문의처" };
 const MAX = 3; // 한 번에 읽는 사진 수
 
-export interface SavedDoc { id: string; label: string; text: string; date: string; summary?: SummaryLine[] | null }
+export interface SavedDoc { id: string; type: DocType; text: string; date: string; fields?: DocFields | null; confirmed: boolean }
 
 interface Row extends DocItem { quote: string; include: boolean }
 
@@ -59,6 +60,12 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
   const [docs, setDocs] = useState<SavedDoc[]>(initialDocs);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [found, setFound] = useState<DocType[]>([]);
+  const [toConfirm, setToConfirm] = useState<string[]>([]); // 방금 찍어 확인을 기다리는 서류 id
+  // 확인하면 서류함의 그 서류도 바로 바꾼다
+  const confirmed = (id: string, type: DocType, fields: DocFields) => {
+    setDocs((ds) => ds.map((d) => (d.id === id ? { ...d, type, fields, confirmed: true } : d)));
+    setToConfirm((ids) => ids.filter((x) => x !== id));
+  };
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState("");
   const [phase, setPhase] = useState<"prep" | "read">("read"); // 지금 실제로 하고 있는 일
@@ -73,7 +80,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
   const onFiles = async (list: FileList | Blob[] | null) => {
     const files = [...(list ?? [])].slice(0, MAX);
     if (!files.length) return;
-    setErr(""); setRows(null); setFound([]);
+    setErr(""); setRows(null); setFound([]); setToConfirm([]);
     const all: Row[] = [];
     const types: DocType[] = [];
 
@@ -86,7 +93,10 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
         const r = await extractFromImage(auth, b64);
         types.push(r.docType);
         all.push(...toRows(r.items));
-        if (r.docId) setDocs((prev) => [{ id: r.docId!, label: DOC_TYPE_LABEL[r.docType] ?? "기타 서류", text: r.transcript, date: "방금", summary: r.summary }, ...prev]);
+        if (r.docId) {
+          setDocs((prev) => [{ id: r.docId!, type: r.docType, text: r.transcript, date: "방금", fields: r.fields, confirmed: false }, ...prev]);
+          if (hasForm(r.docType)) setToConfirm((ids) => [...ids, r.docId!]);
+        }
       } catch (e) {
         setErr(e instanceof Error ? e.message : "읽지 못했어요. 다시 촬영해주세요");
       }
@@ -115,7 +125,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       const res = await extractFromPaste(auth, paste);
       setRows(toRows(res.items));
       setFound(["message"]);
-      if (res.docId) setDocs((prev) => [{ id: res.docId!, label: "병원 문자", text: res.transcript, date: "방금" }, ...prev]);
+      if (res.docId) setDocs((prev) => [{ id: res.docId!, type: "message", text: res.transcript, date: "방금", confirmed: false }, ...prev]);
       router.refresh();
     }
     catch (e) { setErr(e instanceof Error ? e.message : "읽지 못했어요"); }
@@ -194,6 +204,14 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
         </section>
       )}
 
+      {/* 방금 찍은 서류마다 양식으로 확인받기(강제하지 않음: 나중에 서류함에서 해도 된다) */}
+      {toConfirm.map((id) => {
+        const d = docs.find((x) => x.id === id);
+        return d?.fields ? (
+          <ConfirmCard key={id} auth={auth} id={id} type={d.type} fields={d.fields} onDone={(t, f) => confirmed(id, t, f)} onLater={() => setToConfirm((ids) => ids.filter((x) => x !== id))} />
+        ) : null;
+      })}
+
       {/* 고를 것이 있을 때만: 서류에 적힌 외래·검사 날짜를 달력에 넣을지 */}
       {rows && rows.length > 0 && (
         <section className="view-in mt-5" aria-labelledby="rv">
@@ -214,6 +232,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
             auth={auth}
             docs={docs}
             onDelete={(id) => setDocs((prev) => prev.filter((d) => d.id !== id))}
+            onConfirmed={confirmed}
           />
         ) : (
           <div className="mt-3 rounded-xl bg-card p-4 text-center text-xs text-muted shadow-card">

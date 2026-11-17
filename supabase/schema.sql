@@ -194,3 +194,5 @@ alter table public.documents add constraint documents_doc_type_check check (doc_
 
 -- 서류함 정리본 (2026-11-17): 원문에서 그대로 옮긴 핵심 줄만 [{label, value}]. 원문(transcript)은 그대로 둔다.
 alter table public.documents add column if not exists summary jsonb;
+-- 서류 양식 (2026-11-17): 종류별 칸 {values, meds}. AI가 원문에서 채우고 사람이 확인·수정한다. confirmed_at이 있으면 사람이 확인한 값.
+alter table public.documents add column if not exists fields jsonb, add column if not exists confirmed_at timestamptz;

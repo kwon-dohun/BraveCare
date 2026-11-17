@@ -4,7 +4,7 @@ import { db, resolve, logEvent, soloOwner, type Auth } from "@/lib/db";
 import { act } from "@/lib/push";
 import { todaySeoul } from "@/lib/load";
 import { askJson, hasModel } from "@/lib/openai";
-import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, validateTranscript, verifySummary, type SummaryLine, type DocItem, type DocType } from "@/lib/extract";
+import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, validateTranscript, verifyFields, cleanFields, fieldLines, DOC_TYPES, type DocFields, type DocItem, type DocType } from "@/lib/extract";
 import { buildChatPrompt, parseChatJson, verifyAnswer, type ChatAnswer, type Source } from "@/lib/chat";
 import { DOC_TYPE_LABEL } from "@/lib/extract";
 import { loadCase } from "@/lib/load";
@@ -30,7 +30,7 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{
   docType: DocType;
   empty: boolean;
   transcript: string;
-  summary: SummaryLine[];
+  fields: DocFields;
   docId: string | null;
 }> {
   const actor = await resolve(a);
@@ -49,12 +49,13 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{
     throw new Error("병원 서류(진단서, 퇴원 안내문, 약봉투, 영수증 등)로 읽히지 않았어요. 글자가 잘 보이게 밝은 곳에서 다시 찍어 주세요");
   }
   const transcript = maskIds(parsed.transcript).slice(0, 6000);
-  const summary = verifySummary(transcript, parsed.summary).map((l) => ({ label: maskIds(l.label), value: maskIds(l.value) }));
+  // 종류별 양식 칸: 원문에 그대로 있는 값만 채운다. 사람이 확인하기 전까지는 '확인 안 함'
+  const fields = verifyFields(transcript, parsed.docType, parsed);
   const { data: inserted, error: saveErr } = await db.from("documents").insert({
     case_id: actor.caseId,
     doc_type: parsed.docType,
     transcript,
-    summary: summary.length ? summary : null,
+    fields,
   }).select("id").maybeSingle();
   if (saveErr) throw new Error("읽은 글자를 보관하지 못했어요. 잠시 뒤 다시 시도해 주세요");
 
@@ -64,7 +65,7 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{
     docType: parsed.docType,
     empty: items.length === 0,
     transcript,
-    summary,
+    fields,
     docId: inserted?.id ?? null,
   };
 }
@@ -119,6 +120,19 @@ export async function confirmDocItems(a: Auth, items: { kind: DocItem["kind"]; t
   revalidatePath("/c/[token]", "layout");
 }
 
+// 찍은 뒤 확인 카드에서 '맞아요'를 누르면: 사람이 고친 칸과 서류 종류를 저장하고 확인한 시각을 남긴다
+export async function confirmDocument(a: Auth, id: string, docType: string, fields: unknown) {
+  const actor = await resolve(a);
+  if (!DOC_TYPES.includes(docType as DocType)) throw new Error("서류 종류를 다시 골라 주세요");
+  const f = cleanFields(docType as DocType, fields);
+  const masked: DocFields = { values: Object.fromEntries(Object.entries(f.values).map(([k, v]) => [k, maskIds(v)])), meds: f.meds };
+  const { error } = await db.from("documents").update({ doc_type: docType, fields: masked, confirmed_at: new Date().toISOString() }).eq("id", id).eq("case_id", actor.caseId);
+  if (error) throw new Error("저장하지 못했어요. 다시 시도해 주세요");
+  await logEvent(actor.caseId, "doc_confirmed", { doc_type: docType, meds: f.meds.length });
+  revalidatePath("/c/[token]", "layout");
+  return masked;
+}
+
 export async function deleteDocument(a: Auth, id: string) {
   const actor = await resolve(a);
   await db.from("documents").delete().eq("id", id).eq("case_id", actor.caseId);
@@ -136,14 +150,19 @@ export async function askChat(a: Auth, question: string): Promise<ChatAnswer> {
 
   // 자료: 보관한 서류 + 우리 집 씩씩케어 정보 + 쉬운 용어 사전. 답의 근거 문장은 이 글자 안에서만 인정한다.
   const [{ data: docs }, data] = await Promise.all([
-    db.from("documents").select("doc_type,transcript,summary,created_at").eq("case_id", actor.caseId).order("created_at", { ascending: false }).limit(5),
+    db.from("documents").select("doc_type,transcript,fields,confirmed_at,created_at").eq("case_id", actor.caseId).order("created_at", { ascending: false }).limit(5),
     loadCase(actor.caseId),
   ]);
   const sources: Source[] = [
     // 서류마다 넣은 날을 붙이고(최근 것부터), 정리본이 있으면 원문 앞에 둔다. 정리본 값도 원문 글자 그대로라 근거로 인용할 수 있다
-    ...(docs ?? []).map((d) => ({
-      label: `서류(${DOC_TYPE_LABEL[d.doc_type as DocType] ?? "기타"}, ${krDate(seoulDay(d.created_at as string))} 넣음)`,
-      text: [((d.summary ?? []) as SummaryLine[]).map((l) => `${l.label}: ${l.value}`).join("\n"), d.transcript as string].filter(Boolean).join("\n"),
+    // 같은 날 여러 장을 넣어도 구분되게 시각까지 붙이고, 종류마다 가장 최근 한 장에 표시를 단다(목록이 최신순이라 처음 나온 것)
+    ...(docs ?? []).map((d, i, all) => ({
+      label: `서류(${DOC_TYPE_LABEL[d.doc_type as DocType] ?? "기타"}, ${krDate(seoulDay(d.created_at as string))} ${new Date(d.created_at as string).toLocaleTimeString("ko-KR", { timeZone: "Asia/Seoul", hour: "numeric", minute: "2-digit" })} 넣음${all.findIndex((x) => x.doc_type === d.doc_type) === i ? `, 가장 최근 ${DOC_TYPE_LABEL[d.doc_type as DocType] ?? "서류"}` : ""})`,
+      // 사람이 확인한 칸이 있으면 그것을 먼저(씩씩이는 이걸 원문보다 우선한다), 그다음 원문
+      text: [
+        d.fields ? `${d.confirmed_at ? "[사용자가 확인한 내용]" : "[서류에서 읽은 내용]"}\n${fieldLines(d.doc_type as DocType, d.fields as DocFields).join("\n")}` : "",
+        `[원문]\n${d.transcript as string}`,
+      ].filter(Boolean).join("\n"),
     })),
     { label: "씩씩케어 정보", text: caseBrief(data) },
     { label: "쉬운 용어 사전", text: glossaryText() },
