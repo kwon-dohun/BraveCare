@@ -191,3 +191,6 @@ alter table saved_benefits enable row level security;
 alter table public.daily_checks add column if not exists notes text;
 alter table public.documents drop constraint if exists documents_doc_type_check;
 alter table public.documents add constraint documents_doc_type_check check (doc_type in ('receipt','medication','guide','certificate','message','other'));
+
+-- 서류함 정리본 (2026-11-17): 원문에서 그대로 옮긴 핵심 줄만 [{label, value}]. 원문(transcript)은 그대로 둔다.
+alter table public.documents add column if not exists summary jsonb;

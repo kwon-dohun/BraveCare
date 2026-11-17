@@ -4,7 +4,7 @@ import { db, resolve, logEvent, soloOwner, type Auth } from "@/lib/db";
 import { act } from "@/lib/push";
 import { todaySeoul } from "@/lib/load";
 import { askJson, hasModel } from "@/lib/openai";
-import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, validateTranscript, type DocItem, type DocType } from "@/lib/extract";
+import { EXTRACT_PROMPT, parseModelJson, verifyItems, toDocItems, itemsFromText, maskIds, validateTranscript, verifySummary, type SummaryLine, type DocItem, type DocType } from "@/lib/extract";
 import { buildChatPrompt, parseChatJson, verifyAnswer, type ChatAnswer, type Source } from "@/lib/chat";
 import { DOC_TYPE_LABEL } from "@/lib/extract";
 import { loadCase } from "@/lib/load";
@@ -27,6 +27,7 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{
   docType: DocType;
   empty: boolean;
   transcript: string;
+  summary: SummaryLine[];
   docId: string | null;
 }> {
   const actor = await resolve(a);
@@ -44,10 +45,13 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{
   if (!validateTranscript(parsed.transcript, items.length)) {
     throw new Error("병원 서류(진단서, 퇴원 안내문, 약봉투, 영수증 등)로 읽히지 않았어요. 글자가 잘 보이게 밝은 곳에서 다시 찍어 주세요");
   }
+  const transcript = maskIds(parsed.transcript).slice(0, 6000);
+  const summary = verifySummary(transcript, parsed.summary).map((l) => ({ label: maskIds(l.label), value: maskIds(l.value) }));
   const { data: inserted, error: saveErr } = await db.from("documents").insert({
     case_id: actor.caseId,
     doc_type: parsed.docType,
-    transcript: maskIds(parsed.transcript).slice(0, 6000),
+    transcript,
+    summary: summary.length ? summary : null,
   }).select("id").maybeSingle();
   if (saveErr) throw new Error("읽은 글자를 보관하지 못했어요. 잠시 뒤 다시 시도해 주세요");
 
@@ -56,7 +60,8 @@ export async function extractFromImage(a: Auth, jpegBase64: string): Promise<{
     items,
     docType: parsed.docType,
     empty: items.length === 0,
-    transcript: maskIds(parsed.transcript).slice(0, 6000),
+    transcript,
+    summary,
     docId: inserted?.id ?? null,
   };
 }

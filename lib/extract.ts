@@ -34,10 +34,41 @@ export const EXTRACT_PROMPT = `너는 병원에서 받은 서류(진단서·소�
    - kind: "schedule"(외래·검사 등 방문 일정) | "medication"(복약) | "caution"(주의사항) | "contact"(문의처·전화번호)
    - text: transcript에 있는 문장을 한 글자도 바꾸지 않고 그대로 복사한 것. 숫자(복용량, 날짜, 전화번호)도 원문 그대로.
 3) docType: "certificate"(진단서·소견서·입퇴원확인서) | "guide"(퇴원 안내문·외래예약증) | "medication"(약봉투·처방전·복약안내) | "receipt"(진료비 영수증·세부내역서) | "other"
-JSON만 출력해: {"docType": "...", "transcript": "...", "items": [{"kind": "...", "text": "..."}]}
-병원 서류가 아니거나 글자를 읽을 수 없으면 {"docType": "other", "transcript": "", "items": []}.`;
+4) summary: 나중에 서류함에서 이 서류를 다시 볼 때 한눈에 알 수 있게 핵심만 골라 최대 12줄. 각 줄은 {"label", "value"}.
+   - 약봉투·처방전: 약마다 한 줄씩. label은 약 이름(한글 이름, 원문 그대로), value는 그 약을 먹는 법(원문 그대로). 그다음 조제일·약국·조제일수·합계·본인부담.
+   - 영수증·세부내역서: 진료 기간, 합계, 본인부담, 비급여, 병원.
+   - 진단서·확인서: 병명, 질병분류기호, 발병일, 진단일, 입퇴원 날짜.
+   - 퇴원 안내문: 외래·검사 일정, 꼭 지킬 주의사항, 문의처.
+   - value는 transcript에 있는 글자를 한 글자도 바꾸지 않고 복사해. label은 transcript에 있는 말이나 짧은 항목 이름(약국, 조제일, 합계, 본인부담, 병명, 질병코드, 진단일 등)만 써.
+   - 원문에 없는 내용, 해석, 계산, 요약 문장은 넣지 마.
+JSON만 출력해: {"docType": "...", "transcript": "...", "items": [{"kind": "...", "text": "..."}], "summary": [{"label": "...", "value": "..."}]}
+병원 서류가 아니거나 글자를 읽을 수 없으면 {"docType": "other", "transcript": "", "items": [], "summary": []}.`;
 
-export function parseModelJson(raw: string): { docType: DocType; transcript: string; items: RawItem[] } {
+export interface SummaryLine { label: string; value: string }
+// 정리본의 이름표로 쓸 수 있는 짧은 말. 원문에 없더라도 이 말들은 허용한다(값은 반드시 원문에 있어야 한다).
+const LABELS = ["약국", "병원", "주의사항", "외래 예약", "예약", "검사 일정", "입원기간", "진료비", "조제일", "조제일수", "처방일", "합계", "본인부담", "비급여", "급여", "진료 기간", "입원 기간", "병명", "질병코드", "질병분류기호", "발병일", "진단일", "입원일", "퇴원일", "외래", "검사", "주의", "문의"];
+
+// 정리본은 원문에 그대로 있는 값만 남긴다(지어낸 약 이름·금액이 서랍에 들어가지 않게)
+export function verifySummary(transcript: string, lines: unknown): SummaryLine[] {
+  if (!Array.isArray(lines)) return [];
+  const t = norm(transcript);
+  const seen = new Set<string>();
+  const out: SummaryLine[] = [];
+  for (const l of lines) {
+    const label = typeof l?.label === "string" ? norm(l.label).slice(0, 30) : "";
+    const value = typeof l?.value === "string" ? norm(l.value).slice(0, 120) : "";
+    if (!label || !value || !t.includes(value)) continue;
+    if (!t.includes(label) && !LABELS.includes(label)) continue;
+    const key = `${label}::${value}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ label, value });
+    if (out.length >= 12) break;
+  }
+  return out;
+}
+
+export function parseModelJson(raw: string): { docType: DocType; transcript: string; items: RawItem[]; summary: unknown } {
   const body = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
   try {
     const j = JSON.parse(body);
@@ -46,9 +77,10 @@ export function parseModelJson(raw: string): { docType: DocType; transcript: str
       docType: DOC_TYPES.includes(j.docType) ? j.docType : "other",
       transcript: typeof j.transcript === "string" ? j.transcript : "",
       items: items.filter((i: RawItem) => i && typeof i.text === "string" && ["schedule", "medication", "caution", "contact"].includes(i.kind)),
+      summary: j.summary,
     };
   } catch {
-    return { docType: "other", transcript: "", items: [] };
+    return { docType: "other", transcript: "", items: [], summary: [] };
   }
 }
 

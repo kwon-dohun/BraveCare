@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { extractFromImage, extractFromPaste, confirmDocItems } from "@/app/scan-actions";
 import type { Auth } from "@/lib/db";
 import Link from "next/link";
-import { DOC_TYPE_LABEL, type DocItem, type DocType } from "@/lib/extract";
+import { DOC_TYPE_LABEL, type DocItem, type DocType, type SummaryLine } from "@/lib/extract";
 import { toApp, useInApp } from "@/lib/app";
 import Mascot from "@/components/Mascot";
 import Icon from "@/components/Icon";
@@ -13,7 +13,7 @@ import Kept from "./Kept";
 const KIND: Record<DocItem["kind"], string> = { schedule: "일정", medication: "복약", caution: "주의사항", contact: "문의처" };
 const MAX = 3; // 한 번에 읽는 사진 수
 
-export interface SavedDoc { id: string; label: string; text: string; date: string }
+export interface SavedDoc { id: string; label: string; text: string; date: string; summary?: SummaryLine[] | null }
 
 interface Row extends DocItem { quote: string; include: boolean }
 
@@ -86,7 +86,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
         const r = await extractFromImage(auth, b64);
         types.push(r.docType);
         all.push(...toRows(r.items));
-        if (r.docId) setDocs((prev) => [{ id: r.docId!, label: DOC_TYPE_LABEL[r.docType] ?? "기타 서류", text: r.transcript, date: "방금" }, ...prev]);
+        if (r.docId) setDocs((prev) => [{ id: r.docId!, label: DOC_TYPE_LABEL[r.docType] ?? "기타 서류", text: r.transcript, date: "방금", summary: r.summary }, ...prev]);
       } catch (e) {
         setErr(e instanceof Error ? e.message : "읽지 못했어요. 다시 촬영해주세요");
       }
