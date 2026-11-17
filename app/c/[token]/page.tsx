@@ -219,7 +219,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         today={today}
         dischargeDate={input.dischargeDate}
         eventsData={[...events.entries()]}
-        calendarBase={`${base}/tasks`}
+        base={base}
       />
 
       {/* 받을 수 있는 지원: 이름과 마감만 짧게 */}

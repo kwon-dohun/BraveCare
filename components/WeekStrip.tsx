@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { EVENT_STYLE, type CalEvent, type EventKind } from "@/lib/calendar";
 import { krDate } from "@/lib/format";
+import Icon from "./Icon";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const weekday = (d: string) => WEEKDAYS[new Date(`${d}T00:00:00Z`).getUTCDay()];
@@ -12,13 +13,13 @@ export default function WeekStrip({
   today,
   dischargeDate,
   eventsData,
-  calendarBase,
+  base,
 }: {
   week: string[];
   today: string;
   dischargeDate: string | null;
   eventsData: [string, CalEvent[]][];
-  calendarBase: string;
+  base: string; // 케이스 주소(/c/<열쇠>). 할 일·지원 상세와 달력 주소를 여기서 만든다
 }) {
   const [selected, setSelected] = useState<string>(today);
   const eventsMap = new Map<string, CalEvent[]>(eventsData);
@@ -33,7 +34,7 @@ export default function WeekStrip({
           <h2 id="h-week" className="font-display text-headline">이번 주 일정</h2>
           <p className="text-xs text-muted">날짜를 누르면 홈에서 바로 일정을 확인할 수 있어요</p>
         </div>
-        <Link href={calendarBase.includes("?") ? `${calendarBase}&d=${selected}` : `${calendarBase}?d=${selected}`} className="flex items-center text-sm font-medium text-accent">
+        <Link href={`${base}/tasks?d=${selected}`} className="flex items-center text-sm font-medium text-accent">
           달력 전체 보기
         </Link>
       </div>
@@ -93,24 +94,23 @@ export default function WeekStrip({
             <p className="py-2 text-center text-xs text-muted">이 날은 예정된 일정이 없어요.</p>
           ) : (
             <ul className="space-y-1.5">
-              {selectedEvents.map((e, idx) => (
-                <li key={idx + e.title} className="flex items-center gap-2 rounded-lg bg-background/60 p-2 text-sm">
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-caption font-semibold ${EVENT_STYLE[e.kind].chip}`}>
-                    {EVENT_STYLE[e.kind].label}
-                  </span>
-                  <span className={`min-w-0 flex-1 truncate ${e.done ? "line-through opacity-50" : ""}`}>
-                    {e.title}
-                  </span>
-                  {e.taskId && (
-                    <Link
-                      href={`${calendarBase.replace(/\/calendar$/, "")}/tasks/${e.taskId}`}
-                      className="shrink-0 text-caption font-medium text-accent hover:underline"
-                    >
-                      상세
-                    </Link>
-                  )}
-                </li>
-              ))}
+              {selectedEvents.map((e, idx) => {
+                // 줄 전체를 눌러 상세로 간다(할 일 → 할 일 수정, 지원 마감 → 지원 상세). 퇴원일처럼 갈 곳이 없으면 그냥 줄
+                const href = e.taskId ? `${base}/tasks/${e.taskId}` : e.benefitId ? `${base}/benefits/${e.benefitId}` : null;
+                const inner = (
+                  <>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-caption font-semibold ${EVENT_STYLE[e.kind].chip}`}>{EVENT_STYLE[e.kind].label}</span>
+                    <span className={`min-w-0 flex-1 truncate ${e.done ? "line-through opacity-50" : ""}`}>{e.title}</span>
+                    {href && <Icon name="right" size={16} className="shrink-0 text-muted" />}
+                  </>
+                );
+                const row = "flex items-center gap-2 rounded-lg bg-background/60 p-2 text-sm";
+                return (
+                  <li key={idx + e.title}>
+                    {href ? <Link href={href} className={`${row} min-h-11`}>{inner}</Link> : <div className={row}>{inner}</div>}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
