@@ -7,7 +7,7 @@ import { dateLabel, krDate, krTime } from "@/lib/format";
 import TaskActions from "./TaskActions";
 import { taskHelp } from "@/lib/task-help";
 import CalSyncLink from "@/components/CalSyncLink";
-import TaskForm from "./TaskForm";
+import EditTask from "./EditTask";
 import Link from "next/link";
 import { DocsChecklist } from "@/components/StatusPicker";
 import { applyWays, benefitIdOfTask, callScript } from "@/lib/benefit-task";
@@ -41,12 +41,15 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
     ["상태", t.done ? `끝냈어요${t.done_by ? ` (${t.done_by})` : ""}` : late ? "날짜가 지났어요" : "할 일"],
   ];
 
-  // 먼저 무엇을 언제 누가 하는지 보여주고, 고치기는 접어 둔다
+  // 먼저 무엇을 언제 누가 하는지 보여주고, 고치기는 제목 옆 수정 버튼(아래에서 올라오는 창)으로 둔다
   return (
     <>
       <BackLink href={`${base}/tasks`}>할 일</BackLink>
       <div className="mt-3"><span className={`inline-block rounded-full px-2.5 py-0.5 text-caption font-semibold ${EVENT_STYLE[KIND[t.kind]].chip}`}>{KIND_LABEL[t.kind]}</span></div>
-      <h1 className={`mt-2 text-title font-display ${t.done ? "text-muted line-through" : ""}`}>{t.title}</h1>
+      <div className="mt-2 flex items-start justify-between gap-3">
+        <h1 className={`text-title font-display ${t.done ? "text-muted line-through" : ""}`}>{t.title}</h1>
+        <EditTask auth={auth} back={`${base}/tasks`} members={data.members} solo={data.alone} task={{ id: t.id, title: t.title, due_date: t.due_date, rel_day: t.rel_day, assignee_id: t.assignee_id, memo: t.memo, due_time: t.due_time, repeat: t.repeat }} sourceLabel={SOURCE[t.source] ?? t.source} />
+      </div>
       <dl className="mt-4 divide-y divide-line rounded-xl bg-card px-4 shadow-card">
         {rows.map(([k, v]) => (
           <div key={k} className="flex gap-4 py-3">
@@ -85,13 +88,6 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
           <Icon name="right" size={18} className="text-muted" />
         </Link>
       )}
-      <details className="mt-6 rounded-xl bg-card shadow-card">
-        <summary className="cursor-pointer px-4 py-3 font-semibold">내용 고치기</summary>
-        <div className="px-4 pb-4">
-          <p className="text-xs text-muted">출처: {SOURCE[t.source] ?? t.source}</p>
-          <TaskForm auth={auth} back={`${base}/tasks`} members={data.members} solo={data.alone} task={{ id: t.id, title: t.title, due_date: t.due_date, rel_day: t.rel_day, assignee_id: t.assignee_id, memo: t.memo, due_time: t.due_time, repeat: t.repeat }} />
-        </div>
-      </details>
     </>
   );
 }

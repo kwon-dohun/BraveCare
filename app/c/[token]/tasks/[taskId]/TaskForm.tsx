@@ -13,7 +13,7 @@ interface Props {
   task: { id: string; title: string; due_date: string | null; rel_day: number | null; assignee_id: string | null; memo: string | null; due_time: string | null; repeat: "daily" | "weekly" | null };
 }
 
-export default function TaskForm({ auth, back, members, task, solo = false }: Props & { solo?: boolean }) {
+export default function TaskForm({ auth, back, members, task, solo = false, onSaved }: Props & { solo?: boolean; onSaved?: () => void }) {
   const router = useRouter();
   const [title, setTitle] = useState(task.title);
   const [date, setDate] = useState(task.due_date ?? "");
@@ -39,7 +39,7 @@ export default function TaskForm({ auth, back, members, task, solo = false }: Pr
   const field = "mt-1 w-full rounded-xl border border-line bg-card px-4 py-3";
 
   return (
-    <form className="mt-5 space-y-4" onSubmit={(e) => { e.preventDefault(); run(() => updateTask(auth, task.id, { title, dueDate: date || null, dueTime: time || null, repeat: repeat || null, assigneeId: assignee || null, memo }), done); }}>
+    <form className="mt-5 space-y-4" onSubmit={(e) => { e.preventDefault(); run(() => updateTask(auth, task.id, { title, dueDate: date || null, dueTime: time || null, repeat: repeat || null, assigneeId: assignee || null, memo }), onSaved ?? done); }}>
       <div>
         <label htmlFor="tt" className="font-semibold">할 일</label>
         <textarea id="tt" rows={2} maxLength={100} value={title} onChange={(e) => setTitle(e.target.value)} className={field} />
