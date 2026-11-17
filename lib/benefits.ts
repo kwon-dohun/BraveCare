@@ -19,6 +19,7 @@ export interface CaseInput {
   living: Living;
   income: Income;
   dailyCompleted?: boolean; // 회복 완료 / 데일리 체크 종료 여부
+  dailyCompletedAt?: string; // 회복 완료로 처리한 날(YYYY-MM-DD). 홈의 축하 카드를 며칠만 보여 주는 데 쓴다
   customDocs?: string[]; // 원무과 발급용 추가 서류 목록
   isSelfCare?: boolean; // 1인 가구 셀프 케어 모드 여부
 }

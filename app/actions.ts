@@ -79,6 +79,7 @@ export async function updateCase(a: Auth, raw: CaseInput) {
   if (!input) throw new Error("입력값을 확인해주세요. 퇴원일은 오늘 기준 1년 전부터 1년 뒤까지 넣을 수 있어요");
   const { data: prev } = await db.from("cases").select("input,is_self_care").eq("id", actor.caseId).single();
   input.dailyCompleted = !!(prev?.input as CaseInput | undefined)?.dailyCompleted; // 설정 저장이 '회복 완료'를 풀지 않게
+  input.dailyCompletedAt = (prev?.input as CaseInput | undefined)?.dailyCompletedAt;
   input.isSelfCare = input.living === "alone" && !!input.isSelfCare; // 혼자 지내는 경우에만 '환자 본인이 씀'이 있다
   await db.from("cases").update({ input, is_self_care: input.isSelfCare }).eq("id", actor.caseId);
   if (!!prev?.is_self_care !== input.isSelfCare) await switchMode(actor, input.isSelfCare);
@@ -111,7 +112,7 @@ export async function setDailyCompleted(a: Auth, completed: boolean) {
   const actor = await resolve(a);
   const { data: c } = await db.from("cases").select("input").eq("id", actor.caseId).single();
   const prevInput = (c?.input as CaseInput) || {};
-  const input = { ...prevInput, dailyCompleted: !!completed };
+  const input = { ...prevInput, dailyCompleted: !!completed, dailyCompletedAt: completed ? todaySeoul() : undefined };
   await db.from("cases").update({ input }).eq("id", actor.caseId);
   await act(
     actor.caseId,

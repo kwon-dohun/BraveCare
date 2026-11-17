@@ -13,7 +13,6 @@ import WeekStrip from "@/components/WeekStrip";
 import Icon from "@/components/Icon";
 import RefreshIfSeen from "@/components/RefreshIfSeen";
 import Mascot, { Logo } from "@/components/Mascot";
-import DailyCompleteToggle from "@/components/DailyCompleteToggle";
 
 export default async function Home(props: PageProps<"/c/[token]">) {
   const { token } = await props.params;
@@ -163,20 +162,16 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         </section>
       )}
       {stage === "recovery" && input.dailyCompleted ? (
-        <section className="mt-4 rounded-2xl bg-accent-soft p-4 text-accent" aria-labelledby="h-stage-done">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <span className="rounded-full bg-card px-2.5 py-0.5 text-caption font-semibold">회복 완료</span>
-              <h2 id="h-stage-done" className="mt-1 font-semibold text-ink">건강한 일상으로 복귀하셨어요!</h2>
-              <p className="mt-0.5 text-xs">데일리 체크가 완료되었어요. 그동안 정성껏 기록해주셔서 고마워요.</p>
-            </div>
+        // 회복 완료 축하는 처리한 뒤 사흘만 보여 주고 사라진다(다시 시작은 설정에서). 날짜 기록이 없는 예전 처리분은 바로 숨긴다
+        input.dailyCompletedAt && dayDiff(today, input.dailyCompletedAt) <= 2 ? (
+          <section className="mt-4 flex items-center gap-3 rounded-2xl bg-accent-soft p-4 text-accent" aria-labelledby="h-stage-done">
             <Mascot size={48} mood="cheer" />
-          </div>
-          <div className="mt-3 flex items-center justify-between border-t border-accent/15 pt-2.5 text-xs">
-            <Link href={`${base}/report`} className="font-semibold underline">누적 외래 리포트 보기</Link>
-            <DailyCompleteToggle auth={auth} completed={true} variant="card" />
-          </div>
-        </section>
+            <div className="min-w-0">
+              <h2 id="h-stage-done" className="font-semibold text-ink">건강한 일상으로 복귀하셨어요!</h2>
+              <p className="mt-0.5 text-xs">데일리 체크를 마쳤어요. 그동안 정성껏 기록해 주셔서 고마워요.</p>
+            </div>
+          </section>
+        ) : null
       ) : stage === "recovery" ? (
         <section className={card} aria-labelledby="h-stage">
           <div className="flex items-center justify-between">

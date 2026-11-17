@@ -81,8 +81,8 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
                 <h2 id="r1" className="font-semibold text-ink">약 복용 이행률</h2>
                 <span className="text-xs text-muted">{s.days}일 기록</span>
               </div>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-display font-display text-accent">{s.adherence}%</span>
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
+                <span className="shrink-0 whitespace-nowrap text-display font-display text-accent">{s.adherence}%</span>
                 <span className="text-sm text-muted">(퇴원 후 {s.span}일 중 기록한 날 기준)</span>
               </div>
               {s.sideEffects.length > 0 ? (
