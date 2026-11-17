@@ -8,6 +8,7 @@ export interface TaskSeed {
   kind: TaskKind;
   rel: number; // 퇴원일 기준 D±n
   source: "template" | "benefit";
+  benefitId?: string; // 지원 제도와 이어진 할 일
   preOnly?: boolean; // 퇴원 뒤에는 의미가 없는 일. 이미 지난 시점에 시작한 사람에게는 만들지 않는다
 }
 
@@ -78,7 +79,7 @@ export function seedTasks(input: CaseInput, results: Result[]): TaskSeed[] {
   // 가능성 높은 지원만 할 일로 만든다(확인 필요까지 넣으면 타임라인이 지원 목록으로 덮인다). 마감 있는 건 퇴원 전날, 없는 건 퇴원 다음 날.
   const benefit: TaskSeed[] = results
     .filter((r) => r.verdict === "high")
-    .map((r) => ({ rel: r.benefit.deadline ? -1 : 1, kind: "admin" as const, source: "benefit" as const, title: `${r.benefit.name} 신청 알아보기` }));
+    .map((r) => ({ rel: r.benefit.deadline ? -1 : 1, kind: "admin" as const, source: "benefit" as const, benefitId: r.benefit.id, title: `${r.benefit.name} 신청 알아보기` }));
   const all = [...COMMON, ...byReason, ...benefit].sort((a, b) => a.rel - b.rel);
   if (input.isSelfCare) {
     return all.map((t) => ({ ...t, title: SELF_CARE_TITLE_MAP[t.title] ?? t.title }));

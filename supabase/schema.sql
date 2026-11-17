@@ -196,3 +196,6 @@ alter table public.documents add constraint documents_doc_type_check check (doc_
 alter table public.documents add column if not exists summary jsonb;
 -- 서류 양식 (2026-11-17): 종류별 칸 {values, meds}. AI가 원문에서 채우고 사람이 확인·수정한다. confirmed_at이 있으면 사람이 확인한 값.
 alter table public.documents add column if not exists fields jsonb, add column if not exists confirmed_at timestamptz;
+
+-- 지원 제도와 이어진 할 일 (lib/benefits의 id). null이면 지원과 무관
+alter table public.tasks add column if not exists benefit_id text;

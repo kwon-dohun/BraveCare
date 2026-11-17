@@ -1,11 +1,15 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import Icon from "@/components/Icon";
+import AddBenefitTask from "@/components/AddBenefitTask";
+import { benefitIdOfTask } from "@/lib/benefit-task";
 import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
 import { loadSaved } from "@/lib/load";
 import SaveButton from "@/components/SaveButton";
 import { Badge } from "@/components/BenefitCard";
 import { StatusPicker, DocsChecklist } from "@/components/StatusPicker";
-import { dday, krDateYear, dotDate } from "@/lib/format";
+import { dday, krDate, krDateYear, dotDate } from "@/lib/format";
 
 export default async function BenefitDetail(props: PageProps<"/c/[token]/benefits/[id]">) {
   const { token, id } = await props.params;
@@ -15,6 +19,7 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
   const b = r.benefit;
   const d = r.deadline;
   const active = r.verdict !== "no" && d.state !== "closed";
+  const linked = data.tasks.find((t) => benefitIdOfTask(t) === b.id); // 이 지원과 이어진 할 일
 
   return (
     <>
@@ -75,6 +80,26 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
           </ul>
         )}
       </section>
+
+      {active && (
+        <section className="mt-6 rounded-xl bg-card shadow-card p-4">
+          {linked ? (
+            <Link href={`${base}/tasks/${linked.id}`} className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm text-muted">할 일에 있어요</p>
+                <p className="font-semibold">{linked.done ? "신청을 마쳤어요" : linked.due_date ? `${krDate(linked.due_date)}까지 신청하기` : "신청하기"}</p>
+              </div>
+              <Icon name="right" size={18} className="shrink-0 text-muted" />
+            </Link>
+          ) : (
+            <>
+              <p className="font-semibold">신청할 계획이세요?</p>
+              <p className="mt-0.5 text-sm text-muted">할 일에 넣으면 날짜가 일정에 생기고, 신청 방법과 필요 서류를 할 일에서 바로 챙길 수 있어요.</p>
+              <div className="mt-3"><AddBenefitTask auth={auth} benefitId={b.id} /></div>
+            </>
+          )}
+        </section>
+      )}
 
       {active && <div className="mt-6"><StatusPicker auth={auth} benefitId={b.id} current={data.status[b.id] ?? "none"} /></div>}
 

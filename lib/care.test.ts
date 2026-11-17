@@ -264,3 +264,20 @@ test("챗봇: '적혀 있지 않아요' 답에는 엉뚱한 근거 인용을 붙
   assert.equal(a.sourceQuote, "");
   assert.equal(a.unverified, false);
 });
+
+test("지원↔할 일: 제목·benefit_id로 지원을 찾고, 신청 방법 방식을 짐작하고, 기본 날짜는 이틀 뒤(마감이 가까우면 마감일)", async () => {
+  const { benefitIdOfTask, benefitTaskTitle, applyWays, defaultBenefitDue } = await import("./benefit-task.ts");
+  const { BENEFITS } = await import("./benefits.ts");
+  const b = BENEFITS[0];
+  assert.equal(benefitIdOfTask({ benefit_id: "x1", source: "manual", title: "아무 제목" }), "x1");
+  assert.equal(benefitIdOfTask({ source: "benefit", title: `${b.name} 신청 알아보기` }), b.id); // 예전에 자동으로 만든 할 일
+  assert.equal(benefitIdOfTask({ source: "benefit", title: benefitTaskTitle(b.name) }), b.id);
+  assert.equal(benefitIdOfTask({ source: "template", title: `${b.name} 신청 알아보기` }), null);
+  assert.deepEqual(applyWays("주민센터·보건소 전화 문의 후 방문(신분증 지참), 또는 공유누리(eshare.go.kr) 온라인 예약"), ["온라인", "방문", "전화"]);
+  assert.deepEqual(applyWays("복지로에서 신청"), ["온라인"]);
+  assert.deepEqual(applyWays("", "1577-1000"), ["전화"]);
+  assert.equal(defaultBenefitDue("2026-11-18"), "2026-11-20");
+  assert.equal(defaultBenefitDue("2026-11-18", "2026-11-19"), "2026-11-19");
+  assert.equal(defaultBenefitDue("2026-11-18", "2026-12-30"), "2026-11-20");
+  assert.equal(defaultBenefitDue("2026-11-18", "2026-11-10"), "2026-11-18"); // 마감이 지났어도 날짜는 오늘로
+});

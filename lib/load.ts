@@ -9,6 +9,7 @@ export interface Task {
   due_date: string | null; rel_day: number | null; assignee_id: string | null;
   done: boolean; done_at: string | null; done_by: string | null; source: string; source_quote: string | null; memo: string | null;
   due_time: string | null; repeat: "daily" | "weekly" | null;
+  benefit_id: string | null; // 이어진 지원 제도(없으면 null)
 }
 
 export const todaySeoul = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
@@ -17,7 +18,7 @@ export const loadCase = cache(async (caseId: string) => {
   const [c, m, t, s, a] = await Promise.all([
     db.from("cases").select("input,share_token,share_expires_at,admin_token,hospital,silson24,docs_checked,patient_token,is_self_care").eq("id", caseId).single(),
     db.from("members").select("id,name,role").eq("case_id", caseId).order("created_at"),
-    db.from("tasks").select("id,title,kind,due_date,rel_day,assignee_id,done,done_at,done_by,source,source_quote,memo,due_time,repeat").eq("case_id", caseId),
+    db.from("tasks").select("id,title,kind,due_date,rel_day,assignee_id,done,done_at,done_by,source,source_quote,memo,due_time,repeat,benefit_id").eq("case_id", caseId),
     db.from("benefit_status").select("benefit_id,status,docs_checked").eq("case_id", caseId),
     db.from("activity").select("id,text,created_at").eq("case_id", caseId).order("created_at", { ascending: false }).limit(20),
   ]);

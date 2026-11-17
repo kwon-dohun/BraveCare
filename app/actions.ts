@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db, resolve, logEvent, soloOwner, type Auth, type Actor } from "@/lib/db";
-import { todaySeoul } from "@/lib/load";
+import { todaySeoul, loadCase } from "@/lib/load";
+import { benefitIdOfTask, benefitTaskTitle, defaultBenefitDue } from "@/lib/benefit-task";
 import { evaluate, validateInput, dayDiff, BENEFITS, STATUS_LABEL, type CaseInput } from "@/lib/benefits";
 import { seedTasks, addDays, nextDue, SELF_CARE_TITLE_MAP } from "@/lib/timeline";
 import { act } from "@/lib/push";
@@ -63,7 +64,7 @@ export async function createCase(raw: CaseInput, adminName: string, consented: b
   await db.from("benefit_status").insert(results.filter((r) => r.verdict !== "no").map((r) => ({ case_id: c.id, benefit_id: r.benefit.id })));
   await db.from("tasks").insert(
     seedTasks(input, results).filter((t) => !(t.preOnly && input.dischargeDate && addDays(input.dischargeDate, t.rel) < today)).map((t) => ({
-      case_id: c.id, title: t.title, kind: t.kind, rel_day: t.rel, source: t.source, assignee_id: input.isSelfCare ? me?.id ?? null : null,
+      case_id: c.id, title: t.title, kind: t.kind, rel_day: t.rel, source: t.source, benefit_id: t.benefitId ?? null, assignee_id: input.isSelfCare ? me?.id ?? null : null,
       due_date: input.dischargeDate ? addDays(input.dischargeDate, t.rel) : null,
     })),
   );
@@ -204,12 +205,23 @@ export async function removeMember(a: Auth, memberId: string) {
 
 export async function toggleTask(a: Auth, taskId: string, done: boolean) {
   const actor = await resolve(a);
-  const { data: t } = await db.from("tasks").select("title,kind,due_date,due_time,repeat,assignee_id,memo").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
+  const { data: t } = await db.from("tasks").select("title,kind,due_date,due_time,repeat,assignee_id,memo,source,benefit_id").eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
   if (!t) throw new Error("할 일을 찾을 수 없어요");
   // 반복 할 일은 끝낼 때 다음 회차를 새로 만들고, 끝낸 쪽의 반복은 지운다(체크를 풀었다 다시 눌러도 두 번 생기지 않게)
   const next = done && t.repeat ? { ...t, case_id: actor.caseId, source: "manual", due_date: nextDue(t.due_date, t.repeat, todaySeoul()) } : null;
   await db.from("tasks").update({ done: !!done, done_at: done ? new Date().toISOString() : null, done_by: done ? actor.name : null, ...(next ? { repeat: null } : {}) }).eq("id", taskId);
   if (next) await db.from("tasks").insert(next);
+  // 지원 신청 할 일을 끝내면 그 지원이 '신청함'으로, 끝냄을 풀면 '신청함'이었던 것은 '미신청'으로 돌아간다
+  const bid = benefitIdOfTask(t);
+  if (bid) {
+    const { data: st } = await db.from("benefit_status").select("status").eq("case_id", actor.caseId).eq("benefit_id", bid).maybeSingle();
+    const cur = st?.status ?? "none";
+    const to = done && cur === "none" ? "applied" : !done && cur === "applied" ? "none" : null;
+    if (to) {
+      await db.from("benefit_status").upsert({ case_id: actor.caseId, benefit_id: bid, status: to, updated_by: actor.name, updated_at: new Date().toISOString() });
+      await logEvent(actor.caseId, "benefit_status_changed", { benefit: bid, from: cur, to, via: "task" });
+    }
+  }
   if (done) {
     await act(actor.caseId, `${actor.name}님이 완료했어요: ${t.title}`, actor.memberId);
     await logEvent(actor.caseId, "task_completed", { role: actor.role });
@@ -332,6 +344,38 @@ export async function setBenefitStatus(a: Auth, benefitId: string, status: strin
   await db.from("benefit_status").upsert({ case_id: actor.caseId, benefit_id: benefitId, status, updated_by: actor.name, updated_at: new Date().toISOString() });
   await act(actor.caseId, `${actor.name}님이 "${b.name}" 상태를 변경했어요: ${STATUS_LABEL[status]}`, actor.memberId);
   await logEvent(actor.caseId, "benefit_status_changed", { benefit: benefitId, from: prev?.status ?? "none", to: status });
+  // 이어진 할 일: 신청함·승인·거절이면 끝냄, 미신청이면 다시 열기, 포기면 지운다
+  const { data: bt } = await db.from("tasks").select("id,done,title,source,benefit_id").eq("case_id", actor.caseId).in("source", ["benefit", "manual"]);
+  const mine = (bt ?? []).filter((x) => benefitIdOfTask(x) === benefitId);
+  if (mine.length) {
+    const ids = mine.map((x) => x.id);
+    if (status === "dropped") await db.from("tasks").delete().in("id", ids);
+    else {
+      const finished = status !== "none";
+      await db.from("tasks").update({ done: finished, done_at: finished ? new Date().toISOString() : null, done_by: finished ? actor.name : null }).in("id", ids.filter((id) => mine.find((x) => x.id === id)?.done !== finished));
+    }
+  }
+  refresh();
+}
+
+// 지원 상세의 "할 일에 넣기": 신청 방법·필요 서류가 붙은 할 일을 달력에 만든다. 이미 있으면 새로 만들지 않는다.
+export async function createBenefitTask(a: Auth, benefitId: string) {
+  const actor = await resolve(a);
+  const b = BENEFITS.find((x) => x.id === benefitId);
+  if (!b) throw new Error("잘못된 요청이에요");
+  const { data: cur } = await db.from("tasks").select("id,source,title,benefit_id").eq("case_id", actor.caseId).in("source", ["benefit", "manual"]);
+  const have = (cur ?? []).find((x) => benefitIdOfTask(x) === benefitId);
+  if (have) {
+    if (!have.benefit_id) await db.from("tasks").update({ benefit_id: benefitId }).eq("id", have.id); // 예전에 자동으로 만든 할 일에 연결을 붙인다
+    refresh();
+    return;
+  }
+  const data = await loadCase(actor.caseId);
+  const r = data.results.find((x) => x.benefit.id === benefitId);
+  const due = defaultBenefitDue(todaySeoul(), r?.deadline.state === "open" ? r.deadline.endDate : undefined);
+  await db.from("tasks").insert({ case_id: actor.caseId, title: benefitTaskTitle(b.name), kind: "admin", source: "benefit", benefit_id: benefitId, due_date: due, assignee_id: await soloOwner(actor.caseId, actor.memberId) });
+  await act(actor.caseId, `${actor.name}님이 "${b.name}" 신청을 할 일에 넣었어요`, actor.memberId);
+  await logEvent(actor.caseId, "benefit_task_created", { benefit: benefitId });
   refresh();
 }
 
