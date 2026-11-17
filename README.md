@@ -238,6 +238,10 @@ npm test
 - 초대 링크는 만료되며 재발급할 수 있다.
 - 마지막 활동 후 365일이 지난 케이스를 자동 파기하도록 구성했다.
 
+## 저작권
+
+이 저장소의 코드는 오픈소스가 아니며, 모든 권리는 저작자에게 있다. 서비스가 사용하는 오픈소스와 공공데이터의 라이선스는 [오픈소스 라이선스](https://bravecare-kr.vercel.app/licenses) 화면에 고지한다.
+
 ## 배포
 
 - 웹: [bravecare-kr.vercel.app](https://bravecare-kr.vercel.app)
