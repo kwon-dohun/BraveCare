@@ -59,13 +59,7 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
           <Row label="혜택·비용">{b.cost}</Row>
           <Row label="신청 기간">{period}{d.state === "open" ? ` · ${krDateYear(d.endDate!)}까지` : ""}</Row>
           {ways.length > 0 && (
-            <Row label="신청 방식">
-              <span className="flex flex-wrap gap-1.5">
-                {ways.map((w) => (
-                  <span key={w} className="rounded-full bg-accent-soft px-2.5 py-0.5 text-sm font-semibold text-accent">{w === "전화" ? "전화 문의" : `${w} 신청`}</span>
-                ))}
-              </span>
-            </Row>
+            <Row label="신청 방식">{ways.map((w) => (w === "전화" ? "전화 문의" : `${w} 신청`)).join(" · ")}</Row>
           )}
         </dl>
         {active && (
