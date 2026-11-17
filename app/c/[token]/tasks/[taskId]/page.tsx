@@ -10,7 +10,9 @@ import CalSyncLink from "@/components/CalSyncLink";
 import TaskForm from "./TaskForm";
 import Link from "next/link";
 import { DocsChecklist } from "@/components/StatusPicker";
-import { applyWays, benefitIdOfTask } from "@/lib/benefit-task";
+import { applyWays, benefitIdOfTask, callScript } from "@/lib/benefit-task";
+import ApplyGuide from "@/components/ApplyGuide";
+import Icon from "@/components/Icon";
 
 export const metadata = { title: "할 일 · 씩씩케어" };
 
@@ -28,9 +30,12 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
   const help = taskHelp(t.title, data.isSelfCare);
   const bid = benefitIdOfTask(t);
   const br = bid ? data.results.find((r) => r.benefit.id === bid) : undefined; // 이 할 일이 신청하려는 지원
+  const ways = br ? applyWays(br.apply.place, br.apply.phone).map((w) => (w === "전화" ? "전화 문의" : `${w} 신청`)).join(" · ") : "";
+  const script = br ? callScript({ name: br.benefit.name, reason: data.input.reason, dischargeDate: data.input.dischargeDate ?? null, today: data.today, selfCare: data.isSelfCare, check: br.verdict === "check" }) : null;
   const rows: [string, string][] = [
     ["날짜", when || "정하지 않음"],
     ...(data.alone ? [] : [["담당", t.assignee_id === actor.memberId ? "나" : owner ?? "아직 없어요"] as [string, string]]),
+    ...(ways ? [["방식", ways] as [string, string]] : []),
     ...(t.memo ? [["메모", t.memo] as [string, string]] : []),
     ["상태", t.done ? `끝냈어요${t.done_by ? ` (${t.done_by})` : ""}` : late ? "날짜가 지났어요" : "할 일"],
   ];
@@ -52,32 +57,31 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
       {help && <p className="mt-3 rounded-xl bg-accent-soft p-3 text-sm leading-relaxed text-accent"><span className="font-semibold">왜 해요? </span>{help}</p>}
       {t.source_quote && <p className="mt-3 rounded-xl bg-background p-3 text-sm">안내문 원문: “{t.source_quote}”</p>}
       {br && (
-        <section className="mt-5 rounded-xl bg-card shadow-card p-4">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <h2 className="font-semibold">신청 정보</h2>
-            {applyWays(br.apply.place, br.apply.phone).map((w) => (
-              <span key={w} className="rounded-full bg-accent-soft px-2 py-0.5 text-caption font-semibold text-accent">{w === "전화" ? "전화 문의" : `${w} 신청`}</span>
-            ))}
-          </div>
-          <p className="mt-2 text-callout">{br.apply.place}</p>
-          {br.apply.phone && !t.done && (
-            <a href={`tel:${br.apply.phone.replaceAll("-", "")}`} className="mt-3 flex items-center justify-center rounded-xl bg-primary px-5 py-3 font-semibold text-ink">{br.apply.phone} 전화 걸기</a>
-          )}
-          <a href={br.benefit.source.url} target="_blank" rel="noreferrer" className="mt-2 flex items-center justify-center rounded-xl bg-background px-5 py-3 text-sm font-semibold">공식 안내 보기</a>
-          <p className="mt-1 text-center text-xs text-muted">출처 · {br.benefit.source.label}</p>
-          <h3 className="mt-4 text-sm font-semibold">챙길 서류</h3>
-          <DocsChecklist auth={auth} benefitId={br.benefit.id} docs={br.benefit.docs} checked={data.docsChecked[br.benefit.id] ?? []} packetChecked={data.packet} docsHref={`${base}/docs`} />
-          <Link href={`${base}/benefits/${br.benefit.id}`} className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-accent">지원 상세 보기 <span aria-hidden>›</span></Link>
-          <p className="mt-2 text-xs text-muted">이 할 일을 끝내면 지원 상태가 ‘신청함’으로 바뀌어요</p>
-        </section>
+        <>
+          <section className="mt-6">
+            <h2 className="font-semibold">챙길 서류</h2>
+            <DocsChecklist auth={auth} benefitId={br.benefit.id} docs={br.benefit.docs} checked={data.docsChecked[br.benefit.id] ?? []} packetChecked={data.packet} docsHref={`${base}/docs`} />
+          </section>
+          <section className="mt-6">
+            <h2 className="font-semibold">신청 방법</h2>
+            <ApplyGuide place={br.apply.place} phone={t.done ? undefined : br.apply.phone} script={t.done ? null : script} sourceUrl={br.benefit.source.url} sourceLabel={br.benefit.source.label} />
+          </section>
+        </>
       )}
       <TaskActions auth={auth} id={t.id} done={t.done} canClaim={!data.alone && !t.assignee_id} mine={!data.alone && t.assignee_id === actor.memberId} />
+      {br && !t.done && <p className="mt-2 text-center text-xs text-muted">끝내면 지원 상태가 ‘신청함’으로 바뀌어요</p>}
       {(data.alone || t.assignee_id === actor.memberId) && !t.done && t.due_date && (
         <CalSyncLink
           href={`/ics/${auth.k}/${auth.v}/${t.id}`}
           label="내 캘린더에 넣기 (알림 포함)"
           className="mt-2 flex items-center justify-center rounded-full bg-card px-5 py-3 text-sm font-semibold text-accent shadow-card"
         />
+      )}
+      {br && (
+        <Link href={`${base}/benefits/${br.benefit.id}`} className="mt-4 flex items-center justify-between rounded-xl bg-card px-4 py-3 shadow-card">
+          <span className="text-sm font-semibold">지원 상세 보기</span>
+          <Icon name="right" size={18} className="text-muted" />
+        </Link>
       )}
       <details className="mt-6 rounded-xl bg-card shadow-card">
         <summary className="cursor-pointer px-4 py-3 font-semibold">내용 고치기</summary>

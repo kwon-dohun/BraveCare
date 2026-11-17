@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Icon from "@/components/Icon";
 import AddBenefitTask from "@/components/AddBenefitTask";
-import CopyText from "@/components/CopyText";
+import ApplyGuide from "@/components/ApplyGuide";
 import { applyWays, benefitIdOfTask, callScript } from "@/lib/benefit-task";
 import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
@@ -84,21 +84,7 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
 
       <section className="mt-6">
         <h2 className="font-semibold">신청 방법</h2>
-        <p className="mt-1">{r.apply.place}</p>
-        {r.apply.phone && active && (
-          <a href={`tel:${r.apply.phone.replaceAll("-", "")}`} className="mt-3 flex items-center justify-center rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink">
-            {r.apply.phone} 전화 걸기
-          </a>
-        )}
-        {script && (
-          <div className="mt-3 rounded-xl bg-accent-soft p-3">
-            <p className="text-xs font-semibold text-accent">전화나 방문할 때 이렇게 말해 보세요</p>
-            <p className="mt-1 text-sm leading-relaxed text-ink">“{script}”</p>
-            <CopyText text={script} />
-          </div>
-        )}
-        <a href={b.source.url} target="_blank" rel="noreferrer" className="mt-3 flex items-center justify-center rounded-xl bg-card px-5 py-3 shadow-card">공식 안내 보기</a>
-        <p className="mt-1 text-center text-xs text-muted">출처 · {b.source.label}</p>
+        <ApplyGuide place={r.apply.place} phone={active ? r.apply.phone : undefined} script={script} sourceUrl={b.source.url} sourceLabel={b.source.label} />
       </section>
 
       <section className="mt-6">
