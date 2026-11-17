@@ -14,12 +14,15 @@ export default function Kept({ auth, docs, onDelete, onConfirmed }: {
 }) {
   const { run, pending, err } = useAct();
   const [editing, setEditing] = useState<string | null>(null);
+  const [opened, setOpened] = useState<string[]>([]); // 줄이 많은 서류에서 '더 보기'를 누른 서류
+  const SHOW = 3;
   return (
     <>
       {err && <p role="alert" className="text-warn">{err}</p>}
       <ul className={`mt-2 space-y-2 ${pending ? "opacity-60" : ""}`}>
         {docs.map((d) => {
           const lines = d.fields ? fieldLines(d.type, d.fields) : [];
+          const all = opened.includes(d.id);
           const unchecked = !!d.fields && !d.confirmed && hasForm(d.type);
           const preview = d.fields?.meds.length
             ? `${d.fields.meds.slice(0, 2).map((m) => m.name).join(", ")}${d.fields.meds.length > 2 ? ` 외 ${d.fields.meds.length - 2}개` : ""}`
@@ -44,7 +47,7 @@ export default function Kept({ auth, docs, onDelete, onConfirmed }: {
                     <>
                       {lines.length > 0 && (
                         <dl className="divide-y divide-line rounded-lg bg-background px-3">
-                          {lines.map((l, i) => {
+                          {(all ? lines : lines.slice(0, SHOW)).map((l, i) => {
                             const [k, ...v] = l.split(": ");
                             return (
                               <div key={i} className="py-2.5">
@@ -54,6 +57,11 @@ export default function Kept({ auth, docs, onDelete, onConfirmed }: {
                             );
                           })}
                         </dl>
+                      )}
+                      {lines.length > SHOW && (
+                        <button type="button" onClick={() => setOpened((o) => (all ? o.filter((x) => x !== d.id) : [...o, d.id]))} className="mt-2 w-full min-h-0 py-2 text-sm font-semibold text-accent">
+                          {all ? "접기" : `${lines.length - SHOW}개 더 보기`}
+                        </button>
                       )}
                       {d.fields && hasForm(d.type) && (
                         <button type="button" onClick={() => setEditing(d.id)} className={`mt-2 w-full rounded-full px-4 py-2.5 text-sm font-semibold ${unchecked ? "bg-primary text-ink" : "bg-accent-soft text-accent"}`}>
