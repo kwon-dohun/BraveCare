@@ -58,9 +58,12 @@ export async function drugInfo(name: string): Promise<{ name: string; text: stri
   if (b.length < 2) return null;
   const [it] = await call("getDrugPrdtPrmsnDtlInq08", b, 1);
   if (!it) return null;
+  // 일반의약품이면 식약처가 환자용 쉬운 말로 쓴 'e약은요'(효능·사용법·주의·함께 먹으면 안 되는 것·부작용·보관)를 앞에 둔다
+  const easy = it.ETC_OTC_CODE?.includes("일반") ? await easyInfo(b) : null;
   return {
     name: it.ITEM_NAME,
     text: [
+      easy,
       `제품명: ${it.ITEM_NAME} (${it.ETC_OTC_CODE ?? ""}, ${it.ENTP_NAME ?? ""})`,
       it.CHART && `모양: ${it.CHART}`,
       `효능효과: ${text(it.EE_DOC_DATA)}`,
@@ -69,4 +72,31 @@ export async function drugInfo(name: string): Promise<{ name: string; text: stri
       it.STORAGE_METHOD && `보관: ${it.STORAGE_METHOD}`,
     ].filter(Boolean).join("\n"),
   };
+}
+
+// 식약처 '의약품개요정보(e약은요)': 일반의약품만, 환자용 쉬운 말. 제품 이름이 같은 것을 고른다
+interface Easy { itemName: string; efcyQesitm?: string; useMethodQesitm?: string; atpnWarnQesitm?: string; atpnQesitm?: string; intrcQesitm?: string; seQesitm?: string; depositMethodQesitm?: string }
+async function easyInfo(b: string): Promise<string | null> {
+  const raw = process.env.DATA_GO_KR_KEY;
+  if (!raw) return null;
+  try {
+    const r = await fetch(`https://apis.data.go.kr/1471000/DrbEasyDrugInfoService/getDrbEasyDrugList?serviceKey=${encodeURIComponent(decodeURIComponent(raw))}&type=json&numOfRows=10&itemName=${encodeURIComponent(b)}`, { next: { revalidate: 86400 }, signal: AbortSignal.timeout(8000) });
+    const items: Easy[] = r.ok ? ((await r.json())?.body?.items ?? []) : [];
+    const e = items.find((x) => baseName(x.itemName) === b);
+    if (!e) return null;
+    const t = (s?: string) => (s ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    return [
+      "[식약처 e약은요: 환자용 쉬운 설명]",
+      t(e.efcyQesitm) && `효능: ${t(e.efcyQesitm)}`,
+      t(e.useMethodQesitm) && `사용법(일반 기준, 처방이 있으면 처방을 따름): ${t(e.useMethodQesitm)}`,
+      t(e.atpnWarnQesitm) && `경고: ${t(e.atpnWarnQesitm)}`,
+      t(e.atpnQesitm) && `주의사항: ${t(e.atpnQesitm)}`,
+      t(e.intrcQesitm) && `함께 먹으면 안 되는 것: ${t(e.intrcQesitm)}`,
+      t(e.seQesitm) && `부작용: ${t(e.seQesitm)}`,
+      t(e.depositMethodQesitm) && `보관: ${t(e.depositMethodQesitm)}`,
+      "[식약처 허가정보]",
+    ].filter(Boolean).join("\n");
+  } catch {
+    return null;
+  }
 }
