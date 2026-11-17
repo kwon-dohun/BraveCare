@@ -16,6 +16,24 @@ export const TEMP_LABEL = { normal: "정상", mild: "미열 (37.5도 이상)", h
 export const BOWEL_LABEL = { good: "원활", constipation: "변비·답답함", diarrhea: "설사" } as const;
 export const PAIN_WORD = (n: number) => (n === 0 ? "없음" : n <= 3 ? "약함" : n <= 6 ? "보통" : n <= 8 ? "심함" : "매우 심함");
 
+// 진료실에서 그대로 읽어도 되는 말하기 요약. 기록한 값만 문장으로 옮기고 해석은 하지 않는다.
+export function speakScript(s: ReturnType<typeof summarize>): string {
+  if (!s.days) return "";
+  const md = (d: string) => `${Number(d.slice(5, 7))}월 ${Number(d.slice(8))}일`;
+  const out = [`퇴원 후 ${s.span}일 중 ${s.days}일을 기록했어요.`];
+  if (s.adherence !== null) out.push(`기록한 날 기준으로 약은 ${s.adherence}% 챙겨 먹었어요.`);
+  if (s.avgPain !== null) out.push(`통증은 평균 ${s.avgPain}점, 가장 심할 때 ${s.maxPain}점이었어요.`);
+  else out.push(`통증은 ${s.pain.map((p) => `${md(p.date)} ${p.pain}점`).join(", ")}이었어요.`);
+  const issues = [
+    s.fevers.length && `${s.fevers.map((f) => `${md(f.date)} ${f.temp === "high" ? "고열" : "미열"}`).join(", ")}`,
+    s.wounds.length && `${s.wounds.map(md).join(", ")} 수술 부위 진물·벌어짐`,
+    s.sideEffects.length && `${s.sideEffects.map(md).join(", ")} 약 먹고 불편함`,
+    s.bowel.length && `${s.bowel.map((b) => `${md(b.date)} ${BOWEL_LABEL[b.bowel]}`).join(", ")}`,
+  ].filter(Boolean);
+  out.push(issues.length ? `다만 ${issues.join(" / ")}이 있었어요.` : "열, 상처, 약 부작용, 배변은 기록한 날 모두 이상 없었어요.");
+  return out.join(" ");
+}
+
 export function summarize(checks: Daily[], from: string, today: string) {
   const list = [...checks].sort((a, b) => a.check_date.localeCompare(b.check_date));
   const span = Math.max(list.length, Math.round((Date.parse(today) - Date.parse(from)) / 86_400_000) + 1);

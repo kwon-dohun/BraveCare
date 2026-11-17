@@ -37,7 +37,7 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
     ["날짜", when || "정하지 않음"],
     ...(data.alone ? [] : [["담당", t.assignee_id === actor.memberId ? "나" : owner ?? "아직 없어요"] as [string, string]]),
     ...(ways ? [["방식", ways] as [string, string]] : []),
-    ...(t.memo ? [["메모", t.memo] as [string, string]] : []),
+    ...(t.memo ? [[t.kind === "question" ? "들은 답" : "메모", t.memo] as [string, string]] : []),
     ["상태", t.done ? `끝냈어요${t.done_by ? ` (${t.done_by})` : ""}` : late ? "날짜가 지났어요" : "할 일"],
   ];
 

@@ -5,7 +5,7 @@ import { krDate } from "./format.ts";
 import { KIND_LABEL, type TaskKind } from "./timeline.ts";
 import { REASON_LABEL } from "./options.ts";
 
-interface T { title: string; kind: TaskKind; due_date: string | null; assignee_id: string | null; done: boolean }
+interface T { title: string; kind: TaskKind; due_date: string | null; assignee_id: string | null; done: boolean; memo?: string | null; done_at?: string | null }
 interface M { id: string; name: string; role: string }
 
 export function caseBrief(d: {
@@ -39,6 +39,13 @@ export function caseBrief(d: {
 
   const qs = open.filter((t) => t.kind === "question").slice(0, 6);
   if (qs.length) { out.push("의료진에게 물어볼 질문:"); qs.forEach((t) => out.push(`- ${t.title}`)); }
+
+  // 외래·회진 때 사용자가 직접 적은 의사 답변 메모(최근 것부터). 한 줄에 하나라 그대로 인용할 수 있다
+  const heard = d.tasks.filter((t) => t.kind === "question" && t.memo).sort((a, b) => (b.done_at ?? "").localeCompare(a.done_at ?? "")).slice(0, 10);
+  if (heard.length) {
+    out.push("외래·회진 때 들은 답(사용자가 직접 적은 메모):");
+    heard.forEach((t) => out.push(`- ${t.done_at ? `${krDate(new Date(t.done_at).toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" }))} ` : ""}질문 "${t.title}" → 들은 답: ${t.memo!.replace(/\s+/g, " ")}`));
+  }
 
   const high = d.results.filter((r) => r.verdict === "high");
   out.push(`받을 가능성이 높은 지원 ${high.length}개:`);

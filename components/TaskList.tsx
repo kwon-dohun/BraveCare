@@ -12,6 +12,7 @@ import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
 import Mascot from "@/components/Mascot";
 import { helpRequestText } from "@/lib/task-help";
+import QuestionAnswer from "./QuestionAnswer";
 
 export interface T { id: string; title: string; kind: keyof typeof KIND_LABEL; due_date: string | null; rel_day: number | null; assignee_id: string | null; done: boolean; done_by: string | null; source: string; source_quote: string | null; memo: string | null; due_time?: string | null; repeat?: "daily" | "weekly" | null }
 interface M { id: string; name: string }
@@ -137,7 +138,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                     )}
                   </div>
                   {badge && <span className="mt-1.5 inline-block rounded-full bg-warn-soft px-2 py-0.5 text-caption font-semibold text-warn">{badge}</span>}
-                  {t.memo && <p className="mt-1 truncate text-xs text-muted">메모: {t.memo}</p>}
+                  {t.kind === "question" ? <QuestionAnswer auth={auth} task={t} /> : t.memo && <p className="mt-1 truncate text-xs text-muted">메모: {t.memo}</p>}
                 </div>
                 {showOwner && !t.done && (
                   <div className="flex w-16 shrink-0 justify-center">

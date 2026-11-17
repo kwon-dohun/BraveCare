@@ -312,3 +312,30 @@ test("신청 날짜 후보: 마감 안의 날짜만, 마감일도 후보로, 미
   assert.equal(recommendedDue(near), "2026-11-19");
   assert.equal(dueOptions("2026-11-18").length, 4); // 마감이 없으면 네 가지
 });
+
+test("챗봇 자료: 외래 때 적은 답 메모가 한 줄로 들어가고, 답 없는 질문은 안 들어간다", async () => {
+  const { caseBrief } = await import("./brief.ts");
+  const { evaluate } = await import("./benefits.ts");
+  const input = { dischargeDate: "2026-11-18", birthYear: 1958, sido: "서울", sigungu: "마포구", reason: "ortho", living: "away", income: "mid" } as const;
+  const text = caseBrief({
+    input, today: "2026-11-20", members: [{ id: "a", name: "지은", role: "admin" }],
+    tasks: [
+      { title: "샤워 언제부터 되나요?", kind: "question", due_date: null, assignee_id: null, done: true, memo: "다음 주부터 가능,\n사우나는 한 달 뒤", done_at: "2026-11-19T05:00:00Z" },
+      { title: "실밥은 언제 빼나요?", kind: "question", due_date: null, assignee_id: null, done: false },
+    ],
+    results: evaluate(input, "2026-11-20"), status: {}, hospital: "", silson24: null, packet: [],
+  });
+  assert.match(text, /^- 11월 19일 질문 "샤워 언제부터 되나요\?" → 들은 답: 다음 주부터 가능, 사우나는 한 달 뒤$/m);
+  assert.doesNotMatch(text, /들은 답: .*실밥/);
+});
+
+test("외래 리포트: 말하기 요약은 기록한 값만 문장으로 옮긴다", async () => {
+  const { summarize, speakScript } = await import("./report.ts");
+  const day = (d: string, o = {}) => ({ check_date: d, med_morning: true, med_lunch: true, med_dinner: true, side_effect: false, temp: "normal" as const, wound_issue: false, pain: 3, bowel: "good" as const, ...o });
+  const none = speakScript(summarize([day("2026-11-19")], "2026-11-16", "2026-11-19"));
+  assert.match(none, /퇴원 후 4일 중 1일을 기록했어요/);
+  assert.match(none, /모두 이상 없었어요/);
+  const some = speakScript(summarize([day("2026-11-18", { temp: "mild", pain: 6 }), day("2026-11-19", { side_effect: true })], "2026-11-18", "2026-11-19"));
+  assert.match(some, /다만 11월 18일 미열 \/ 11월 19일 약 먹고 불편함이 있었어요/);
+  assert.equal(speakScript(summarize([], "2026-11-18", "2026-11-19")), "");
+});

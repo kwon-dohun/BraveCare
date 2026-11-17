@@ -2,11 +2,12 @@ import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
-import { summarize, TEMP_LABEL, BOWEL_LABEL } from "@/lib/report";
+import { summarize, speakScript, TEMP_LABEL, BOWEL_LABEL } from "@/lib/report";
 import { REASON_LABEL } from "@/lib/options";
 import { krDateYear } from "@/lib/format";
 import AddQuestion from "./AddQuestion";
-import Bright from "@/components/Bright";
+import DoctorView from "./DoctorView";
+import QuestionAnswer from "@/components/QuestionAnswer";
 
 export const metadata = { title: "외래 리포트 · 씩씩케어" };
 
@@ -28,16 +29,60 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
   const x = (i: number) => L + (s.pain.length === 1 ? (W - L - 8) / 2 : (i * (W - L - 8)) / (s.pain.length - 1));
   const y = (p: number) => 8 + ((10 - p) * (H - B - 8)) / 10;
   const box = "rounded-2xl border border-line bg-card p-4 shadow-card";
+  const heard = data.tasks.filter((t) => t.kind === "question" && t.done && t.memo).sort((a, b) => (b.done_at ?? "").localeCompare(a.done_at ?? "")).slice(0, 5);
+
+  // 진료실에서 가장 먼저 쓰는 칸: 물어볼 것마다 들은 답을 바로 적는다
+  const askBlock = (
+    <section className={box} aria-labelledby="r-ask">
+      <h2 id="r-ask" className="font-semibold text-ink">의료진에게 여쭤볼 것</h2>
+      {questions.length ? (
+        <ol className="mt-2 list-decimal space-y-3 pl-5 text-sm">
+          {questions.map((q) => <li key={q.id} className="text-ink">{q.title}<QuestionAnswer auth={auth} task={q} /></li>)}
+        </ol>
+      ) : (
+        <p className="mt-2 text-sm text-muted">아직 적어둔 질문이 없어요. 아래에서 바로 추가할 수 있어요.</p>
+      )}
+      <div className="mt-3"><AddQuestion auth={auth} /></div>
+      <Link href={`${base}/questions`} className="mt-2.5 inline-block text-xs text-accent underline">
+        전체 질문 목록 보기{allAsked > questions.length ? ` (${allAsked}개)` : ""}
+      </Link>
+    </section>
+  );
 
   return (
     <div className="text-ink">
-      <Bright />
       <div className="mx-auto max-w-3xl">
         <div className="flex items-center justify-between print:hidden">
           <BackLink href={`${base}/daily`}>데일리 체크</BackLink>
-          <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">
-            진료실 공유용 리포트
-          </span>
+          {s.days > 0 && (
+            <DoctorView>
+              <div className="mx-auto max-w-4xl pt-10">
+                <h1 className="text-3xl font-bold">퇴원 후 경과 요약</h1>
+                <p className="mt-1 text-lg">
+                  {REASON_LABEL.find(([k]) => k === data.input.reason)?.[1]} · {data.input.birthYear}년생
+                  {data.input.dischargeDate ? ` · ${krDateYear(data.input.dischargeDate)} 퇴원` : ""}
+                </p>
+                <div className="mt-6 grid gap-8 landscape:grid-cols-2">
+                  <div className="space-y-4 text-2xl leading-snug">
+                    <p>약 복용 <b className="text-4xl">{s.adherence}%</b> <span className="text-lg">(기록 {s.days}일 / 퇴원 후 {s.span}일)</span></p>
+                    <p>통증 {s.avgPain !== null ? <>평균 <b>{s.avgPain}</b>점 · 최대 <b>{s.maxPain}</b>점</> : s.pain.map((p) => `${md(p.date)} ${p.pain}점`).join(", ")}</p>
+                    <p>발열 <b>{s.fevers.length ? s.fevers.map((f) => `${md(f.date)} ${TEMP_LABEL[f.temp]}`).join(", ") : "없음"}</b></p>
+                    <p>수술 부위 진물·벌어짐 <b>{s.wounds.length ? s.wounds.map(md).join(", ") : "없음"}</b></p>
+                    <p>약 먹고 불편 <b>{s.sideEffects.length ? s.sideEffects.map(md).join(", ") : "없음"}</b></p>
+                    <p>배변 <b>{s.bowel.length ? s.bowel.map((b) => `${md(b.date)} ${BOWEL_LABEL[b.bowel]}`).join(", ") : "이상 없음"}</b></p>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">환자가 여쭙고 싶은 것</h2>
+                    {questions.length ? (
+                      <ol className="mt-3 list-decimal space-y-3 pl-7 text-2xl leading-snug">
+                        {questions.map((q) => <li key={q.id}>{q.title}</li>)}
+                      </ol>
+                    ) : <p className="mt-3 text-xl">적어 온 질문이 없어요.</p>}
+                  </div>
+                </div>
+              </div>
+            </DoctorView>
+          )}
         </div>
 
         <div className="mt-3">
@@ -65,23 +110,32 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
               </Link>
             </div>
 
-            <section className={box} aria-labelledby="r-ask">
-              <h2 id="r-ask" className="font-semibold text-ink">여쭤보고 싶은 것</h2>
-              {questions.length ? (
-                <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm">
-                  {questions.map((q) => <li key={q.id}>{q.title}</li>)}
-                </ol>
-              ) : (
-                <p className="mt-2 text-sm text-muted">아직 적어둔 질문이 없어요. 아래에서 바로 추가할 수 있어요.</p>
-              )}
-              <div className="mt-3"><AddQuestion auth={auth} /></div>
-              <Link href={`${base}/questions`} className="mt-2.5 inline-block text-xs text-accent underline">
-                전체 질문 목록 보기{allAsked > questions.length ? ` (${allAsked}개)` : ""}
-              </Link>
-            </section>
+            {askBlock}
           </div>
         ) : (
           <div className="mt-5 space-y-4">
+            {/* 진료실에서 읽어도 되는 말하기 요약 */}
+            <section className="rounded-2xl bg-accent-soft p-4" aria-labelledby="r0">
+              <h2 id="r0" className="font-semibold text-accent">진료실에서 이렇게 말해 보세요</h2>
+              <p className="mt-1.5 text-callout leading-relaxed text-ink">{speakScript(s)}</p>
+            </section>
+
+            {askBlock}
+
+            {heard.length > 0 && (
+              <section className={box} aria-labelledby="r-heard">
+                <h2 id="r-heard" className="font-semibold text-ink">들은 답 기록</h2>
+                <ul className="mt-2 divide-y divide-line/60 text-sm">
+                  {heard.map((q) => (
+                    <li key={q.id} className="py-2">
+                      <p className="text-muted">{q.title}</p>
+                      <QuestionAnswer auth={auth} task={q} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
             {/* 1. 약 복용 */}
             <section className={box} aria-labelledby="r1">
               <div className="flex items-center justify-between">
@@ -150,25 +204,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
               </ul>
             </section>
 
-            {/* 4. 의사에게 여쭤볼 것 */}
-            <section className={box} aria-labelledby="r4">
-              <div className="flex items-center justify-between">
-                <h2 id="r4" className="font-semibold text-ink">의료진에게 여쭤볼 것</h2>
-                <Link href={`${base}/questions`} className="text-xs text-accent underline">
-                  전체 ({allAsked})
-                </Link>
-              </div>
-              {questions.length ? (
-                <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm">
-                  {questions.map((q) => <li key={q.id} className="text-ink">{q.title}</li>)}
-                </ol>
-              ) : (
-                <p className="mt-2 text-xs text-muted">아직 적어둔 질문이 없어요. 아래에서 바로 추가할 수 있어요.</p>
-              )}
-              <div className="mt-3"><AddQuestion auth={auth} /></div>
-            </section>
-
-            {/* 5. 보호자 특이사항 메모 (전체 폭) */}
+            {/* 보호자 특이사항 메모 */}
             {checks.some((c) => c.notes) && (
               <section className={box} aria-labelledby="r5">
                 <h2 id="r5" className="font-semibold text-ink">날짜별 메모</h2>
