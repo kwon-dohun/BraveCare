@@ -3,13 +3,9 @@ import Icon from "@/components/Icon";
 import Mascot from "@/components/Mascot";
 import TaskList from "@/components/TaskList";
 import { adminPage } from "@/lib/page-auth";
-import { PHASES, phaseOf } from "@/lib/timeline";
 import AddQuestion from "../report/AddQuestion";
 
 export const metadata = { title: "물어볼 것 · 씩씩케어" };
-
-// 단계 이름만으로는 감이 안 와서, 언제 하는 일인지 한 줄을 붙인다
-const PHASE_HINT = ["입원 중에 끝내 두면 퇴원 날이 편해요", "계산·서류·약을 한 번에 챙기는 날", "집에 와서 2주, 첫 외래까지", "정기 외래와 남은 지원 정리"];
 
 // 의료진에게 물어볼 것. 회진·외래 때 보여주는 화면이라 담당 개념 없이 체크와 답 메모만 둔다.
 // 데일리 체크와 외래 리포트가 같은 질문을 쓴다(리포트에는 이 중 일부가 큰 글씨로 나온다).
@@ -20,12 +16,6 @@ export default async function Questions(props: PageProps<"/c/[token]/questions">
   const open = pool.filter((t) => !t.done);
   const done = pool.filter((t) => t.done);
 
-  const LATE = "지난 질문";
-  const groups = new Map<string, typeof open>([[LATE, []], ...PHASES.map((p) => [p, []] as [string, typeof open]), ["날짜 미정", []]]);
-  for (const t of open) {
-    const ph = phaseOf(t.rel_day, t.due_date, data.input.dischargeDate);
-    groups.get(t.due_date && t.due_date < data.today ? LATE : ph === null ? "날짜 미정" : PHASES[ph])!.push(t);
-  }
   const common = { members: data.members, auth, meId: actor.memberId, today: data.today, detailBase: `${base}/tasks`, showOwner: false };
 
   return (
@@ -41,18 +31,7 @@ export default async function Questions(props: PageProps<"/c/[token]/questions">
       <AddQuestion auth={auth} />
 
       {open.length === 0 && <p className="mt-4 flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card"><Mascot size={40} mood="cheer" />질문을 모두 확인했어요. 수고했어요!</p>}
-      {[...groups].filter(([, list]) => list.length).map(([label, list]) => {
-        const pi = PHASES.indexOf(label as (typeof PHASES)[number]);
-        return (
-          <section key={label} className="mt-6" aria-label={label}>
-            <div className="mb-2">
-              <h2 className={`font-semibold ${label === LATE ? "text-warn" : ""}`}>{label}</h2>
-              <p className="text-xs text-muted">{label === LATE ? "날짜는 지났지만 지금 물어봐도 괜찮아요" : pi >= 0 ? PHASE_HINT[pi] : "날짜를 정하면 일정에 들어가요"}</p>
-            </div>
-            <TaskList tasks={list} {...common} />
-          </section>
-        );
-      })}
+      {open.length > 0 && <div className="mt-4"><TaskList tasks={open} {...common} /></div>}
 
       {done.length > 0 && (
         <details className="mt-6">

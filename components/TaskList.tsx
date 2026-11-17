@@ -59,10 +59,11 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
       )}
       <ul className="divide-y divide-line overflow-hidden rounded-xl bg-card shadow-card">
         {tasks.map((t) => {
-          const late = !t.done && !!t.due_date && t.due_date < today;
+          const isQ = t.kind === "question"; // 물어볼 것은 날짜·마감 없이 체크만 한다
+          const late = !isQ && !t.done && !!t.due_date && t.due_date < today;
           let dueText = "";
           let isUrgent = false;
-          if (showDate) {
+          if (showDate && !isQ) {
             if (t.due_date) {
               const diff = dayDiff(t.due_date, today);
               if (diff === 0) { dueText = "오늘 마감 (D-Day)"; isUrgent = true; }
@@ -126,7 +127,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                         {copiedId === t.id ? "복사 완료!" : "카톡 부탁"}
                       </button>
                     )}
-                    {!showOwner && !t.done && t.due_date && (
+                    {!showOwner && !isQ && !t.done && t.due_date && (
                       <a
                         href={`/ics/${auth.k}/${auth.v}/${t.id}`}
                         download={`${t.title}.ics`}

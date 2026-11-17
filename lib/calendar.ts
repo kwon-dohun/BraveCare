@@ -25,7 +25,8 @@ export function buildEvents(d: {
   const map = new Map<string, CalEvent[]>();
   const add = (date: string, e: CalEvent) => map.set(date, [...(map.get(date) ?? []), e]);
   if (d.input.dischargeDate) add(d.input.dischargeDate, { kind: "discharge", title: "퇴원하는 날" });
-  for (const t of d.tasks) if (t.due_date) add(t.due_date, { kind: KIND[t.kind], title: t.title, done: t.done, taskId: t.id, assignee: t.assignee_id });
+  // 의료진에게 물어볼 것은 날짜가 없는 목록이라 달력에 올리지 않는다
+  for (const t of d.tasks) if (t.due_date && t.kind !== "question") add(t.due_date, { kind: KIND[t.kind], title: t.title, done: t.done, taskId: t.id, assignee: t.assignee_id });
   for (const r of d.results) {
     if (r.verdict === "no" || r.deadline.state !== "open" || !r.deadline.endDate) continue;
     if ((d.status[r.benefit.id] ?? "none") !== "none") continue; // 이미 신청했으면 마감 알림은 필요 없다

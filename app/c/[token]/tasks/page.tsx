@@ -176,7 +176,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
               })}
             </div>
             <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1 border-t border-line pt-3 text-caption text-muted" aria-label="색 설명">
-              {(Object.keys(EVENT_STYLE) as EventKind[]).filter((k) => k !== "discharge" && k !== "visit").map((k) => (
+              {(Object.keys(EVENT_STYLE) as EventKind[]).filter((k) => k !== "discharge" && k !== "visit" && k !== "question").map((k) => (
                 <li key={k} className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: EVENT_STYLE[k].dot }} />{EVENT_STYLE[k].label}</li>
               ))}
             </ul>

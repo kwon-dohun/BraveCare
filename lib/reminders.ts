@@ -17,7 +17,7 @@ export function buildReminders(d: {
   const out: (Omit<Reminder, "at"> & { at: number })[] = [];
   const deadlines = openDeadlines(d.results);
   for (const t of d.tasks) {
-    if (t.done || !t.due_date || (t.assignee_id && t.assignee_id !== d.meId)) continue; // 다른 가족이 맡은 일은 알리지 않는다
+    if (t.done || t.kind === "question" || !t.due_date || (t.assignee_id && t.assignee_id !== d.meId)) continue; // 다른 가족이 맡은 일은 알리지 않는다
     if (t.source === "benefit") continue; // 지원 신청은 아래 마감 알림이 맡는다
     if (!t.assignee_id && priorityOf(t, deadlines) > 1) continue; // 급하지 않은 담당 없는 일은 화면에서만
     const body = t.assignee_id ? t.title : `${t.title} (담당자 없음)`;

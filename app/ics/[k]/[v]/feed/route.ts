@@ -15,6 +15,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/ics/[k]/[v]/fee
       .select("id,title,due_date,due_time,memo,kind,done")
       .eq("case_id", actor.caseId)
       .not("due_date", "is", null)
+      .neq("kind", "question")
       .order("due_date", { ascending: true }),
   ]);
 
