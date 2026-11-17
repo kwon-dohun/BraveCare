@@ -281,3 +281,23 @@ test("지원↔할 일: 제목·benefit_id로 지원을 찾고, 신청 방법 �
   assert.equal(defaultBenefitDue("2026-11-18", "2026-12-30"), "2026-11-20");
   assert.equal(defaultBenefitDue("2026-11-18", "2026-11-10"), "2026-11-18"); // 마감이 지났어도 날짜는 오늘로
 });
+
+test("전화 문장: 입원 이유·퇴원일을 채우고, 퇴원 전이면 '퇴원할 예정', 확인 필요면 대상 확인 부탁", async () => {
+  const { callScript } = await import("./benefit-task.ts");
+  const base = { name: "휠체어 무료 대여", reason: "ortho", dischargeDate: "2026-11-15", today: "2026-11-18", selfCare: false, check: false };
+  assert.match(callScript(base), /저희 가족이 정형외과 수술로 11월 15일에 퇴원했어요/);
+  assert.match(callScript({ ...base, today: "2026-11-10" }), /퇴원할 예정이에요/);
+  assert.match(callScript({ ...base, selfCare: true }), /제가 정형외과 수술로/);
+  assert.match(callScript({ ...base, check: true }), /대상이 되는지도 확인/);
+  assert.match(callScript({ ...base, dischargeDate: null }), /입원했다가 퇴원했어요/);
+});
+
+test("서류 안내: 알려진 서류만 어디서 받는지 붙이고, 모르는 것·따로 없음은 붙이지 않는다", async () => {
+  const { docHint } = await import("./doc-hints.ts");
+  assert.match(docHint("신분증 (나머지는 상담 때 안내)")!, /본인 신분증/);
+  assert.match(docHint("퇴원을 확인할 수 있는 서류")!, /원무과/);
+  assert.match(docHint("가족관계증명서")!, /정부24/);
+  assert.equal(docHint("따로 없음 (전화 상담 후 안내)"), null);
+  assert.equal(docHint("회사에 내는 신청서 (회사 양식)") !== null, true);
+  assert.equal(docHint("근로중단확인서"), null);
+});

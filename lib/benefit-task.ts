@@ -26,3 +26,15 @@ export function defaultBenefitDue(today: string, endDate?: string): string {
   const soon = addDays(today, 2);
   return endDate && endDate < soon ? (endDate < today ? today : endDate) : soon;
 }
+
+// 전화·방문할 때 그대로 읽을 수 있는 한 문단. 입원 이유와 퇴원일은 이 집의 정보로 채운다.
+const REASON_PHRASE: Record<string, string> = {
+  ortho: "정형외과 수술로", cancer: "암 치료로", brain: "뇌혈관 질환으로", heart: "심장 질환으로", surgery: "수술로", internal: "내과 질환으로", other: "입원 치료로",
+};
+export function callScript(o: { name: string; reason: string; dischargeDate: string | null; today: string; selfCare: boolean; check: boolean }): string {
+  const who = o.selfCare ? "제가" : "저희 가족이";
+  const when = o.dischargeDate
+    ? `${Number(o.dischargeDate.slice(5, 7))}월 ${Number(o.dischargeDate.slice(8, 10))}일에 ${o.dischargeDate <= o.today ? "퇴원했어요" : "퇴원할 예정이에요"}`
+    : "입원했다가 퇴원했어요";
+  return `안녕하세요, ${o.name} 신청하려고 연락드렸어요. ${who} ${REASON_PHRASE[o.reason] ?? "입원 치료로"} ${when}.${o.check ? " 저희가 대상이 되는지도 확인해 주세요." : ""} 신청 방법과 필요한 서류를 알려 주세요.`;
+}

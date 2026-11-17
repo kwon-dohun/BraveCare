@@ -63,7 +63,8 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
           {br.apply.phone && !t.done && (
             <a href={`tel:${br.apply.phone.replaceAll("-", "")}`} className="mt-3 flex items-center justify-center rounded-xl bg-primary px-5 py-3 font-semibold text-ink">{br.apply.phone} 전화 걸기</a>
           )}
-          <a href={br.benefit.source.url} target="_blank" rel="noreferrer" className="mt-2 flex items-center justify-center rounded-xl bg-background px-5 py-3 text-sm font-semibold">공식 안내 보기 ({br.benefit.source.label})</a>
+          <a href={br.benefit.source.url} target="_blank" rel="noreferrer" className="mt-2 flex items-center justify-center rounded-xl bg-background px-5 py-3 text-sm font-semibold">공식 안내 보기</a>
+          <p className="mt-1 text-center text-xs text-muted">출처 · {br.benefit.source.label}</p>
           <h3 className="mt-4 text-sm font-semibold">챙길 서류</h3>
           <DocsChecklist auth={auth} benefitId={br.benefit.id} docs={br.benefit.docs} checked={data.docsChecked[br.benefit.id] ?? []} packetChecked={data.packet} docsHref={`${base}/docs`} />
           <Link href={`${base}/benefits/${br.benefit.id}`} className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-accent">지원 상세 보기 <span aria-hidden>›</span></Link>

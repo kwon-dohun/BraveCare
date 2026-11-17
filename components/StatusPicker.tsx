@@ -4,6 +4,7 @@ import { setBenefitStatus, setDocsChecked } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import { STATUS_LABEL } from "@/lib/benefits";
 import Sheet from "./Sheet";
+import { docHint } from "@/lib/doc-hints";
 import { useAct } from "./useAct";
 
 const HINT: Record<string, string> = {
@@ -106,7 +107,10 @@ export function DocsChecklist({
               <label className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer">
                 <div className="flex items-center gap-3 min-w-0">
                   <input type="checkbox" checked={sel.includes(d)} onChange={() => toggle(d)} className="h-5 w-5 shrink-0 accent-primary" />
-                  <span className={`text-sm ${sel.includes(d) ? "text-muted line-through" : ""}`}>{d}</span>
+                  <span className="min-w-0">
+                    <span className={`text-sm ${sel.includes(d) ? "text-muted line-through" : ""}`}>{d}</span>
+                    {docHint(d) && <span className="mt-0.5 block text-xs leading-relaxed text-muted">{docHint(d)}</span>}
+                  </span>
                 </div>
                 {matched && (
                   <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${isPacketReady ? "bg-accent-soft text-accent" : "bg-[#fff4cc] text-[#7a5a00]"}`}>

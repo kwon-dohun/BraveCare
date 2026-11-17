@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Icon from "@/components/Icon";
 import AddBenefitTask from "@/components/AddBenefitTask";
-import { benefitIdOfTask } from "@/lib/benefit-task";
+import CopyText from "@/components/CopyText";
+import { applyWays, benefitIdOfTask, callScript } from "@/lib/benefit-task";
 import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
 import { loadSaved } from "@/lib/load";
@@ -10,6 +11,15 @@ import SaveButton from "@/components/SaveButton";
 import { Badge } from "@/components/BenefitCard";
 import { StatusPicker, DocsChecklist } from "@/components/StatusPicker";
 import { dday, krDate, krDateYear, dotDate } from "@/lib/format";
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="py-2.5 first:pt-0 last:pb-0">
+      <dt className="text-xs font-semibold text-muted">{label}</dt>
+      <dd className="mt-0.5 text-callout leading-relaxed">{children}</dd>
+    </div>
+  );
+}
 
 export default async function BenefitDetail(props: PageProps<"/c/[token]/benefits/[id]">) {
   const { token, id } = await props.params;
@@ -20,6 +30,11 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
   const d = r.deadline;
   const active = r.verdict !== "no" && d.state !== "closed";
   const linked = data.tasks.find((t) => benefitIdOfTask(t) === b.id); // 이 지원과 이어진 할 일
+  const period = b.deadline ? (b.deadline.toDaysAfter === 0 ? "퇴원 전까지" : `퇴원 후 ${b.deadline.toDaysAfter}일까지`) : "따로 정해진 기한이 없어요";
+  const ways = applyWays(r.apply.place, r.apply.phone);
+  const script = active
+    ? callScript({ name: b.name, reason: data.input.reason, dischargeDate: data.input.dischargeDate ?? null, today: data.today, selfCare: data.isSelfCare, check: r.verdict === "check" })
+    : null;
 
   return (
     <>
@@ -37,28 +52,59 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
       <p className="text-muted">{b.operator}</p>
       <p className="mt-3">{b.summary}</p>
 
-      <section className="mt-5 rounded-xl bg-card shadow-card p-4">
-        <h2 className="font-semibold">왜 이렇게 나왔나요?</h2>
-        <p className="mt-1">{r.reason}</p>
-      </section>
-
-      <section className="mt-6">
-        <h2 className="font-semibold">비용</h2>
-        <p className="mt-1">{b.cost}</p>
+      {/* 한눈에: 해당 여부·혜택·기간·방식을 먼저, 바로 할 일로 넣는 버튼까지 첫 화면에 */}
+      <section className="mt-5 rounded-xl bg-card p-4 shadow-card">
+        <dl className="divide-y divide-line">
+          <Row label="나는 해당될까요?">{r.reason}</Row>
+          <Row label="혜택·비용">{b.cost}</Row>
+          <Row label="신청 기간">{period}{d.state === "open" ? ` · ${krDateYear(d.endDate!)}까지` : ""}</Row>
+          {ways.length > 0 && (
+            <Row label="신청 방식">
+              <span className="flex flex-wrap gap-1.5">
+                {ways.map((w) => (
+                  <span key={w} className="rounded-full bg-accent-soft px-2.5 py-0.5 text-sm font-semibold text-accent">{w === "전화" ? "전화 문의" : `${w} 신청`}</span>
+                ))}
+              </span>
+            </Row>
+          )}
+        </dl>
+        {active && (
+          <div className="mt-3 border-t border-line pt-3">
+            {linked ? (
+              <Link href={`${base}/tasks/${linked.id}`} className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm text-muted">할 일에 있어요</p>
+                  <p className="font-semibold">{linked.done ? "신청을 마쳤어요" : linked.due_date ? `${krDate(linked.due_date)}까지 신청하기` : "신청하기"}</p>
+                </div>
+                <Icon name="right" size={18} className="shrink-0 text-muted" />
+              </Link>
+            ) : (
+              <>
+                <AddBenefitTask auth={auth} benefitId={b.id} />
+                <p className="mt-1.5 text-center text-xs text-muted">일정에 날짜가 생기고, 신청 방법과 서류를 할 일에서 챙겨요</p>
+              </>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="mt-6">
         <h2 className="font-semibold">신청 방법</h2>
         <p className="mt-1">{r.apply.place}</p>
-        {b.deadline && <p className="mt-1 text-sm text-muted">신청 기간: {b.deadline.toDaysAfter === 0 ? "퇴원 전까지" : `퇴원 후 ${b.deadline.toDaysAfter}일까지`}</p>}
         {r.apply.phone && active && (
           <a href={`tel:${r.apply.phone.replaceAll("-", "")}`} className="mt-3 flex items-center justify-center rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink">
             {r.apply.phone} 전화 걸기
           </a>
         )}
-        <a href={b.source.url} target="_blank" rel="noreferrer" className="mt-2 flex items-center justify-center rounded-xl bg-card shadow-card px-5 py-3">
-          공식 안내 보기 ({b.source.label})
-        </a>
+        {script && (
+          <div className="mt-3 rounded-xl bg-accent-soft p-3">
+            <p className="text-xs font-semibold text-accent">전화나 방문할 때 이렇게 말해 보세요</p>
+            <p className="mt-1 text-sm leading-relaxed text-ink">“{script}”</p>
+            <CopyText text={script} />
+          </div>
+        )}
+        <a href={b.source.url} target="_blank" rel="noreferrer" className="mt-3 flex items-center justify-center rounded-xl bg-card px-5 py-3 shadow-card">공식 안내 보기</a>
+        <p className="mt-1 text-center text-xs text-muted">출처 · {b.source.label}</p>
       </section>
 
       <section className="mt-6">
@@ -80,26 +126,6 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
           </ul>
         )}
       </section>
-
-      {active && (
-        <section className="mt-6 rounded-xl bg-card shadow-card p-4">
-          {linked ? (
-            <Link href={`${base}/tasks/${linked.id}`} className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm text-muted">할 일에 있어요</p>
-                <p className="font-semibold">{linked.done ? "신청을 마쳤어요" : linked.due_date ? `${krDate(linked.due_date)}까지 신청하기` : "신청하기"}</p>
-              </div>
-              <Icon name="right" size={18} className="shrink-0 text-muted" />
-            </Link>
-          ) : (
-            <>
-              <p className="font-semibold">신청할 계획이세요?</p>
-              <p className="mt-0.5 text-sm text-muted">할 일에 넣으면 날짜가 일정에 생기고, 신청 방법과 필요 서류를 할 일에서 바로 챙길 수 있어요.</p>
-              <div className="mt-3"><AddBenefitTask auth={auth} benefitId={b.id} /></div>
-            </>
-          )}
-        </section>
-      )}
 
       {active && <div className="mt-6"><StatusPicker auth={auth} benefitId={b.id} current={data.status[b.id] ?? "none"} /></div>}
 
