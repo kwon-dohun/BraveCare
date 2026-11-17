@@ -3,7 +3,7 @@ import { adminPage } from "@/lib/page-auth";
 import Icon from "@/components/Icon";
 import Mascot from "@/components/Mascot";
 
-export const metadata = { title: "혼자 퇴원 안심 가이드 · 씩씩케어" };
+export const metadata = { title: "퇴원 안심 가이드 · 씩씩케어" };
 
 export default async function SoloGuidePage(props: PageProps<"/c/[token]/solo-guide">) {
   const { token } = await props.params;
@@ -15,8 +15,8 @@ export default async function SoloGuidePage(props: PageProps<"/c/[token]/solo-gu
       <div className="mt-2 flex items-center gap-3">
         <Mascot size={40} mood="cheer" />
         <div>
-          <h1 className="text-title font-display">혼자 퇴원 안심 가이드</h1>
-          <p className="text-sm text-muted">혼자서도 불안하지 않게, 꼭 필요한 공공 도움처를 모았어요</p>
+          <h1 className="text-title font-display">퇴원 안심 가이드</h1>
+          <p className="text-sm text-muted">병원 오가기부터 집안일, 갑자기 아플 때까지 도움받을 곳을 모았어요</p>
         </div>
       </div>
 
@@ -30,7 +30,7 @@ export default async function SoloGuidePage(props: PageProps<"/c/[token]/solo-gu
             <h2 className="font-semibold text-ink">병원 안심동행 서비스</h2>
           </div>
           <p className="mt-2 text-sm text-muted leading-relaxed">
-            집에서 병원 출발부터 수납·약국까지 전문 매니저가 함께 걸으며 동행해 드려요. 서울에 사는 분이 서울 안 병원에 갈 때, 혼자 가기 어려우면 신청할 수 있어요. 평일 오전 7시부터 저녁 8시까지예요.
+            집에서 병원 출발부터 수납·약국까지 전문 매니저가 함께 걸으며 동행해 드려요. 서울에 사는 분이 서울 안 병원에 갈 때, 동행이 필요하면 신청할 수 있어요. 평일 오전 7시부터 저녁 8시까지예요.
           </p>
           <div className="mt-3 rounded-xl bg-background p-3 text-sm space-y-1">
             <p className="font-semibold text-ink">• 서울시 병원안심동행: <a href="tel:1533-1179" className="text-accent underline font-semibold">1533-1179</a> (시간당 5,000원, 저소득층 무료)</p>
@@ -53,7 +53,7 @@ export default async function SoloGuidePage(props: PageProps<"/c/[token]/solo-gu
             <h2 className="font-semibold text-ink">긴급돌봄 및 가사 지원</h2>
           </div>
           <p className="mt-2 text-sm text-muted leading-relaxed">
-            퇴원 후 혼자 식사 준비나 집안 청소, 세탁이 어려우실 때 동주민센터 돌봄SOS나 긴급돌봄 서비스를 신청하시면 요양보호사·가사간병 매니저가 집으로 방문해요.
+            퇴원 후 식사 준비나 집안 청소, 세탁이 어려우실 때 동주민센터 돌봄SOS나 긴급돌봄 서비스를 신청하시면 요양보호사·가사간병 매니저가 집으로 방문해요.
           </p>
           <div className="mt-3 rounded-xl bg-background p-3 text-sm space-y-1">
             <p className="font-semibold text-ink">• 보건복지상담센터: <a href="tel:129" className="text-accent underline font-semibold">국번없이 129</a></p>
@@ -70,7 +70,7 @@ export default async function SoloGuidePage(props: PageProps<"/c/[token]/solo-gu
             <h2 className="font-semibold text-warn">밤이나 휴일에 갑자기 아플 때</h2>
           </div>
           <p className="mt-2 text-sm leading-relaxed text-warn">
-            숨이 차거나, 참기 힘든 흉통·복통, 고열(38도 이상)이 날 때는 혼자 참지 마시고 즉시 119를 누르세요. 119 구급상황관리센터에서 의료 상담과 당직 병원 안내도 무료로 해드려요.
+            숨이 차거나, 참기 힘든 흉통·복통, 고열(38도 이상)이 날 때는 참지 마시고 즉시 119를 누르세요. 119 구급상황관리센터에서 의료 상담과 당직 병원 안내도 무료로 해드려요.
           </p>
           <a
             href="tel:119"
@@ -82,7 +82,7 @@ export default async function SoloGuidePage(props: PageProps<"/c/[token]/solo-gu
 
         {/* 4. 혼자 챙기는 꿀팁 */}
         <section className="rounded-xl bg-card p-4 shadow-card">
-          <h2 className="font-semibold text-ink">혼자 회복할 때 꼭 기억할 3가지</h2>
+          <h2 className="font-semibold text-ink">회복할 때 꼭 기억할 3가지</h2>
           <ul className="mt-3 space-y-2 text-sm text-muted leading-relaxed">
             <li className="flex items-start gap-2">
               <span className="font-semibold text-accent">1.</span>

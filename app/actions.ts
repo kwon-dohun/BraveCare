@@ -2,10 +2,10 @@
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { db, resolve, logEvent, type Auth } from "@/lib/db";
+import { db, resolve, logEvent, soloOwner, type Auth, type Actor } from "@/lib/db";
 import { todaySeoul } from "@/lib/load";
 import { evaluate, validateInput, dayDiff, BENEFITS, STATUS_LABEL, type CaseInput } from "@/lib/benefits";
-import { seedTasks, addDays, nextDue } from "@/lib/timeline";
+import { seedTasks, addDays, nextDue, SELF_CARE_TITLE_MAP } from "@/lib/timeline";
 import { act } from "@/lib/push";
 import { validDaily, upsertDaily } from "@/lib/daily";
 import { krDate } from "@/lib/format";
@@ -63,7 +63,7 @@ export async function createCase(raw: CaseInput, adminName: string, consented: b
   await db.from("benefit_status").insert(results.filter((r) => r.verdict !== "no").map((r) => ({ case_id: c.id, benefit_id: r.benefit.id })));
   await db.from("tasks").insert(
     seedTasks(input, results).filter((t) => !(t.preOnly && input.dischargeDate && addDays(input.dischargeDate, t.rel) < today)).map((t) => ({
-      case_id: c.id, title: t.title, kind: t.kind, rel_day: t.rel, source: t.source,
+      case_id: c.id, title: t.title, kind: t.kind, rel_day: t.rel, source: t.source, assignee_id: input.isSelfCare ? me?.id ?? null : null,
       due_date: input.dischargeDate ? addDays(input.dischargeDate, t.rel) : null,
     })),
   );
@@ -76,9 +76,11 @@ export async function updateCase(a: Auth, raw: CaseInput) {
   const actor = await resolve(a);
   const input = validateInput(raw, todaySeoul());
   if (!input) throw new Error("입력값을 확인해주세요. 퇴원일은 오늘 기준 1년 전부터 1년 뒤까지 넣을 수 있어요");
-  const { data: prev } = await db.from("cases").select("input").eq("id", actor.caseId).single();
+  const { data: prev } = await db.from("cases").select("input,is_self_care").eq("id", actor.caseId).single();
   input.dailyCompleted = !!(prev?.input as CaseInput | undefined)?.dailyCompleted; // 설정 저장이 '회복 완료'를 풀지 않게
-  await db.from("cases").update({ input }).eq("id", actor.caseId);
+  input.isSelfCare = input.living === "alone" && !!input.isSelfCare; // 혼자 지내는 경우에만 '환자 본인이 씀'이 있다
+  await db.from("cases").update({ input, is_self_care: input.isSelfCare }).eq("id", actor.caseId);
+  if (!!prev?.is_self_care !== input.isSelfCare) await switchMode(actor, input.isSelfCare);
 
   // 퇴원일이 바뀌면 상대 일정(D±n)만 다시 계산한다. 사용자가 날짜를 직접 정한 할 일(rel_day 없음)은 그대로.
   if ((prev?.input as CaseInput | undefined)?.dischargeDate !== input.dischargeDate) {
@@ -88,6 +90,18 @@ export async function updateCase(a: Auth, raw: CaseInput) {
     await act(actor.caseId, input.dischargeDate ? `퇴원일이 ${krDate(input.dischargeDate)}로 정해졌어요. 일정을 다시 계산했어요` : "퇴원일이 미정으로 바뀌었어요", actor.memberId);
   }
   refresh();
+}
+
+// 쓰는 사람이 바뀌어도 할 일·기록은 그대로 둔다. 혼자 쓰게 되면 남은 일을 모두 내 일로 옮기고,
+// 기본 할 일 제목만 쓰는 사람에 맞는 말투로 바꾼다(반대로 돌아가면 원래 제목으로).
+async function switchMode(actor: Actor, solo: boolean) {
+  const { data: rows } = await db.from("tasks").select("id,title,done,source").eq("case_id", actor.caseId);
+  const map = solo ? SELF_CARE_TITLE_MAP : Object.fromEntries(Object.entries(SELF_CARE_TITLE_MAP).map(([a, b]) => [b, a]));
+  await Promise.all((rows ?? []).filter((t) => t.source === "template" && map[t.title]).map((t) =>
+    db.from("tasks").update({ title: map[t.title] }).eq("id", t.id)));
+  if (solo) await db.from("tasks").update({ assignee_id: actor.memberId }).eq("case_id", actor.caseId).eq("done", false);
+  await act(actor.caseId, solo ? "이제 환자 본인이 쓰는 화면으로 바뀌었어요. 할 일과 기록은 그대로 있어요" : "이제 가족이 함께 쓰는 화면으로 바뀌었어요. 할 일과 기록은 그대로 있어요", actor.memberId);
+  await logEvent(actor.caseId, "care_mode_changed", { self_care: solo });
 }
 
 export async function setDailyCompleted(a: Auth, completed: boolean) {
@@ -252,7 +266,7 @@ export async function addTask(a: Auth, title: string, dueDate: string | null, ki
   if (!t) throw new Error("내용을 입력해주세요");
   if (!["custom", "schedule", "question"].includes(kind)) throw new Error("잘못된 요청이에요");
   if (kind === "schedule" && !isDate(dueDate)) throw new Error("병원 일정은 날짜가 필요해요");
-  await db.from("tasks").insert({ case_id: actor.caseId, title: t, kind, source: "manual", due_date: isDate(dueDate) ? dueDate : null, due_time: isDate(dueDate) && isTime(dueTime) ? dueTime : null });
+  await db.from("tasks").insert({ case_id: actor.caseId, title: t, kind, source: "manual", assignee_id: await soloOwner(actor.caseId, actor.memberId), due_date: isDate(dueDate) ? dueDate : null, due_time: isDate(dueDate) && isTime(dueTime) ? dueTime : null });
   refresh();
 }
 

@@ -41,7 +41,7 @@ export function StatusPicker({ auth, benefitId, current }: { auth: Auth; benefit
         <button disabled={pending || pick === current} onClick={() => run(() => setBenefitStatus(auth, benefitId, pick), () => setOpen(false))} className="mt-4 w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">
           {pending ? "저장하는 중…" : "저장"}
         </button>
-        <p className="mt-2 text-center text-sm text-muted">바꾸면 가족 활동에 공유돼요</p>
+        <p className="mt-2 text-center text-sm text-muted">바꾸면 새 소식에 남아요</p>
       </Sheet>
     </div>
   );
@@ -99,7 +99,7 @@ export function DocsChecklist({
         })}
       </ul>
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-        <span>{sel.length}/{docs.length} 준비됨 · 체크는 가족과 함께 봐요</span>
+        <span>{sel.length}/{docs.length} 준비됨</span>
         {hasHospitalDoc && docsHref && (
           <Link href={docsHref} className="font-semibold text-accent hover:underline">
             원무과 서류 4종 관리로 이동 ↗

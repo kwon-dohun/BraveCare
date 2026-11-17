@@ -26,7 +26,7 @@ export default async function Benefits(props: PageProps<"/c/[token]/benefits">) 
     <>
       <div className="flex items-start justify-between gap-3">
         <h1 className="text-title font-display leading-snug">
-          {high.length ? <>우리 가족이 받을 수 있는<br />지원 <span className="text-accent tabular-nums">{high.length}개</span></>
+          {high.length ? <>{data.isSelfCare ? "내가" : "우리 가족이"} 받을 수 있는<br />지원 <span className="text-accent tabular-nums">{high.length}개</span></>
             : results.length ? <>조건을 확인해 볼<br />지원 <span className="text-accent tabular-nums">{results.length}개</span></>
             : <>지금 조건에 꼭 맞는<br />공공 지원은 아직 없어요</>}
         </h1>

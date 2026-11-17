@@ -104,3 +104,10 @@ test("서류 매칭: 복지 서류 문구와 원무과 4종 서류 매핑", () =
   assert.equal(matchPacketDoc("원무과 장애인증명서")?.id, "disabled_cert");
   assert.equal(matchPacketDoc("신분증"), null);
 });
+
+test("환자 본인이 쓰는 모드에는 가족돌봄휴가를 보여주지 않는다", () => {
+  const base = { dischargeDate: "2026-11-20", birthYear: 1985, sido: "서울", sigungu: "마포구", reason: "surgery", living: "alone", income: "general" } as const;
+  const v = (isSelfCare: boolean) => evaluate({ ...base, isSelfCare }, "2026-11-17").find((r) => r.benefit.id === "family_care_leave")!.verdict;
+  assert.equal(v(true), "no");
+  assert.notEqual(v(false), "no");
+});

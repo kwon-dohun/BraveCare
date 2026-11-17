@@ -13,7 +13,7 @@ interface Props {
   task: { id: string; title: string; due_date: string | null; rel_day: number | null; assignee_id: string | null; memo: string | null; due_time: string | null; repeat: "daily" | "weekly" | null };
 }
 
-export default function TaskForm({ auth, back, members, task }: Props) {
+export default function TaskForm({ auth, back, members, task, solo = false }: Props & { solo?: boolean }) {
   const router = useRouter();
   const [title, setTitle] = useState(task.title);
   const [date, setDate] = useState(task.due_date ?? "");
@@ -66,7 +66,7 @@ export default function TaskForm({ auth, back, members, task }: Props) {
           {repeat && <p className="col-span-2 text-sm text-muted">끝냈다고 체크하면 다음 {repeat === "daily" ? "날" : "주"} 할 일이 자동으로 생겨요.</p>}
         </div>
       )}
-      <div>
+      {!solo && <div>
         <label htmlFor="ta" className="font-semibold">담당자</label>
         <select id="ta" value={assignee} onChange={(e) => setAssignee(e.target.value)} className={field}>
           <option value="">담당자 없음</option>
@@ -82,12 +82,12 @@ export default function TaskForm({ auth, back, members, task }: Props) {
             {copiedHelp ? "도움 요청 문구가 복사되었어요" : "가족에게 도움 요청 문구 복사하기"}
           </button>
         )}
-      </div>
+      </div>}
       <div>
         <label htmlFor="tm" className="font-semibold">메모</label>
-        <textarea id="tm" rows={3} maxLength={500} value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="가족에게 남길 말 (예: 진료 예약증은 냉장고 옆에 있어요)" className={field} />
+        <textarea id="tm" rows={3} maxLength={500} value={memo} onChange={(e) => setMemo(e.target.value)} placeholder={solo ? "메모 (예: 진료 예약증은 냉장고 옆에 있어요)" : "가족에게 남길 말 (예: 진료 예약증은 냉장고 옆에 있어요)"} className={field} />
       </div>
-      {err && <p role="alert" className="text-warn">{err}</p>}
+      {err && <p role="}alert" className="text-warn">{err}</p>}
       <button disabled={pending || !title.trim()} className="w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">{pending ? "저장하는 중…" : "저장"}</button>
 
       <div className="pt-6">

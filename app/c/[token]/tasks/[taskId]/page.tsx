@@ -23,10 +23,10 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
         {KIND_LABEL[t.kind]} · 출처: {SOURCE[t.source] ?? t.source}
         {t.done && t.done_by ? ` · ${t.done_by} 완료` : ""}
       </p>
-      {taskHelp(t.title) && (
-        <p className="mt-3 rounded-xl bg-accent-soft p-3 text-sm leading-relaxed text-accent"><span className="font-semibold">왜 해요? </span>{taskHelp(t.title)}</p>
+      {taskHelp(t.title, data.isSelfCare) && (
+        <p className="mt-3 rounded-xl bg-accent-soft p-3 text-sm leading-relaxed text-accent"><span className="font-semibold">왜 해요? </span>{taskHelp(t.title, data.isSelfCare)}</p>
       )}
-      {t.assignee_id === actor.memberId && !t.done && t.due_date && (
+      {(data.isSelfCare || t.assignee_id === actor.memberId) && !t.done && t.due_date && (
         <CalSyncLink
           href={`/ics/${auth.k}/${auth.v}/${t.id}`}
           label="내 캘린더에 넣기 (알림 포함)"
@@ -34,7 +34,7 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
         />
       )}
       {t.source_quote && <p className="mt-2 rounded-xl bg-background p-3 text-sm">안내문 원문: “{t.source_quote}”</p>}
-      <TaskForm auth={auth} back={`${base}/tasks`} members={data.members} task={{ id: t.id, title: t.title, due_date: t.due_date, rel_day: t.rel_day, assignee_id: t.assignee_id, memo: t.memo, due_time: t.due_time, repeat: t.repeat }} />
+      <TaskForm auth={auth} back={`${base}/tasks`} members={data.members} solo={data.isSelfCare} task={{ id: t.id, title: t.title, due_date: t.due_date, rel_day: t.rel_day, assignee_id: t.assignee_id, memo: t.memo, due_time: t.due_time, repeat: t.repeat }} />
     </>
   );
 }

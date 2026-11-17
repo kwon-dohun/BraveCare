@@ -222,10 +222,6 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         calendarBase={`${base}/tasks`}
       />
 
-      {noOwnerVisits > 0 && (
-        <Link href={`${base}/tasks?view=list&f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={16} /></Link>
-      )}
-
       {/* 받을 수 있는 지원: 이름과 마감만 짧게 */}
       <section className="mt-6" aria-labelledby="h-benefit">
         <div className="mb-2 flex items-end justify-between">
@@ -233,7 +229,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
             {onlyCheck
               ? <h2 id="h-benefit" className="font-display text-headline">조건을 확인해 볼 지원</h2>
               : <h2 id="h-benefit" className="font-display text-headline">받을 수 있는 지원 <span className="text-accent">{highCount}개</span></h2>}
-            <p className="text-xs text-muted">{onlyCheck ? "확실히 대상인 지원은 아직 없지만, 조건에 따라 받을 수 있어요" : "우리 가족 조건으로 골랐어요. 마감이 가까운 순서예요"}</p>
+            <p className="text-xs text-muted">{onlyCheck ? "확실히 대상인 지원은 아직 없지만, 조건에 따라 받을 수 있어요" : (data.isSelfCare ? "입력한 조건으로 골랐어요. 마감이 가까운 순서예요" : "우리 가족 조건으로 골랐어요. 마감이 가까운 순서예요")}</p>
           </div>
           <Link href={`${base}/benefits`} className="flex items-center text-sm font-medium text-accent">전체 보기<span className="sr-only"> 지원</span></Link>
         </div>
@@ -254,7 +250,8 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         </ul>
       </section>
 
-      <section className="mt-6" aria-labelledby="h-act">
+      {/* 혼자 쓰는 모드에는 가족 활동 대신 아무것도 두지 않는다(새 소식은 위 종 아이콘) */}
+      {!data.isSelfCare && <section className="mt-6" aria-labelledby="h-act">
         <div className="mb-2 flex items-center justify-between">
           <h2 id="h-act" className="font-semibold">가족 최근 활동{unread > 0 && <span className="ml-1.5 rounded-full bg-[#ffe4ea] px-2 py-0.5 text-caption font-semibold text-[#a3324f]">새 소식 {unread}</span>}</h2>
           <Link href={`${base}/news`} className="flex min-h-0 items-center py-1 text-sm text-accent">모두 보기</Link>
@@ -265,7 +262,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         {members.length < 2 && (
           <Link href={`${base}/family`} className="mt-3 flex items-center justify-center rounded-full bg-accent-soft px-5 py-3 font-semibold text-accent">가족 초대해서 나누기</Link>
         )}
-      </section>
+      </section>}
     </>
   );
 }

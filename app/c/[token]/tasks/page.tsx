@@ -49,9 +49,10 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
   const calHref = (q: string) => `${base}/tasks?${q}`;
 
   // 날짜 선택 시 할 일 3단 분류: 내가 할 일 -> 배정 대기 -> 다른 가족
-  const dayMine = dayTasks.filter((t) => t.assignee_id === me && !t.done);
-  const dayNeedOwner = dayTasks.filter((t) => !t.assignee_id && !t.done);
-  const dayOthers = dayTasks.filter((t) => t.assignee_id && t.assignee_id !== me && !t.done);
+  // 혼자 쓰는 모드는 담당 구분 없이 모두 '할 일' 한 목록
+  const dayMine = dayTasks.filter((t) => !t.done && (isSelfCare || t.assignee_id === me));
+  const dayNeedOwner = isSelfCare ? [] : dayTasks.filter((t) => !t.assignee_id && !t.done);
+  const dayOthers = isSelfCare ? [] : dayTasks.filter((t) => t.assignee_id && t.assignee_id !== me && !t.done);
   const dayCompleted = dayTasks.filter((t) => t.done);
 
   // 2) 할 일 목록 계산
@@ -255,7 +256,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
             {/* 1) 내가 해야 할 일 (최우선) */}
             {dayMine.length > 0 && (
               <div className="mt-4">
-                <p className="mb-1 text-xs font-semibold text-accent">내가 할 일 ({dayMine.length})</p>
+                <p className="mb-1 text-xs font-semibold text-accent">{isSelfCare ? "할 일" : "내가 할 일"} ({dayMine.length})</p>
                 <TaskList
                   tasks={dayMine}
                   members={data.members}
@@ -336,7 +337,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
           <section className="mt-8 rounded-2xl bg-card p-4 shadow-card" aria-labelledby="h-cal-sync">
             <h3 id="h-cal-sync" className="text-sm font-semibold text-ink">스마트폰 캘린더에 전체 일정 넣기</h3>
             <p className="mt-1 text-xs text-muted">
-              애플, 구글, 삼성 캘린더에 우리 집 전체 일정을 한 번에 등록하고, 전날 저녁과 당일 아침 알람을 받을 수 있어요.
+              애플, 구글, 삼성 캘린더에 전체 일정을 한 번에 등록하고, 전날 저녁과 당일 아침 알람을 받을 수 있어요.
             </p>
             <CalSyncLink
               href={`/ics/${auth.k}/${auth.v}/feed`}

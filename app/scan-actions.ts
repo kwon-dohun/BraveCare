@@ -1,6 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { db, resolve, logEvent, type Auth } from "@/lib/db";
+import { db, resolve, logEvent, soloOwner, type Auth } from "@/lib/db";
 import { act } from "@/lib/push";
 import { todaySeoul } from "@/lib/load";
 import { askJson, hasModel } from "@/lib/openai";
@@ -105,7 +105,8 @@ export async function confirmDocItems(a: Auth, items: { kind: DocItem["kind"]; t
     ? await db.from("tasks").select("id", { count: "exact", head: true }).eq("case_id", actor.caseId).eq("kind", "schedule").lt("due_date", today)
     : { count: 0 };
 
-  const { error } = await db.from("tasks").insert(rows);
+  const owner = await soloOwner(actor.caseId, actor.memberId);
+  const { error } = await db.from("tasks").insert(rows.map((r) => ({ ...r, assignee_id: owner })));
   if (error) throw error;
   await act(actor.caseId, `${actor.name}님이 서류에서 할 일 ${rows.length}개를 추가했어요`, actor.memberId);
   await logEvent(actor.caseId, "doc_items_confirmed", { count: rows.length });

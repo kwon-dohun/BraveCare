@@ -69,7 +69,7 @@ test("챗봇: 응급 표현 감지, 일상 질문은 통과", () => {
 });
 
 test("챗봇: 서류가 없어도 우리 집 정보 질문 3개 + 용어 질문, 최대 6개", () => {
-  assert.deepEqual(chips([]).slice(0, 3), ["오늘 뭐부터 하면 돼?", "다음 병원 일정은 언제야?", "우리가 받을 수 있는 지원 알려줘"]);
+  assert.deepEqual(chips([]).slice(0, 3), ["오늘 뭐부터 하면 돼?", "다음 병원 일정은 언제야?", "받을 수 있는 지원 알려줘"]);
   assert.equal(chips(["medication", "guide", "receipt"]).length, 6);
   assert.ok(chips(["medication"]).includes("이 약은 언제, 어떻게 먹으라고 적혀 있어?"));
 });

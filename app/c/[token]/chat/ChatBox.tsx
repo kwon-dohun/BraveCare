@@ -84,7 +84,7 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
 
       <div className="space-y-4" aria-live="polite">
         <Bot>
-          <p className="text-callout leading-relaxed">안녕하세요, 씩씩이예요. 우리 집 일정과 할 일, 받을 수 있는 지원{docCount ? `, 보관한 서류 ${docCount}장` : ""}을 보고 답해 드려요.</p>
+          <p className="text-callout leading-relaxed">안녕하세요, 씩씩이예요. 일정과 할 일, 받을 수 있는 지원{docCount ? `, 보관한 서류 ${docCount}장` : ""}을 보고 답해 드려요.</p>
           <p className="mt-1.5 text-sm leading-relaxed text-muted">진단이나 약 처방은 하지 않아요. 몸 상태는 꼭 의료진에게 확인해 주세요.</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {chips.map((c) => (

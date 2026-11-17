@@ -81,8 +81,8 @@ export function verifyAnswer(a: ChatAnswer, sources: Source[] | string[]): ChatA
 // 바로 누를 수 있는 추천 질문. 서류 여부와 퇴원 전·후 시점에 맞춰 실생활에 필요한 질문으로 제공.
 export function chips(docTypes: string[], isPre = false): string[] {
   const out = isPre
-    ? ["퇴원할 때 원무과에서 뗄 서류가 뭐야?", "다음 병원 일정은 언제야?", "우리가 받을 수 있는 지원 알려줘"]
-    : ["오늘 뭐부터 하면 돼?", "다음 병원 일정은 언제야?", "우리가 받을 수 있는 지원 알려줘"];
+    ? ["퇴원할 때 원무과에서 뗄 서류가 뭐야?", "다음 병원 일정은 언제야?", "받을 수 있는 지원 알려줘"]
+    : ["오늘 뭐부터 하면 돼?", "다음 병원 일정은 언제야?", "받을 수 있는 지원 알려줘"];
   if (docTypes.includes("certificate")) out.push("진단서에 적힌 질병명과 코드가 뭐야?");
   if (docTypes.includes("medication")) out.push("이 약은 언제, 어떻게 먹으라고 적혀 있어?");
   if (docTypes.includes("guide")) out.push("병원에 연락해야 하는 증상이 뭐라고 적혀 있어?", "샤워는 언제부터 된다고 적혀 있어?");

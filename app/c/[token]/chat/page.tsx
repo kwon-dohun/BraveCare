@@ -23,7 +23,7 @@ export default async function Chat(props: PageProps<"/c/[token]/chat">) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-title">씩씩이에게 물어보기</h1>
-          <p className="mt-0.5 text-xs text-muted">우리 집 일정·지원·서류 바탕으로 답해요</p>
+          <p className="mt-0.5 text-xs text-muted">일정·지원·보관한 서류를 바탕으로 답해요</p>
         </div>
         <Link href={`${base}/scan`} className="flex items-center gap-1 rounded-full bg-card px-3 py-1.5 text-xs font-semibold text-accent shadow-card hover:bg-accent-soft">
           <Icon name="camera" size={14} />서류 찍기

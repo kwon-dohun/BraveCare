@@ -44,7 +44,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
           <p className="mt-1 text-sm text-muted leading-relaxed">
             {REASON_LABEL.find(([k]) => k === data.input.reason)?.[1]} · {data.input.birthYear}년생
             {data.input.dischargeDate ? ` · 퇴원일 ${data.input.dischargeDate}` : ""}
-            {checks.length > 0 && ` · 환자 직접 기록 ${checks.filter((c) => c.source_role === "patient").length}일, 가족 기록 ${checks.filter((c) => c.source_role !== "patient").length}일`}
+            {!data.isSelfCare && checks.length > 0 && ` · 환자 직접 기록 ${checks.filter((c) => c.source_role === "patient").length}일, 가족 기록 ${checks.filter((c) => c.source_role !== "patient").length}일`}
           </p>
         </div>
 

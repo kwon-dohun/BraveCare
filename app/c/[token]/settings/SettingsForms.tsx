@@ -10,8 +10,8 @@ import Mascot from "@/components/Mascot";
 
 const field = "mt-1 w-full rounded-xl border border-line bg-card px-4 py-3";
 
-export function CaseForm({ auth, input }: { auth: Auth; input: CaseInput }) {
-  const [v, setV] = useState({ ...input, undecided: input.dischargeDate === null, date: input.dischargeDate ?? "", birth: String(input.birthYear) });
+export function CaseForm({ auth, input, selfCare }: { auth: Auth; input: CaseInput; selfCare: boolean }) {
+  const [v, setV] = useState({ ...input, self: selfCare, undecided: input.dischargeDate === null, date: input.dischargeDate ?? "", birth: String(input.birthYear) });
   const [saved, setSaved] = useState(false);
   const { run, pending, err } = useAct();
   const set = (p: Partial<typeof v>) => { setSaved(false); setV((s) => ({ ...s, ...p })); };
@@ -22,7 +22,7 @@ export function CaseForm({ auth, input }: { auth: Auth; input: CaseInput }) {
       className="mt-3 space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
-        run(() => updateCase(auth, { ...input, dischargeDate: v.undecided ? null : v.date, birthYear: Number(v.birth), sido: v.sido, sigungu: v.sigungu, reason: v.reason, living: v.living, income: v.income }), () => setSaved(true));
+        run(() => updateCase(auth, { ...input, dischargeDate: v.undecided ? null : v.date, birthYear: Number(v.birth), sido: v.sido, sigungu: v.sigungu, reason: v.reason, living: v.living, income: v.income, isSelfCare: v.living === "alone" && v.self }), () => setSaved(true));
       }}
     >
       <div>
@@ -65,6 +65,13 @@ export function CaseForm({ auth, input }: { auth: Auth; input: CaseInput }) {
         <label htmlFor="sl" className="text-sm font-medium">낮 시간 돌봄</label>
         <select id="sl" value={v.living} onChange={(e) => set({ living: e.target.value as Living })} className={field}>{LIVING_LABEL.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
       </div>
+      {v.living === "alone" && (
+        <div className="view-in">
+          <p className="text-sm font-medium">이 앱은 누가 쓰나요</p>
+          <div className="mt-1"><Segmented label="이 앱은 누가 쓰나요" active={v.self ? 0 : 1} items={[{ label: "환자 본인", onClick: () => set({ self: true }) }, { label: "떨어져 사는 가족", onClick: () => set({ self: false }) }]} /></div>
+          <p className="mt-1 text-xs text-muted">바꿔도 할 일과 기록은 그대로 남아요. 화면만 쓰는 사람에 맞게 바뀌어요.</p>
+        </div>
+      )}
       <div>
         <label htmlFor="si" className="text-sm font-medium">가구 소득</label>
         <select id="si" value={v.income} onChange={(e) => set({ income: e.target.value as Income })} className={field}>{INCOME_OPTIONS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
@@ -102,7 +109,7 @@ export function DeleteCase({ auth, stats }: { auth: Auth; stats?: { doneTasks: n
             <div>
               <p className="font-semibold text-ink">그동안 회복을 위해 정말 고생 많으셨어요</p>
               <p className="mt-0.5 text-xs text-muted">
-                가족들이 함께 총 {stats.doneTasks}개의 할 일을 해냈고, {stats.dailyDays}일의 데일리 체크를 기록했어요.
+                지금까지 할 일 {stats.doneTasks}개를 끝냈고, {stats.dailyDays}일의 데일리 체크를 기록했어요.
               </p>
             </div>
           </div>

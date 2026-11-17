@@ -17,7 +17,10 @@ export const MORE: Benefit[] = [
     apply: { phone: "1350", place: "다니는 회사에 신청. 제도 문의는 고용노동부 고객상담센터" },
     docs: ["회사에 내는 신청서 (회사 양식)", "입원·진료를 확인할 수 있는 서류 (회사가 요청할 때)"],
     deadline: null,
-    rules: [{ when: { living: ["away"] }, verdict: "high", reason: "낮에 돌볼 사람이 없는 상황이라, 직장에 다니는 가족이 쓸 수 있어요" }],
+    rules: [
+      { when: { selfCare: true }, verdict: "no", reason: "환자 본인이 쓰는 경우라 휴가를 낼 가족이 없어요" },
+      { when: { living: ["away"] }, verdict: "high", reason: "낮에 돌볼 사람이 없는 상황이라, 직장에 다니는 가족이 쓸 수 있어요" },
+    ],
     fallback: { verdict: "check", reason: "돌보는 가족 중 직장인이 있으면 쓸 수 있어요" },
     source: { label: "남녀고용평등법 제22조의2 (국가법령정보센터)", url: "https://www.law.go.kr" },
     lastVerified: V,

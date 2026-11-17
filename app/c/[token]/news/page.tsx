@@ -27,7 +27,7 @@ export default async function News(props: PageProps<"/c/[token]/news">) {
       <MarkSeen auth={auth} />
       <BackLink href={base}>홈</BackLink>
       <h1 className="mt-2 font-display text-title">새 소식</h1>
-      <p className="mt-1 text-sm text-muted">가족이 맡거나 끝낸 일이 여기에 모여요. 앱을 쓰면 알림으로도 받아요.</p>
+      <p className="mt-1 text-sm text-muted">맡거나 끝낸 일, 바뀐 일정 같은 소식이 여기에 모여요. 앱을 쓰면 알림으로도 받아요.</p>
       {list.length === 0 && (
         <p className="mt-5 flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card"><Mascot size={40} mood="rest" />아직 소식이 없어요</p>
       )}
