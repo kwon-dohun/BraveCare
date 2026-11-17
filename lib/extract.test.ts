@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { verifyItems, parseDate, parseModelJson, toDocItems, validateTranscript } from "./extract.ts";
+import { verifyItems, parseDate, parseModelJson, toDocItems, validateTranscript, verifyFields } from "./extract.ts";
 
 const TRANSCRIPT = "퇴원 안내문\n1. 외래 예약: 2026년 11월 27일 오전 10시 정형외과\n2. 아스피린 100mg 하루 1회 식후 복용\n문의 02-123-4567";
 
@@ -86,4 +86,36 @@ test("서류 양식: 원문에 있는 값만 채우고 없으면 빈칸, 사람�
   assert.equal(c.values.합계, "34,300원");
   assert.equal("엉뚱한칸" in c.values, false);
   assert.deepEqual(c.meds, []);
+});
+
+test("줄 표시(@일정 등)에서 항목을 뽑고, 표시를 뗀 원문을 돌려준다", () => {
+  const raw = JSON.stringify({ docType: "guide", transcript: "퇴원 안내문\n@일정 외래 2026-11-27 10:30\n@주의사항 2주간 샤워 금지" });
+  const p = parseModelJson(raw);
+  assert.equal(p.transcript, "퇴원 안내문\n외래 2026-11-27 10:30\n2주간 샤워 금지");
+  assert.deepEqual(verifyItems(p.transcript, p.items).map((i) => i.kind + ":" + i.text), ["schedule:외래 2026-11-27 10:30", "caution:2주간 샤워 금지"]);
+});
+
+test("모델이 표시를 빠뜨려도 전화번호·복약·방문 일정 줄은 코드가 잡는다", () => {
+  const p = parseModelJson(JSON.stringify({ docType: "guide", transcript: "2026-11-27 정형외과 외래\n와파린정 2mg 하루 1회 저녁\n문의 02-3410-1234\n수술 2026-11-08 시행" }));
+  assert.deepEqual(p.items.map((i) => i.kind), ["schedule", "medication", "contact"]);
+});
+
+test("진단서·영수증은 코드 규칙으로 일정을 만들지 않는다(과거 수술일 오탐 방지)", () => {
+  const p = parseModelJson(JSON.stringify({ docType: "certificate", transcript: "2026년 11월 8일 수술 후 외래 추적 필요" }));
+  assert.equal(p.items.length, 0);
+});
+
+test("한 줄에 날짜가 둘이면 날짜마다 항목을 나눈다 (11/27 의 / 는 나누지 않는다)", () => {
+  const [a, b] = toDocItems([{ kind: "schedule", text: "2026-11-27 외래 / 2026-12-18 CT 검사" }], "2026-11-15");
+  assert.deepEqual([a.date, b.date], ["2026-11-27", "2026-12-18"]);
+  const [c] = toDocItems([{ kind: "schedule", text: "11/27 외래" }], "2026-11-15");
+  assert.equal(c.date, "2026-11-27");
+});
+
+test("퇴원 안내문 칸은 고른 줄로 채워지고, 원문에 없는 줄은 빠진다", () => {
+  const p = parseModelJson(JSON.stringify({ docType: "guide", transcript: "@일정 2026-11-27 외래\n@연락 문의 02-123-4567" }));
+  const f = verifyFields(p.transcript, "guide", p).values;
+  assert.equal(f["외래 일정"], "2026-11-27 외래");
+  assert.equal(f["문의"], "문의 02-123-4567");
+  assert.equal(verifyFields("원문", "guide", { fields: { 문의: "없는 줄" } }).values["문의"], "");
 });
