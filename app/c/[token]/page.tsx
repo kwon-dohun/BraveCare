@@ -11,6 +11,7 @@ import TaskList from "@/components/TaskList";
 import Remember from "@/components/Remember";
 import WeekStrip from "@/components/WeekStrip";
 import Icon from "@/components/Icon";
+import RefreshIfSeen from "@/components/RefreshIfSeen";
 import Mascot, { Logo } from "@/components/Mascot";
 import DailyCompleteToggle from "@/components/DailyCompleteToggle";
 
@@ -63,6 +64,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
 
   return (
     <>
+      <RefreshIfSeen />
       <Remember path={base} label={`${actor.name}님의 씩씩케어`} />
       <header className="flex items-center justify-between">
         <Logo />
