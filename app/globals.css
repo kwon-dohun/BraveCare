@@ -231,11 +231,15 @@ details[open] > :not(summary) { animation: view-in 220ms cubic-bezier(0.22, 1, 0
 a.shadow-card { transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1), color 150ms ease-out, background-color 150ms ease-out; }
 a.shadow-card:active { transform: scale(0.985); }
 
+/* 끝을 모르는 기다림: 막대가 계속 흘러 화면이 멈추지 않았다는 걸 보여준다 */
+.pulse-bar { animation: pulse-fill 1.6s ease-in-out infinite; }
+@keyframes pulse-fill { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
+
 @media (prefers-reduced-motion: reduce) {
   .seg-thumb { transition: none; }
   .view-in, details[open] > :not(summary), .pop { animation: none; }
   a.shadow-card { transition: none; }
   a.shadow-card:active { transform: none; }
   a.bg-primary, button.bg-primary, label.bg-primary { transition: none; }
-  dialog.sheet[open], dialog.sheet[open]::backdrop, .mascot-bob, .nav-progress, .dot-bounce { animation: none; }
+  dialog.sheet[open], dialog.sheet[open]::backdrop, .mascot-bob, .nav-progress, .dot-bounce, .pulse-bar { animation: none; }
 }

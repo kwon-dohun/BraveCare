@@ -61,6 +61,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
   const [found, setFound] = useState<DocType[]>([]);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState("");
+  const [phase, setPhase] = useState<"prep" | "read">("read"); // 지금 실제로 하고 있는 일
   const [paste, setPaste] = useState("");
   const [pending, start] = useTransition();
 
@@ -77,9 +78,11 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
     const types: DocType[] = [];
 
     for (const [i, f] of files.entries()) {
-      setBusy(`${files.length}장 중 ${i + 1}장째 읽는 중… (장당 10초쯤 걸려요)`);
+      setBusy(files.length > 1 ? `${files.length}장 중 ${i + 1}장째` : "서류 1장");
+      setPhase("prep");
       try {
         const b64 = await toJpegBase64(f);
+        setPhase("read");
         const r = await extractFromImage(auth, b64);
         types.push(r.docType);
         all.push(...toRows(r.items));
@@ -107,7 +110,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
   });
 
   const onPaste = async () => {
-    setErr(""); setRows(null); setFound([]); setBusy("읽는 중…");
+    setErr(""); setRows(null); setFound([]); setBusy("병원 문자"); setPhase("read");
     try {
       const res = await extractFromPaste(auth, paste);
       setRows(toRows(res.items));
@@ -178,7 +181,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       </details>
 
       {busy ? (
-        <ScanningCard key={busy} busyText={busy} />
+        <ScanningCard key={busy} busyText={busy} phase={phase} photo={busy !== "병원 문자"} />
       ) : null}
       {err && <p role="alert" className="mt-3 text-warn font-medium leading-relaxed">{err}</p>}
       {found.length > 0 && (
@@ -222,37 +225,40 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
   );
 }
 
-const SCAN_STEPS = ["서류 글자를 그대로 읽고 있어요", "외래·검사 날짜를 찾고 있어요", "서류에 실제로 있는 내용인지 맞춰 보고 있어요"];
-
-// 한 장을 읽는 동안 1 → 2 → 3단계로 한 번만 나아가고, 마지막 단계에서 결과가 나올 때까지 기다린다(되돌아가지 않는다)
-function ScanningCard({ busyText }: { busyText: string }) {
-  const [step, setStep] = useState(0);
+// 실제로 처리 중인 단계만 보여준다: 폰에서 사진 줄이기 → 서버에서 글자 읽기(날짜 찾기·원문 대조까지 한 번에).
+// 서버 안의 세부 단계는 밖에서 알 수 없어서 시간으로 꾸며 내지 않는다. 대신 막대는 계속 흘러 멈춘 느낌이 없게 한다.
+function ScanningCard({ busyText, phase, photo }: { busyText: string; phase: "prep" | "read"; photo: boolean }) {
+  const [slow, setSlow] = useState(false);
   useEffect(() => {
-    const timers = [setTimeout(() => setStep(1), 3000), setTimeout(() => setStep(2), 6500)];
-    return () => timers.forEach(clearTimeout);
+    const id = setTimeout(() => setSlow(true), 12000);
+    return () => clearTimeout(id);
   }, []);
+  const steps: [string, boolean, boolean][] = photo
+    ? [["사진을 읽기 좋게 줄이는 중", phase === "read", phase === "prep"], ["글자를 읽고 날짜를 찾는 중", false, phase === "read"]]
+    : [["문자에서 날짜를 찾는 중", false, true]];
 
   return (
     <section aria-live="polite" className="view-in mt-5 rounded-2xl bg-card p-5 shadow-card">
       <div className="flex items-center gap-3">
         <Mascot size={40} className="mascot-bob shrink-0" />
-        <p className="text-sm font-semibold">{busyText}</p>
+        <p className="text-sm font-semibold">{busyText} 읽는 중</p>
       </div>
       <ol className="mt-4 space-y-2.5">
-        {SCAN_STEPS.map((label, i) => (
-          <li key={label} className={`flex items-center gap-2.5 text-sm transition-colors duration-300 ${i < step ? "text-muted" : i === step ? "font-semibold text-ink" : "text-muted/60"}`}>
-            <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-caption font-semibold transition-colors duration-300 ${i < step ? "bg-primary text-ink" : i === step ? "bg-accent-soft text-accent ring-[1.5px] ring-primary" : "bg-line text-muted"}`}>
-              {i < step ? <Icon name="check" size={12} /> : i + 1}
+        {steps.map(([label, done, now]) => (
+          <li key={label} className={`flex items-center gap-2.5 text-sm transition-colors duration-300 ${now ? "font-semibold text-ink" : "text-muted"}`}>
+            <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors duration-300 ${done ? "bg-primary text-ink" : now ? "bg-accent-soft ring-[1.5px] ring-primary" : "bg-line"}`}>
+              {done ? <Icon name="check" size={12} /> : now ? <span className="dot-bounce h-1.5 w-1.5 rounded-full bg-accent" /> : null}
             </span>
             {label}
-            {i === step && <span className="dot-bounce h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />}
           </li>
         ))}
       </ol>
       <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-line" aria-hidden>
-        <div className="h-full rounded-full bg-primary transition-[width] duration-[2500ms] ease-out" style={{ width: `${[30, 65, 90][step]}%` }} />
+        <div className="pulse-bar h-full w-1/2 rounded-full bg-primary" />
       </div>
-      <p className="mt-2 text-center text-xs text-muted">한 장에 5~10초쯤 걸려요. 화면을 닫지 말고 잠시만 기다려 주세요.</p>
+      <p className="mt-2 text-center text-xs text-muted">
+        {slow ? "조금 더 걸리고 있어요. 글자가 많은 서류는 20초쯤 걸릴 수 있어요." : "한 장에 5~10초쯤 걸려요. 화면을 닫지 말고 잠시만 기다려 주세요."}
+      </p>
     </section>
   );
 }
