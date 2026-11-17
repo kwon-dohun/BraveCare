@@ -2,17 +2,18 @@
 import { useState } from "react";
 import { saveDaily } from "@/app/actions";
 import type { Auth } from "@/lib/db";
-import { TEMP_LABEL, BOWEL_LABEL, PAIN_WORD, type Daily } from "@/lib/report";
+import { TEMP_LABEL, BOWEL_LABEL, PAIN_WORD, cleanTempC, type Daily } from "@/lib/report";
 import { useAct } from "./useAct";
 
 type V = Omit<Daily, "check_date">;
-const GOOD: V = { med_morning: true, med_lunch: true, med_dinner: true, side_effect: false, temp: "normal", wound_issue: false, pain: 0, bowel: "good" };
+const GOOD: V = { med_morning: true, med_lunch: true, med_dinner: true, side_effect: false, temp: "normal", temp_c: null, wound_issue: false, pain: 0, bowel: "good" };
 const EMPTY: V = { ...GOOD, med_morning: false, med_lunch: false, med_dinner: false };
 
 // 저녁에 환자와 통화하거나 마주 앉아 10초 만에 남기는 기록. 가족 모두(환자 본인 포함) 쓴다.
 export default function DailyForm({ auth, today, yesterday }: { auth: Auth; today: Daily | null; yesterday?: Daily | null }) {
   const [v, setV] = useState<V>(today ?? EMPTY);
   const [saved, setSaved] = useState(false);
+  const [tc, setTc] = useState(today?.temp_c != null ? String(today.temp_c) : "");
   const { run, pending, err } = useAct();
   const set = (p: Partial<V>) => { setSaved(false); setV((s) => ({ ...s, ...p })); };
   const save = (val: V) => run(() => saveDaily(auth, val), () => { setV(val); setSaved(true); });
@@ -60,8 +61,15 @@ export default function DailyForm({ auth, today, yesterday }: { auth: Auth; toda
       <div className={box}><fieldset>
         <legend className="mb-2 w-full text-sm font-semibold">체온</legend>
         <div className="grid w-full grid-cols-3 gap-2">
-          {(Object.keys(TEMP_LABEL) as V["temp"][]).map((k) => <button key={k} aria-pressed={v.temp === k} onClick={() => set({ temp: k })} className={`${pill(v.temp === k)} flex flex-col items-center justify-center leading-tight`}><span>{TEMP_LABEL[k].split(" (")[0]}</span>{TEMP_LABEL[k].includes("(") && <span className="text-xs font-normal opacity-80">{TEMP_LABEL[k].split(" (")[1].replace(")", "")}</span>}</button>)}
+          {(Object.keys(TEMP_LABEL) as V["temp"][]).map((k) => <button key={k} aria-pressed={v.temp === k} onClick={() => { set({ temp: k }); if (k === "normal") setTc(""); }} className={`${pill(v.temp === k)} flex flex-col items-center justify-center leading-tight`}><span>{TEMP_LABEL[k].split(" (")[0]}</span>{TEMP_LABEL[k].includes("(") && <span className="text-xs font-normal opacity-80">{TEMP_LABEL[k].split(" (")[1].replace(")", "")}</span>}</button>)}
         </div>
+        {v.temp !== "normal" && (
+          <div className="mt-3 flex items-center gap-2 text-sm">
+            <label htmlFor="tc" className="shrink-0">잰 체온 <span className="text-muted">(선택)</span></label>
+            <input id="tc" inputMode="decimal" maxLength={4} value={tc} placeholder="예: 37.8" onChange={(e) => { setTc(e.target.value); set({ temp_c: cleanTempC(e.target.value, v.temp) }); }} className="w-24 rounded-xl border border-line bg-background px-3 py-2 text-base" />
+            <span>℃</span>
+          </div>
+        )}
         {check("수술 부위에 진물이 나거나 벌어졌어요", v.wound_issue, (b) => set({ wound_issue: b }))}
       </fieldset></div>
 

@@ -5,6 +5,7 @@ export interface Daily {
   med_morning: boolean; med_lunch: boolean; med_dinner: boolean;
   side_effect: boolean;
   temp: "normal" | "mild" | "high";
+  temp_c?: number | null; // 미열·고열일 때 잰 체온(℃)
   wound_issue: boolean;
   pain: number; // 0~10
   bowel: "good" | "constipation" | "diarrhea";
@@ -16,22 +17,45 @@ export const TEMP_LABEL = { normal: "정상", mild: "미열 (37.5도 이상)", h
 export const BOWEL_LABEL = { good: "원활", constipation: "변비·답답함", diarrhea: "설사" } as const;
 export const PAIN_WORD = (n: number) => (n === 0 ? "없음" : n <= 3 ? "약함" : n <= 6 ? "보통" : n <= 8 ? "심함" : "매우 심함");
 
-// 진료실에서 그대로 읽어도 되는 말하기 요약. 기록한 값만 문장으로 옮기고 해석은 하지 않는다.
-export function speakScript(s: ReturnType<typeof summarize>): string {
+const mdKr = (d: string) => `${Number(d.slice(5, 7))}월 ${Number(d.slice(8))}일`;
+export const feverText = (f: { temp: string; c?: number | null }) => `${f.temp === "high" ? "고열" : "미열"}${f.c ? ` ${f.c}℃` : ""}`;
+
+// 진료실에서 그대로 읽어도 되는 말하기 요약. 앱 안의 지표(기록률·복약률)는 빼고, 진료에 쓸 사실만 기록한 값 그대로 옮긴다.
+export function speakScript(s: ReturnType<typeof summarize>, elapsed: number | null = null): string {
   if (!s.days) return "";
-  const md = (d: string) => `${Number(d.slice(5, 7))}월 ${Number(d.slice(8))}일`;
-  const out = [`퇴원 후 ${s.span}일 중 ${s.days}일을 기록했어요.`];
-  if (s.adherence !== null) out.push(`기록한 날 기준으로 약은 ${s.adherence}% 챙겨 먹었어요.`);
-  if (s.avgPain !== null) out.push(`통증은 평균 ${s.avgPain}점, 가장 심할 때 ${s.maxPain}점이었어요.`);
-  else out.push(`통증은 ${s.pain.map((p) => `${md(p.date)} ${p.pain}점`).join(", ")}이었어요.`);
+  const out: string[] = [];
+  if (elapsed !== null && elapsed >= 0) out.push(`퇴원 ${elapsed}일째예요.`);
+  const first = s.pain[0], last = s.pain.at(-1)!;
+  out.push(s.pain.length > 1 && first.pain !== last.pain
+    ? `통증은 0~10점 중 ${first.pain}점에서 ${last.pain}점으로 ${last.pain < first.pain ? "줄었어요" : "늘었어요"}.`
+    : `통증은 0~10점 중 ${last.pain}점이에요.`);
+  out.push(s.missed.length ? `약을 못 챙긴 때: ${s.missed.map((m) => `${mdKr(m.date)} ${m.slots.join("·")}`).join(", ")}.` : "약은 모두 챙겨 먹었어요.");
   const issues = [
-    s.fevers.length && `${s.fevers.map((f) => `${md(f.date)} ${f.temp === "high" ? "고열" : "미열"}`).join(", ")}`,
-    s.wounds.length && `${s.wounds.map(md).join(", ")} 수술 부위 진물·벌어짐`,
-    s.sideEffects.length && `${s.sideEffects.map(md).join(", ")} 약 먹고 불편함`,
-    s.bowel.length && `${s.bowel.map((b) => `${md(b.date)} ${BOWEL_LABEL[b.bowel]}`).join(", ")}`,
+    s.fevers.length && s.fevers.map((f) => `${mdKr(f.date)} ${feverText(f)}`).join(", "),
+    s.wounds.length && `${s.wounds.map(mdKr).join(", ")} 수술 부위 진물·벌어짐`,
+    s.sideEffects.length && `${s.sideEffects.map(mdKr).join(", ")} 약 먹고 불편함`,
+    s.bowel.length && s.bowel.map((b) => `${mdKr(b.date)} ${BOWEL_LABEL[b.bowel]}`).join(", "),
   ].filter(Boolean);
-  out.push(issues.length ? `다만 ${issues.join(" / ")}이 있었어요.` : "열, 상처, 약 부작용, 배변은 기록한 날 모두 이상 없었어요.");
+  out.push(issues.length ? `다만 ${issues.join(" / ")}이 있었어요.` : "열, 상처, 약 부작용, 배변은 이상 없었어요.");
   return out.join(" ");
+}
+
+// 할 일 말투('~물어보기', '~문의하기')를 의사가 읽는 질문으로. 규칙에 안 맞으면 원문을 해치지 않고 '~에 대해 알려 주세요'로 둔다.
+export function askForm(title: string): string {
+  const quoted = title.match(/['"‘“]([^'"’”]+[?？])['"’”]/);
+  if (quoted) return quoted[1];
+  const t = title.trim().replace(/^(회진|외래) 때\s*/, "").replace(/^(의사 선생님|의료진|주치의)(께|에게)\s*/, "");
+  const body = t.replace(/\s*(?:을|를)?\s*(?:(?:병원|원무과|의료진|의사 선생님)(?:에|에게|께)\s*)?(?:물어보기|여쭤보기|문의하기|확인하기|확인해 보기|질문하기)$/, "");
+  if (body === t) return /[요까나가]$/.test(t) ? `${t}?` : t;
+  if (!body) return title;
+  const ask = body.replace(/(한|인|은)지$/, "$1가요?").replace(/는지$/, "나요?");
+  return ask !== body ? ask : `${body}에 대해 알려 주세요.`;
+}
+
+// 체온 입력 검증: 미열·고열을 골랐을 때만 35~42℃ 사이 값을 소수 첫째 자리까지 받는다
+export function cleanTempC(raw: unknown, temp: string): number | null {
+  const n = typeof raw === "string" ? Number(raw.replace(",", ".")) : Number(raw);
+  return temp !== "normal" && raw !== "" && raw != null && Number.isFinite(n) && n >= 35 && n <= 42 ? Math.round(n * 10) / 10 : null;
 }
 
 export function summarize(checks: Daily[], from: string, today: string) {
@@ -47,7 +71,8 @@ export function summarize(checks: Daily[], from: string, today: string) {
     avgPain: list.length >= 3 ? Math.round((list.reduce((n, c) => n + c.pain, 0) / list.length) * 10) / 10 : null,
     maxPain: list.length ? Math.max(...list.map((c) => c.pain)) : null,
     pain: list.map((c) => ({ date: c.check_date, pain: c.pain })),
-    fevers: list.filter((c) => c.temp !== "normal").map((c) => ({ date: c.check_date, temp: c.temp })),
+    fevers: list.filter((c) => c.temp !== "normal").map((c) => ({ date: c.check_date, temp: c.temp, c: c.temp_c ?? null })),
+    missed: list.map((c) => ({ date: c.check_date, slots: ([!c.med_morning && "아침", !c.med_lunch && "점심", !c.med_dinner && "저녁"] as (string | false)[]).filter(Boolean) as string[] })).filter((m) => m.slots.length),
     wounds: list.filter((c) => c.wound_issue).map((c) => c.check_date),
     sideEffects: list.filter((c) => c.side_effect).map((c) => c.check_date),
     bowel: list.filter((c) => c.bowel !== "good").map((c) => ({ date: c.check_date, bowel: c.bowel })),

@@ -1,9 +1,9 @@
 import "server-only";
 import { db, logEvent } from "./db";
-import type { Daily } from "./report";
+import { cleanTempC, type Daily } from "./report";
 
 export type DailyInput = Omit<Daily, "check_date">;
-export const ALL_GOOD: DailyInput = { med_morning: true, med_lunch: true, med_dinner: true, side_effect: false, temp: "normal", wound_issue: false, pain: 0, bowel: "good", notes: null };
+export const ALL_GOOD: DailyInput = { med_morning: true, med_lunch: true, med_dinner: true, side_effect: false, temp: "normal", temp_c: null, wound_issue: false, pain: 0, bowel: "good", notes: null };
 
 // 신뢰 경계 검증. 잘못된 값은 null.
 export function validDaily(raw: unknown): DailyInput | null {
@@ -15,7 +15,7 @@ export function validDaily(raw: unknown): DailyInput | null {
   const notes = typeof r.notes === "string" ? r.notes.trim().slice(0, 300) : null;
   return {
     med_morning: !!r.med_morning, med_lunch: !!r.med_lunch, med_dinner: !!r.med_dinner, side_effect: !!r.side_effect,
-    temp: r.temp!, wound_issue: !!r.wound_issue, pain, bowel: r.bowel!, notes: notes || null,
+    temp: r.temp!, temp_c: cleanTempC(r.temp_c, r.temp!), wound_issue: !!r.wound_issue, pain, bowel: r.bowel!, notes: notes || null,
   };
 }
 
@@ -40,7 +40,7 @@ export async function upsertDaily(
 
 export async function loadDaily(caseId: string): Promise<Daily[]> {
   const { data } = await db.from("daily_checks")
-    .select("check_date,med_morning,med_lunch,med_dinner,side_effect,temp,wound_issue,pain,bowel,notes,source_role")
+    .select("check_date,med_morning,med_lunch,med_dinner,side_effect,temp,temp_c,wound_issue,pain,bowel,notes,source_role")
     .eq("case_id", caseId).order("check_date", { ascending: false }).limit(60);
   return (data ?? []) as Daily[];
 }

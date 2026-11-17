@@ -41,7 +41,7 @@ test("리포트: 복약률은 기록한 날 기준, 기록률을 같이 낸다",
   assert.equal(s.span, 7);
   assert.equal(s.adherence, 89); // 8/9
   assert.equal(s.avgPain, 3.3);
-  assert.deepEqual(s.fevers, [{ date: "2026-11-22", temp: "mild" }]);
+  assert.deepEqual(s.fevers, [{ date: "2026-11-22", temp: "mild", c: null }]);
   assert.deepEqual(s.wounds, ["2026-11-24"]);
 });
 
@@ -329,13 +329,37 @@ test("챗봇 자료: 외래 때 적은 답 메모가 한 줄로 들어가고, �
   assert.doesNotMatch(text, /들은 답: .*실밥/);
 });
 
-test("외래 리포트: 말하기 요약은 기록한 값만 문장으로 옮긴다", async () => {
+test("외래 리포트: 말하기 요약은 앱 지표 없이 진료에 쓸 사실만 옮긴다", async () => {
   const { summarize, speakScript } = await import("./report.ts");
   const day = (d: string, o = {}) => ({ check_date: d, med_morning: true, med_lunch: true, med_dinner: true, side_effect: false, temp: "normal" as const, wound_issue: false, pain: 3, bowel: "good" as const, ...o });
-  const none = speakScript(summarize([day("2026-11-19")], "2026-11-16", "2026-11-19"));
-  assert.match(none, /퇴원 후 4일 중 1일을 기록했어요/);
-  assert.match(none, /모두 이상 없었어요/);
-  const some = speakScript(summarize([day("2026-11-18", { temp: "mild", pain: 6 }), day("2026-11-19", { side_effect: true })], "2026-11-18", "2026-11-19"));
-  assert.match(some, /다만 11월 18일 미열 \/ 11월 19일 약 먹고 불편함이 있었어요/);
+  const none = speakScript(summarize([day("2026-11-19")], "2026-11-16", "2026-11-19"), 4);
+  assert.match(none, /^퇴원 4일째예요\. 통증은 0~10점 중 3점이에요\./);
+  assert.match(none, /약은 모두 챙겨 먹었어요/);
+  assert.doesNotMatch(none, /%|기록/);
+  const some = speakScript(summarize([day("2026-11-18", { temp: "mild", temp_c: 37.8, pain: 6, med_dinner: false }), day("2026-11-19", { side_effect: true })], "2026-11-18", "2026-11-19"));
+  assert.match(some, /6점에서 3점으로 줄었어요/);
+  assert.match(some, /약을 못 챙긴 때: 11월 18일 저녁/);
+  assert.match(some, /다만 11월 18일 미열 37\.8℃ \/ 11월 19일 약 먹고 불편함이 있었어요/);
   assert.equal(speakScript(summarize([], "2026-11-18", "2026-11-19")), "");
+});
+
+test("체온 입력은 미열·고열일 때만, 35~42도 사이에서 받는다", async () => {
+  const { cleanTempC } = await import("./report.ts");
+  assert.equal(cleanTempC("37,8", "mild"), 37.8);
+  assert.equal(cleanTempC(38.04, "high"), 38);
+  assert.equal(cleanTempC("37.8", "normal"), null);
+  assert.equal(cleanTempC("", "mild"), null);
+  assert.equal(cleanTempC("99", "high"), null);
+  assert.equal(cleanTempC("abc", "high"), null);
+});
+
+test("의사용 질문: 할 일 말투를 질문 문장으로 바꾼다", async () => {
+  const { askForm } = await import("./report.ts");
+  assert.equal(askForm("수술 부위 소독 주기와 실밥 제거 일정을 병원에 문의하기"), "수술 부위 소독 주기와 실밥 제거 일정에 대해 알려 주세요.");
+  assert.equal(askForm("계단 이용과 샤워가 언제부터 가능한지 물어보기"), "계단 이용과 샤워가 언제부터 가능한가요?");
+  assert.equal(askForm("기존에 먹던 약과 같이 먹어도 되는지 물어보기"), "기존에 먹던 약과 같이 먹어도 되나요?");
+  assert.equal(askForm("산정특례 등록이 되어 있는지 원무과에 확인하기"), "산정특례 등록이 되어 있나요?");
+  assert.equal(askForm("회진 때 의사 선생님께 '샤워 언제부터 되나요?' 여쭤보기"), "샤워 언제부터 되나요?");
+  assert.equal(askForm("샤워 언제부터 돼요"), "샤워 언제부터 돼요?");
+  assert.equal(askForm("실밥 제거"), "실밥 제거");
 });

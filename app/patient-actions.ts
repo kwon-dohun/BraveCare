@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { db, caseFromPatientToken, logEvent } from "@/lib/db";
 import { upsertDaily } from "@/lib/daily";
+import { cleanTempC } from "@/lib/report";
 import { act } from "@/lib/push";
 import { todaySeoul } from "@/lib/load";
 
@@ -10,6 +11,7 @@ export interface PatientDailyInput {
   med_lunch: boolean;
   med_dinner: boolean;
   temp: "normal" | "mild" | "high";
+  temp_c?: string; // 미열·고열일 때 잰 체온(℃)
   wound_issue: boolean;
   pain: number; // 1 (거의 안 아픔), 4 (조금 아픔), 8 (많이 아픔)
   bowel: "good" | "constipation" | "diarrhea";
@@ -40,6 +42,7 @@ export async function submitPatientDailyCheck(patientToken: string, data: Patien
       med_dinner: !!data.med_dinner,
       side_effect: !!prev?.side_effect,
       temp,
+      temp_c: cleanTempC(data.temp_c, temp),
       wound_issue: !!data.wound_issue,
       pain,
       bowel,

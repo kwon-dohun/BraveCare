@@ -25,7 +25,7 @@ export default async function PatientPage({
   const today = todaySeoul();
   const { data } = await db
     .from("daily_checks")
-    .select("check_date,med_morning,med_lunch,med_dinner,side_effect,temp,wound_issue,pain,bowel,notes")
+    .select("check_date,med_morning,med_lunch,med_dinner,side_effect,temp,temp_c,wound_issue,pain,bowel,notes")
     .eq("case_id", patientCase.caseId)
     .eq("check_date", today)
     .maybeSingle();

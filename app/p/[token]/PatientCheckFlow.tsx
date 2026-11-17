@@ -17,6 +17,7 @@ export default function PatientCheckFlow({ patientToken, todayStr, initialDaily 
   const [meds, setMeds] = useState({ m: d?.med_morning ?? false, l: d?.med_lunch ?? false, n: d?.med_dinner ?? false });
   const [body, setBody] = useState<"ok" | "issue" | null>(d ? (d.temp !== "normal" || d.wound_issue ? "issue" : "ok") : null);
   const [temp, setTemp] = useState<Temp>(d?.temp ?? "normal");
+  const [tc, setTc] = useState(d?.temp_c != null ? String(d.temp_c) : "");
   const [wound, setWound] = useState(d?.wound_issue ?? false);
   const [pain, setPain] = useState<number | null>(d ? painStep(d.pain) : null);
   const [bowel, setBowel] = useState<Bowel | null>(d?.bowel ?? null);
@@ -43,7 +44,7 @@ export default function PatientCheckFlow({ patientToken, todayStr, initialDaily 
     if (!ready) return;
     send({
       med_morning: meds.m, med_lunch: meds.l, med_dinner: meds.n,
-      temp: body === "issue" ? temp : "normal", wound_issue: body === "issue" && wound,
+      temp: body === "issue" ? temp : "normal", temp_c: tc, wound_issue: body === "issue" && wound,
       pain: pain!, bowel: bowel!, notes: note,
     });
   };
@@ -71,7 +72,7 @@ export default function PatientCheckFlow({ patientToken, todayStr, initialDaily 
           <dl className="mt-5 divide-y divide-line rounded-xl bg-background px-4 text-left text-sm">
             {([
               ["약", [meds.m && "아침", meds.l && "점심", meds.n && "저녁"].filter(Boolean).join(" · ") || "안 먹음"],
-              ["열·수술 부위", body === "issue" ? [temp === "high" ? "고열" : temp === "mild" ? "미열" : "", wound ? "수술 부위 불편" : ""].filter(Boolean).join(" · ") || "불편함 있음" : "괜찮음"],
+              ["열·수술 부위", body === "issue" ? [temp === "high" ? "고열" : temp === "mild" ? "미열" : "", temp !== "normal" && tc ? `${tc}℃` : "", wound ? "수술 부위 불편" : ""].filter(Boolean).join(" · ") || "불편함 있음" : "괜찮음"],
               ["통증", PAIN.find(([v]) => v === pain)?.[1] ?? "-"],
               ["화장실", bowel === "good" ? "편함" : bowel === "constipation" ? "변비" : bowel === "diarrhea" ? "설사" : "-"],
             ] as [string, string][]).map(([k, v]) => (
@@ -111,11 +112,18 @@ export default function PatientCheckFlow({ patientToken, todayStr, initialDaily 
               <div className="view-in mt-3 space-y-2 rounded-xl bg-background p-3">
                 <div className="flex gap-2">
                   {([["mild", "미열", "37.5도 이상"], ["high", "고열", "38도 이상"]] as const).map(([v, l, s]) => (
-                    <button key={v} type="button" aria-pressed={temp === v} onClick={() => setTemp(temp === v ? "normal" : v)} className={pill(temp === v, "warn")}>
+                    <button key={v} type="button" aria-pressed={temp === v} onClick={() => { setTemp(temp === v ? "normal" : v); if (temp === v) setTc(""); }} className={pill(temp === v, "warn")}>
                       {l}<span className="text-xs font-normal opacity-80">{s}</span>
                     </button>
                   ))}
                 </div>
+                {temp !== "normal" && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <label htmlFor="ptc" className="shrink-0">잰 체온 <span className="text-muted">(선택)</span></label>
+                    <input id="ptc" inputMode="decimal" maxLength={4} value={tc} onChange={(e) => setTc(e.target.value)} placeholder="예: 37.8" className="w-24 rounded-xl border border-line bg-card px-3 py-2 text-base" />
+                    <span>℃</span>
+                  </div>
+                )}
                 <label className="flex min-h-11 items-center gap-2.5 text-sm">
                   <input type="checkbox" checked={wound} onChange={(e) => setWound(e.target.checked)} className="h-5 w-5 accent-warn" />
                   수술 부위가 붓거나 진물이 나요

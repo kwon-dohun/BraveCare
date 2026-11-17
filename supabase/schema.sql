@@ -90,6 +90,7 @@ create table if not exists public.daily_checks (
   med_dinner boolean not null default false,
   side_effect boolean not null default false,
   temp text not null default 'normal' check (temp in ('normal','mild','high')),
+  temp_c numeric(3,1) check (temp_c is null or temp_c between 35 and 42), -- 미열·고열일 때 잰 체온(℃)
   wound_issue boolean not null default false,
   pain int not null default 0 check (pain between 0 and 10),
   bowel text not null default 'good' check (bowel in ('good','constipation','diarrhea')),
