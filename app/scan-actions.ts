@@ -10,7 +10,7 @@ import { DOC_TYPE_LABEL } from "@/lib/extract";
 import { loadCase } from "@/lib/load";
 import { caseBrief } from "@/lib/brief";
 import { krDate } from "@/lib/format";
-import { baseName, drugInfo, suggestName } from "@/lib/drug";
+import { baseName, drugInfo, suggestName, durMeds, durFindings } from "@/lib/drug";
 
 const seoulDay = (iso: string) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
 import { glossaryText } from "@/lib/glossary";
@@ -181,6 +181,13 @@ export async function askChat(a: Auth, question: string): Promise<ChatAnswer> {
   const asked = medNames.filter((n) => { const b = baseName(n); return b.length >= 2 && q.includes(b); }).slice(0, 2);
   for (const info of await Promise.all(asked.map(drugInfo))) {
     if (info) sources.push({ label: `식약처 의약품 허가정보(${info.name})`, text: info.text });
+  }
+  // '같이 먹어도 돼?', 'CT 찍는데', '조심할 거' 같은 질문이면 가장 최근 약봉투의 약끼리 식약처 DUR로 맞춰 본 결과를 더한다
+  const latestMeds = ((docs ?? []).find((d) => d.doc_type === "medication" && (d.fields as DocFields | null)?.meds?.length)?.fields as DocFields | undefined)?.meds.map((m) => m.name) ?? [];
+  if (latestMeds.length && /같이|함께|병용|섞|조심|주의|부작용|금기|괜찮|먹어도|조영|CT|MRI|검사|겹치|중복/i.test(q)) {
+    const age = Number(data.today.slice(0, 4)) - data.input.birthYear;
+    const found = durFindings(await durMeds(latestMeds), age >= 65);
+    sources.push({ label: "식약처 DUR(의약품 안전사용 정보, 가장 최근 약봉투의 약끼리 확인)", text: found.length ? found.join("\n") : `가장 최근 약봉투의 약(${latestMeds.map(baseName).join(", ")})끼리는 식약처 DUR 병용금기·효능군중복에 걸리는 조합이 없어요.` });
   }
   const prompt = buildChatPrompt(!!data.isSelfCare);
   const raw = await askJson(prompt, [{ type: "text", text: `[자료]\n${sources.map((s) => `--- ${s.label} ---\n${s.text}`).join("\n")}\n\n[질문]\n${q}` }]);

@@ -2,7 +2,7 @@
 // 키는 Encoding·Decoding 어느 쪽으로 넣어도 되게 한 번 풀었다가 다시 인코딩한다.
 const BASE = "https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService08";
 
-interface Item { ITEM_NAME: string; ETC_OTC_CODE?: string; EE_DOC_DATA?: string; UD_DOC_DATA?: string; NB_DOC_DATA?: string; STORAGE_METHOD?: string; CHART?: string; ENTP_NAME?: string }
+interface Item { ITEM_NAME: string; ETC_OTC_CODE?: string; EE_DOC_DATA?: string; UD_DOC_DATA?: string; NB_DOC_DATA?: string; STORAGE_METHOD?: string; CHART?: string; ENTP_NAME?: string; MAIN_ITEM_INGR?: string }
 
 async function call(op: string, itemName: string, rows: number): Promise<Item[]> {
   const raw = process.env.DATA_GO_KR_KEY;
@@ -99,4 +99,55 @@ async function easyInfo(b: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+// ---- 식약처 DUR(의약품 안전사용 정보): 병용금기·노인주의·효능군중복 ----
+interface Taboo { INGR_KOR_NAME?: string; MIXTURE_INGR_KOR_NAME?: string; MIXTURE_CLASS_NAME?: string; PROHBT_CONTENT?: string | null }
+interface DurItem { EFFECT_NAME?: string; INGR_NAME?: string; PROHBT_CONTENT?: string | null }
+export interface DurMed { name: string; ingr: string; taboo: Taboo[]; elderly: DurItem[]; effect: DurItem[] }
+
+async function dur<T>(op: string, itemName: string, rows: number): Promise<T[]> {
+  const raw = process.env.DATA_GO_KR_KEY;
+  if (!raw) return [];
+  try {
+    const r = await fetch(`https://apis.data.go.kr/1471000/DURPrdlstInfoService03/${op}?serviceKey=${encodeURIComponent(decodeURIComponent(raw))}&type=json&numOfRows=${rows}&itemName=${encodeURIComponent(itemName)}`, { next: { revalidate: 86400 }, signal: AbortSignal.timeout(8000) });
+    const items = r.ok ? (await r.json())?.body?.items : null;
+    return Array.isArray(items) ? items : [];
+  } catch {
+    return [];
+  }
+}
+
+// 약마다 성분(허가정보)과 DUR 목록을 모은다. 약이 많아도 하루 캐시라 같은 약은 다시 묻지 않는다
+export async function durMeds(names: string[]): Promise<DurMed[]> {
+  return Promise.all(names.slice(0, 8).map(async (name) => {
+    const b = baseName(name);
+    const [[detail], taboo, elderly, effect] = await Promise.all([
+      call("getDrugPrdtPrmsnDtlInq08", b, 1),
+      dur<Taboo>("getUsjntTabooInfoList03", b, 300),
+      dur<DurItem>("getOdsnAtentInfoList03", b, 5),
+      dur<DurItem>("getEfcyDplctInfoList03", b, 5),
+    ]);
+    return { name: b, ingr: detail?.MAIN_ITEM_INGR ?? "", taboo, elderly, effect };
+  }));
+}
+
+// 서류함 약들끼리 맞춰 본 결과를 씩씩이 근거용 줄로. 순수 함수라 테스트한다
+export function durFindings(meds: DurMed[], senior: boolean): string[] {
+  const out: string[] = [];
+  const uniq = <T,>(xs: T[]) => [...new Set(xs)];
+  for (const a of meds) {
+    for (const b of meds) {
+      if (a === b || !b.ingr) continue;
+      const hit = a.taboo.find((t) => t.MIXTURE_INGR_KOR_NAME && b.ingr.includes(t.MIXTURE_INGR_KOR_NAME));
+      if (hit && a.name < b.name) out.push(`함께 먹으면 안 되는 조합(병용금기): ${a.name} + ${b.name}${hit.PROHBT_CONTENT ? ` — ${hit.PROHBT_CONTENT}` : ""}`);
+    }
+    const others = uniq(a.taboo.map((t) => t.MIXTURE_CLASS_NAME).filter((c): c is string => !!c)).slice(0, 5);
+    if (others.length) out.push(`${a.name}과 함께 쓰면 안 되는 약 종류(병용금기): ${others.join(", ")}`);
+    if (senior && a.elderly.length) out.push(`노인주의: ${a.name}${a.elderly[0].PROHBT_CONTENT ? ` — ${a.elderly[0].PROHBT_CONTENT}` : ""}`);
+  }
+  const byEffect = new Map<string, string[]>();
+  for (const m of meds) for (const e of uniq(m.effect.map((x) => x.EFFECT_NAME).filter((x): x is string => !!x))) byEffect.set(e, [...(byEffect.get(e) ?? []), m.name]);
+  for (const [e, ns] of byEffect) if (ns.length > 1) out.push(`같은 효능군 약이 겹침(효능군중복, ${e}): ${ns.join(", ")}`);
+  return out;
 }
