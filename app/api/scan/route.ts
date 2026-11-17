@@ -1,6 +1,6 @@
 import { extractImage } from "@/lib/scan";
 
-export const maxDuration = 60;
+export const maxDuration = 30;
 
 // 서류 사진을 읽는 동안 진행 상황을 한 줄(JSON)씩 흘려 보낸다. 진행 줄: {p:{docType,chars,sorting}}, 끝: {done:결과}, 실패: {err:메시지}
 export async function POST(req: Request) {

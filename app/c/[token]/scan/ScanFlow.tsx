@@ -27,7 +27,7 @@ function friendly(e: unknown): { msg: string; retryable: boolean } {
 // 서류 사진을 읽는 동안 서버가 흘려 주는 진행 상황(서류 종류, 옮겨 적은 글자 수)을 받아 화면에 알리고, 끝나면 결과를 돌려준다
 async function scanImage(auth: Auth, image: string, onProgress: (p: ScanProgress) => void): Promise<ScanResult> {
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), 55_000);
+  const timer = setTimeout(() => ctl.abort(), 21_000); // 서버는 18초에 포기한다. 그보다 조금 더 기다린 뒤 화면이 먼저 알린다
   try {
     return await readScan(auth, image, onProgress, ctl.signal);
   } catch (e) {
@@ -333,8 +333,8 @@ function ScanningCard({ busyText, phase, live, photo }: { busyText: string; phas
   const [slow, setSlow] = useState(false);
   const [long, setLong] = useState(false);
   useEffect(() => {
-    const id = setTimeout(() => setSlow(true), 12000);
-    const id2 = setTimeout(() => setLong(true), 30000);
+    const id = setTimeout(() => setSlow(true), 8000);
+    const id2 = setTimeout(() => setLong(true), 15000);
     return () => { clearTimeout(id); clearTimeout(id2); };
   }, []);
   const steps: [string, boolean, boolean][] = photo
@@ -366,7 +366,7 @@ function ScanningCard({ busyText, phase, live, photo }: { busyText: string; phas
         <div className="pulse-bar h-full w-1/2 rounded-full bg-primary" />
       </div>
       <p className="mt-2 text-center text-xs text-muted">
-        {long ? "많이 오래 걸리고 있어요. 1분이 지나면 멈추고 다시 읽을 수 있게 알려 드릴게요." : slow ? "조금 더 걸리고 있어요. 글자가 많은 서류는 20초쯤 걸릴 수 있어요." : "한 장에 5~10초쯤 걸려요. 화면을 닫지 말고 잠시만 기다려 주세요."}
+        {long ? "평소보다 오래 걸리고 있어요. 곧 멈추고 다시 읽을 수 있게 알려 드릴게요." : slow ? "조금 더 걸리고 있어요. 글자가 많은 서류는 10초쯤 걸릴 수 있어요." : "보통 3~8초 걸려요. 화면을 닫지 말고 잠시만 기다려 주세요."}
       </p>
     </section>
   );
