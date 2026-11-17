@@ -7,10 +7,11 @@ import type { CaseInput, Income, Living, Reason } from "@/lib/benefits";
 import { SIDO, SIGUNGU, REASON_LABEL, LIVING_LABEL, INCOME_OPTIONS } from "@/lib/options";
 import { useAct } from "@/components/useAct";
 import Mascot from "@/components/Mascot";
+import Sheet from "@/components/Sheet";
 
 const field = "mt-1 w-full rounded-xl border border-line bg-card px-4 py-3";
 
-export function CaseForm({ auth, input, selfCare }: { auth: Auth; input: CaseInput; selfCare: boolean }) {
+export function CaseForm({ auth, input, selfCare, onSaved }: { auth: Auth; input: CaseInput; selfCare: boolean; onSaved?: () => void }) {
   const [v, setV] = useState({ ...input, self: selfCare, undecided: input.dischargeDate === null, date: input.dischargeDate ?? "", birth: String(input.birthYear) });
   const [saved, setSaved] = useState(false);
   const { run, pending, err } = useAct();
@@ -22,7 +23,7 @@ export function CaseForm({ auth, input, selfCare }: { auth: Auth; input: CaseInp
       className="mt-3 space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
-        run(() => updateCase(auth, { ...input, dischargeDate: v.undecided ? null : v.date, birthYear: Number(v.birth), sido: v.sido, sigungu: v.sigungu, reason: v.reason, living: v.living, income: v.income, isSelfCare: v.living === "alone" && v.self }), () => setSaved(true));
+        run(() => updateCase(auth, { ...input, dischargeDate: v.undecided ? null : v.date, birthYear: Number(v.birth), sido: v.sido, sigungu: v.sigungu, reason: v.reason, living: v.living, income: v.income, isSelfCare: v.living === "alone" && v.self }), () => { setSaved(true); onSaved?.(); });
       }}
     >
       <div>
@@ -80,6 +81,27 @@ export function CaseForm({ auth, input, selfCare }: { auth: Auth; input: CaseInp
       {saved && <p role="status" className="text-accent">저장했어요. 지원 판정과 날짜를 다시 계산했어요.</p>}
       <button disabled={pending || !ok} className="w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">{pending ? "저장하는 중…" : "저장"}</button>
     </form>
+  );
+}
+
+// 환자 정보: 평소엔 요약만 보이고, 수정할 때만 아래에서 올라오는 창에서 폼을 연다(다른 화면의 수정과 같은 방식)
+export function PatientInfo({ auth, input, selfCare, summary }: { auth: Auth; input: CaseInput; selfCare: boolean; summary: [string, string][] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-2 rounded-xl bg-card p-4 shadow-card">
+      <dl className="divide-y divide-line">
+        {summary.map(([k, val]) => (
+          <div key={k} className="flex gap-4 py-2 first:pt-0 last:pb-0">
+            <dt className="w-16 shrink-0 text-sm text-muted">{k}</dt>
+            <dd className="min-w-0 flex-1 text-callout">{val}</dd>
+          </div>
+        ))}
+      </dl>
+      <button type="button" onClick={() => setOpen(true)} className="mt-3 w-full rounded-full bg-accent-soft px-5 py-2.5 text-sm font-semibold text-accent">수정</button>
+      <Sheet open={open} onClose={() => setOpen(false)} title="환자 정보 고치기">
+        {open && <CaseForm auth={auth} input={input} selfCare={selfCare} onSaved={() => setOpen(false)} />}
+      </Sheet>
+    </div>
   );
 }
 
