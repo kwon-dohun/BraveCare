@@ -39,7 +39,7 @@ export const EXTRACT_PROMPT = `너는 병원 서류(진단서·소견서·입퇴
    표시는 @일정(외래·검사 등 방문 일정), @복약(약 이름과 복용법이 있는 줄: 약봉투는 약 한 줄마다), @주의(주의사항), @연락(문의처·전화번호) 네 가지뿐이야.
 3) fields: 서류 종류에 맞는 칸만 쓰고 값은 transcript의 글자를 그대로 복사해. 서류에 없으면 빈 문자열.
    - medication: "조제일", "며칠분", "약국"
-   - receipt: "진료 기간", "합계", "본인부담", "비급여", "병원"
+   - receipt: "진료 기간", "합계"(진료비 총액), "본인부담"('환자부담 총액' 또는 '본인부담금'이라고 적힌 값), "비급여"(표의 합계 행에서 '비급여' 열의 값. 공단부담·전액본인부담 값과 섞지 마), "병원"
    - certificate: "병명", "질병코드", "진단일", "발병일"
    - guide: 쓰지 마(서버가 채워)
 4) meds: docType이 medication일 때만, 약마다 {"name": 약 이름(원문 그대로), "how": 먹는 법(원문 그대로, 없으면 "")}. 다른 서류면 [].`;
@@ -237,6 +237,7 @@ export function receiptNote(values: Record<string, string>): string | null {
   const won = (s?: string) => { const m = (s ?? "").match(/\d[\d,]*/); return m ? Number(m[0].replace(/,/g, "")) : null; };
   const total = won(values["합계"]), own = won(values["본인부담"]), non = won(values["비급여"]);
   if (total === null) return null;
-  if ((own ?? 0) > total || (non ?? 0) > total || (own ?? 0) + (non ?? 0) > total) return "본인부담이나 비급여가 합계보다 커요. 금액을 서류와 다시 비교해 주세요";
+  // 환자부담 총액에는 비급여가 이미 들어 있을 수 있어 둘을 더해서 비교하지 않는다
+  if ((own ?? 0) > total || (non ?? 0) > total) return "본인부담이나 비급여가 합계보다 커요. 금액을 서류와 다시 비교해 주세요";
   return null;
 }
