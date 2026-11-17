@@ -10,7 +10,7 @@ export const metadata = { title: "전체 · 씩씩케어" };
 type Tile = [href: string, icon: IconName, label: string, sub: string, tint: string];
 
 // 하단 탭(홈·지원·씩씩이·일정)에 없는 기능만 쓰임새별로 묶는다. 지원은 하단 탭에 있어 여기엔 두지 않는다.
-// 타일마다 지금 상태를 한 줄로 보여주고, 한 묶음의 개수가 홀수면 마지막 타일을 가로로 넓혀 빈 칸이 생기지 않게 한다.
+// 설정은 홈과 같이 오른쪽 위 톱니바퀴로 둔다. 타일마다 지금 상태를 한 줄로 보여주고, 한 묶음의 개수가 홀수면 마지막 타일을 가로로 넓혀 빈 칸이 생기지 않게 한다.
 export default async function More(props: PageProps<"/c/[token]/more">) {
   const { token } = await props.params;
   const { actor, data, base } = await adminPage(token);
@@ -33,16 +33,18 @@ export default async function More(props: PageProps<"/c/[token]/more">) {
       ["/scan", "camera", "서류 찍어서 정리", "안내문·약봉투·병원 문자", "bg-[#f1e9ff] text-[#5b3aa6]"],
       ["/docs", "file", "보험 청구 서류", `${data.packet.length}/${PACKET.length}개 준비`, "bg-[#fff4cc] text-[#7a5a00]"],
     ]],
-    ["설정·도움말", [
+    ["도움말", [
       ["/glossary", "book", "쉬운 용어 사전", "외래·산정특례·실손24…", "bg-[#dff7ec] text-[#0b7a57]"],
       ["/help", "help", "도움말·문의", "자주 묻는 질문", "bg-[#e3f0ff] text-[#1f5aa6]"],
-      ["/settings", "settings", "설정", "퇴원일·글자 크기·주소", "bg-[#eef1f0] text-[#45524d]"],
     ]],
   ];
 
   return (
     <>
-      <Logo />
+      <header className="flex items-center justify-between">
+        <Logo />
+        <Link href={`${base}/settings`} aria-label="설정" className="-mr-2 flex w-11 items-center justify-center text-muted"><Icon name="settings" size={20} /></Link>
+      </header>
       <h1 className="mt-5 font-display text-title">전체</h1>
       {groups.map(([title, items]) => (
         <section key={title} className="mt-6" aria-label={title}>
