@@ -301,3 +301,14 @@ test("서류 안내: 알려진 서류만 어디서 받는지 붙이고, 모르�
   assert.equal(docHint("회사에 내는 신청서 (회사 양식)") !== null, true);
   assert.equal(docHint("근로중단확인서"), null);
 });
+
+test("신청 날짜 후보: 마감 안의 날짜만, 마감일도 후보로, 미리 고르는 건 3일 뒤(마감이 가까우면 가장 늦은 날)", async () => {
+  const { dueOptions, recommendedDue } = await import("./due-options.ts");
+  const far = dueOptions("2026-11-18", "2026-11-29");
+  assert.deepEqual(far.map((o) => o.date), ["2026-11-18", "2026-11-19", "2026-11-21", "2026-11-25", "2026-11-29"]);
+  assert.equal(recommendedDue(far), "2026-11-21");
+  const near = dueOptions("2026-11-18", "2026-11-19");
+  assert.deepEqual(near.map((o) => o.date), ["2026-11-18", "2026-11-19"]);
+  assert.equal(recommendedDue(near), "2026-11-19");
+  assert.equal(dueOptions("2026-11-18").length, 4); // 마감이 없으면 네 가지
+});

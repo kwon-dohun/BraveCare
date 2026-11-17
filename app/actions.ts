@@ -359,7 +359,7 @@ export async function setBenefitStatus(a: Auth, benefitId: string, status: strin
 }
 
 // 지원 상세의 "할 일에 넣기": 신청 방법·필요 서류가 붙은 할 일을 달력에 만든다. 이미 있으면 새로 만들지 않는다.
-export async function createBenefitTask(a: Auth, benefitId: string) {
+export async function createBenefitTask(a: Auth, benefitId: string, dueDate?: string | null) {
   const actor = await resolve(a);
   const b = BENEFITS.find((x) => x.id === benefitId);
   if (!b) throw new Error("잘못된 요청이에요");
@@ -372,7 +372,10 @@ export async function createBenefitTask(a: Auth, benefitId: string) {
   }
   const data = await loadCase(actor.caseId);
   const r = data.results.find((x) => x.benefit.id === benefitId);
-  const due = defaultBenefitDue(todaySeoul(), r?.deadline.state === "open" ? r.deadline.endDate : undefined);
+  const end = r?.deadline.state === "open" ? r.deadline.endDate : undefined;
+  let due = isDate(dueDate) ? dueDate : defaultBenefitDue(todaySeoul(), end); // 고른 날짜를 따르되 오늘 이전·마감 이후는 범위 안으로
+  if (due < todaySeoul()) due = todaySeoul();
+  if (end && due > end) due = end >= todaySeoul() ? end : todaySeoul();
   await db.from("tasks").insert({ case_id: actor.caseId, title: benefitTaskTitle(b.name), kind: "admin", source: "benefit", benefit_id: benefitId, due_date: due, assignee_id: await soloOwner(actor.caseId, actor.memberId) });
   await act(actor.caseId, `${actor.name}님이 "${b.name}" 신청을 할 일에 넣었어요`, actor.memberId);
   await logEvent(actor.caseId, "benefit_task_created", { benefit: benefitId });

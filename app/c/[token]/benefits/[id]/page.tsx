@@ -74,7 +74,7 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
               </Link>
             ) : (
               <>
-                <AddBenefitTask auth={auth} benefitId={b.id} />
+                <AddBenefitTask auth={auth} benefitId={b.id} today={data.today} endDate={d.state === "open" ? d.endDate : undefined} />
                 <p className="mt-1.5 text-center text-xs text-muted">일정에 날짜가 생기고, 신청 방법과 서류를 할 일에서 챙겨요</p>
               </>
             )}
