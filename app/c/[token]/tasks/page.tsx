@@ -10,7 +10,6 @@ import CalSyncLink from "@/components/CalSyncLink";
 import { openDeadlines, sortTasks, badgeFor } from "@/lib/priority";
 import { buildEvents, monthGrid, shiftMonth, weekday, WEEKDAY, EVENT_STYLE, type EventKind } from "@/lib/calendar";
 import { krDate } from "@/lib/format";
-import { dayDiff } from "@/lib/benefits";
 
 export const metadata = { title: "일정 · 씩씩케어" };
 
@@ -111,17 +110,8 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
               <Icon name="right" size={18} className="shrink-0 text-accent" />
             </Link>
           ) : (
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <Link scroll={false} href={calHref(`d=${data.input.dischargeDate}`)} className="flex items-center justify-between rounded-2xl bg-[#ffe9dc] p-3 text-[#9a3f12] shadow-card hover:opacity-90">
-                <div>
-                  <p className="text-caption font-semibold">퇴원일</p>
-                  <p className="text-sm font-semibold tabular-nums">{krDate(data.input.dischargeDate)}</p>
-                </div>
-                <span className="rounded-full bg-card px-2 py-0.5 text-caption font-semibold tabular-nums">
-                  {data.input.dischargeDate === today ? "오늘" : data.input.dischargeDate > today ? `D-${dayDiff(data.input.dischargeDate, today)}` : `D+${dayDiff(today, data.input.dischargeDate)}`}
-                </span>
-              </Link>
-
+            <div className="mt-4">
+              {/* 퇴원일은 홈에 크게 있고 달력에도 '퇴원'으로 찍혀 있어 여기엔 다음 외래만 둔다 */}
               {data.tasks.find((t) => t.kind === "schedule" && t.due_date && t.due_date >= today) ? (
                 (() => {
                   const nextV = data.tasks.filter((t) => t.kind === "schedule" && t.due_date && t.due_date >= today).sort((a, b) => a.due_date!.localeCompare(b.due_date!))[0];
