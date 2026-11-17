@@ -210,7 +210,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
         {app ? "사진첩에서 고르기" : busy ? "읽는 중…" : rows ? "다시 촬영하기" : "촬영하거나 사진 고르기"}
         <input type="file" accept="image/*" multiple className="sr-only" disabled={!!busy} onChange={(e) => { onFiles(e.target.files); e.target.value = ""; }} />
       </label>
-      <p className="mt-2 text-sm text-muted">진단서·확인서, 퇴원 안내문, 약봉투, 영수증을 한 번에 {MAX}장까지 고를 수 있어요. 종이 전체가 보이게 밝은 곳에서 찍어 주세요. 사진은 글자를 읽은 뒤 저장하지 않고, 읽은 글자만 보관해요.</p>
+      <p className="mt-2 text-sm text-muted"><b className="text-ink">사진첩에서 여러 장을 한 번에 골라 읽을 수 있어요(최대 {MAX}장).</b> 진단서·확인서, 퇴원 안내문, 약봉투, 영수증이면 돼요. 종이 전체가 보이게 밝은 곳에서 찍어 주세요. 사진은 글자를 읽은 뒤 저장하지 않고, 읽은 글자만 보관해요.</p>
 
       <details className="mt-4 rounded-xl bg-card shadow-card p-4">
         <summary className="cursor-pointer font-semibold">병원 문자·알림톡 붙여넣기</summary>
