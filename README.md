@@ -104,6 +104,19 @@ flowchart TD
   REPORT --> PUSH
 ```
 
+## 기술 스택
+
+| 영역 | 사용 기술 |
+| --- | --- |
+| 웹 (화면 + 서버) | Next.js 16.4 (App Router · Server Actions) · React 19.3 · TypeScript 5 · Tailwind CSS 4.3 |
+| 데이터베이스 | Supabase (PostgreSQL) · 모든 테이블 RLS 적용, 서버(service role)에서만 접근 |
+| 모바일 앱 | Expo SDK 58 · React Native 0.88 · react-native-webview · expo-notifications · expo-brightness · react-native-document-scanner-plugin |
+| AI | OpenAI API — 서류 읽기 GPT-4.1 mini, 챗봇 GPT-4o (JSON 응답 · 원문 대조 검증) |
+| 공공 데이터 | 식약처 의약품 제품 허가정보 · e약은요 · DUR, 보험개발원 실손24 참여 요양기관, 심평원 상병마스터(KCD) |
+| 연동 | 카카오 로그인(OAuth 2.0) · Expo Push |
+| 배포 · 운영 | Vercel (서울 리전, Cron으로 매일 자동 파기) · EAS Build (Android APK) |
+| 테스트 | Node.js 내장 test runner · 자동 테스트 106개 |
+
 ## 기술적 핵심
 
 | 영역 | 구현 방식 |
