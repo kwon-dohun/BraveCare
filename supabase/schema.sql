@@ -1,4 +1,4 @@
--- 퇴원노트 DB 스키마 (Supabase / Postgres). 새 프로젝트에 그대로 실행하면 된다.
+-- 씩씩케어 DB 스키마 (Supabase / Postgres). 새 프로젝트에 그대로 실행하면 된다.
 -- 모든 접근은 서버(service role)만 한다. RLS를 켜고 정책을 두지 않아 공개 키로는 아무것도 읽히지 않는다.
 
 create table public.cases (

@@ -128,6 +128,7 @@ export async function setDailyCompleted(a: Auth, completed: boolean) {
 export async function deleteCase(a: Auth) {
   const actor = await resolve(a);
   if (actor.role !== "admin") throw new Error("전체 삭제는 처음 만든 가족만 할 수 있어요"); // 되돌릴 수 없는 일이라 한 사람에게만
+  await db.from("events").delete().eq("case_id", actor.caseId); // 이벤트는 외래키가 없어 cascade로 안 지워진다
   await db.from("cases").delete().eq("id", actor.caseId); // members·tasks·상태·활동은 FK cascade로 함께 삭제
   await logEvent(null, "case_deleted");
   redirect("/?deleted=1");

@@ -1,6 +1,6 @@
 import { BENEFITS } from "./benefits.ts";
 
-// 기본 26개 제도 밖의 추가 지원 "확인처" 목록.
+// 기본 47개 제도 밖의 추가 지원 "확인처" 목록.
 // AI가 사업명·금액을 지어내던 방식을 없앴다. 여기에는 실제로 있는 기관·제도만, 금액·기간 없이 적는다.
 // 지역 자체 사업은 지역마다 달라 사업명을 단정하지 않고 주민센터·검색으로 확인하게 한다.
 export interface AiBenefitItem {
@@ -112,7 +112,7 @@ export function findExtraHelp(p: ExtraParams): { items: AiBenefitItem[]; basics:
     const { when: _w, words: _x, ...rest } = e;
     items.push({ ...rest, matchReason: reason, searchQuery: rest.searchQuery || `${region} 퇴원 환자 지원` });
   }
-  // 키워드가 이미 기본 26개 제도에 있으면 그쪽으로 안내한다
+  // 키워드가 이미 기본 47개 제도에 있으면 그쪽으로 안내한다
   const basics = kws.length
     ? BENEFITS.filter((b) => kws.some((k) => squash(b.name + b.summary).includes(squash(k)))).map((b) => ({ id: b.id, name: b.name }))
     : [];

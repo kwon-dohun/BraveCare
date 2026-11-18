@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 앱 셸(mobile/)은 따로 빌드되는 Expo 프로젝트라 웹 린트에서 뺀다
+    "mobile/**",
   ]),
 ]);
 

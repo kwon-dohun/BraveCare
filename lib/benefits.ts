@@ -148,7 +148,7 @@ export const REASONS: Reason[] = ["ortho", "cancer", "brain", "heart", "surgery"
 export const LIVINGS: Living[] = ["alone", "away", "home"];
 export const INCOMES: Income[] = ["basic", "mid", "general", "unknown"];
 
-// 구버전(퇴원노트) 케이스의 값을 지금 분류로 옮긴다
+// 예전 분류로 저장된 케이스의 값을 지금 분류로 옮긴다
 export function normalizeInput(raw: Record<string, unknown>): CaseInput {
   const living = raw.living === "spouse" || raw.living === "family" ? "home" : raw.living;
   const income = raw.income === "near" ? "basic" : raw.income === "none" ? "general" : raw.income ?? "unknown";

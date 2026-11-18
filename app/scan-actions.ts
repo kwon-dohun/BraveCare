@@ -150,7 +150,7 @@ export async function askChat(a: Auth, question: string): Promise<ChatAnswer> {
 
 import { findExtraHelp } from "@/lib/ai-benefits";
 
-// ---- 기본 26개 제도 밖의 추가 지원 확인처 (확인된 기관·제도만, AI 생성 없음) ----
+// ---- 기본 47개 제도 밖의 추가 지원 확인처 (확인된 기관·제도만, AI 생성 없음) ----
 
 export async function searchAdditionalBenefitsAction(a: Auth, extraTags: string[] = [], customKeyword = "") {
   const actor = await resolve(a);
