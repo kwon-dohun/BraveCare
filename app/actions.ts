@@ -327,6 +327,15 @@ export async function setTaskMemo(a: Auth, taskId: string, memo: string) {
   refresh();
 }
 
+// 물어볼 것의 문구만 고친다(날짜·담당이 없는 질문용)
+export async function renameTask(a: Auth, taskId: string, title: string) {
+  const actor = await resolve(a);
+  const t = title.trim().slice(0, 100);
+  if (!t) throw new Error("내용을 입력해주세요");
+  await db.from("tasks").update({ title: t }).eq("id", taskId).eq("case_id", actor.caseId);
+  refresh();
+}
+
 export async function deleteTask(a: Auth, taskId: string) {
   const actor = await resolve(a);
   await db.from("tasks").delete().eq("id", taskId).eq("case_id", actor.caseId);
