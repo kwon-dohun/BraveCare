@@ -6,6 +6,8 @@ import QuestionAnswer from "@/components/QuestionAnswer";
 import { krDate } from "@/lib/format";
 import { adminPage } from "@/lib/page-auth";
 import AddQuestion from "../report/AddQuestion";
+import AddHeardNote from "@/components/AddHeardNote";
+import { HEARD_NOTE } from "@/lib/brief";
 
 export const metadata = { title: "물어볼 것 · 씩씩케어" };
 
@@ -14,9 +16,10 @@ export const metadata = { title: "물어볼 것 · 씩씩케어" };
 export default async function Questions(props: PageProps<"/c/[token]/questions">) {
   const { token } = await props.params;
   const { actor, data, auth, base } = await adminPage(token);
-  const pool = data.tasks.filter((t) => t.kind === "question");
+  const pool = data.tasks.filter((t) => t.kind === "question" && t.title !== HEARD_NOTE); // 질문 없이 적은 들은 말은 질문 수에 세지 않는다
+  const heardNotes = data.tasks.filter((t) => t.kind === "question" && t.title === HEARD_NOTE && t.done);
   const open = pool.filter((t) => !t.done);
-  const done = pool.filter((t) => t.done);
+  const done = [...pool.filter((t) => t.done), ...heardNotes];
 
   const common = { members: data.members, auth, meId: actor.memberId, today: data.today, detailBase: `${base}/tasks`, showOwner: false };
 
@@ -31,6 +34,7 @@ export default async function Questions(props: PageProps<"/c/[token]/questions">
 
       <p className="mt-4 text-sm text-muted tabular-nums">{open.length ? `남은 질문 ${open.length}개` : "질문을 모두 확인했어요"} · 전체 {pool.length}개</p>
       <AddQuestion auth={auth} />
+      <AddHeardNote auth={auth} />
 
       {open.length === 0 && <p className="mt-4 flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card"><Mascot size={40} mood="cheer" />질문을 모두 확인했어요. 수고했어요!</p>}
       {open.length > 0 && <div className="mt-4"><TaskList tasks={open} {...common} /></div>}

@@ -5,6 +5,9 @@ import { krDate } from "./format.ts";
 import { KIND_LABEL, type TaskKind } from "./timeline.ts";
 import { REASON_LABEL } from "./options.ts";
 
+// 질문 없이 진료 중에 들은 말을 적을 때 쓰는 제목. 질문이 아니라 들은 말로 읽히게 한다
+export const HEARD_NOTE = "그 외에 들은 말";
+
 interface T { title: string; kind: TaskKind; due_date: string | null; assignee_id: string | null; done: boolean; memo?: string | null; done_at?: string | null }
 interface M { id: string; name: string; role: string }
 
@@ -44,7 +47,7 @@ export function caseBrief(d: {
   const heard = d.tasks.filter((t) => t.kind === "question" && t.memo).sort((a, b) => (b.done_at ?? "").localeCompare(a.done_at ?? "")).slice(0, 10);
   if (heard.length) {
     out.push("외래·회진 때 들은 답(사용자가 직접 적은 메모):");
-    heard.forEach((t) => out.push(`- ${t.done_at ? `${krDate(new Date(t.done_at).toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" }))} ` : ""}질문 "${t.title}" → 들은 답: ${t.memo!.replace(/\s+/g, " ")}`));
+    heard.forEach((t) => out.push(`- ${t.done_at ? `${krDate(new Date(t.done_at).toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" }))} ` : ""}${t.title === HEARD_NOTE ? "들은 말" : `질문 "${t.title}" → 들은 답`}: ${t.memo!.replace(/\s+/g, " ")}`));
   }
 
   const high = d.results.filter((r) => r.verdict === "high");

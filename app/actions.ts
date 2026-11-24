@@ -10,6 +10,7 @@ import { seedTasks, addDays, nextDue, SELF_CARE_TITLE_MAP } from "@/lib/timeline
 import { act } from "@/lib/push";
 import { validDaily, upsertDaily } from "@/lib/daily";
 import { krDate } from "@/lib/format";
+import { HEARD_NOTE } from "@/lib/brief";
 import { isValidSaved } from "@/lib/saved";
 
 const token = () => randomUUID().replaceAll("-", "");
@@ -342,6 +343,18 @@ export async function recordVisit(a: Auth, v: { nextDate: string | null; nextTim
   await db.from("tasks").insert(rows);
   await act(actor.caseId, `${actor.name}님이 진료 결과를 남겼어요${next ? `. 다음 외래 ${krDate(next)}` : ""}${titles.length ? `, 새 할 일 ${titles.length}개` : ""}`, actor.memberId);
   await logEvent(actor.caseId, "visit_recorded", { next: !!next, tasks: titles.length });
+  refresh();
+}
+
+// 진료 중에 질문 없이 들은 말. 답을 들은 질문처럼 '들은 답'에 쌓이고, 씩씩이도 같은 근거로 읽는다.
+export async function addHeardNote(a: Auth, text: string) {
+  const actor = await resolve(a);
+  const memo = String(text).trim().slice(0, 500);
+  if (!memo) throw new Error("내용을 입력해주세요");
+  await db.from("tasks").insert({
+    case_id: actor.caseId, title: HEARD_NOTE, kind: "question", source: "manual", assignee_id: await soloOwner(actor.caseId, actor.memberId),
+    done: true, done_at: new Date().toISOString(), done_by: actor.name, memo,
+  });
   refresh();
 }
 

@@ -329,6 +329,9 @@ test("챗봇 자료: 외래 때 적은 답 메모가 한 줄로 들어가고, �
   });
   assert.match(text, /^- 11월 19일 질문 "샤워 언제부터 되나요\?" → 들은 답: 다음 주부터 가능, 사우나는 한 달 뒤$/m);
   assert.doesNotMatch(text, /들은 답: .*실밥/);
+  const { HEARD_NOTE } = await import("./brief.ts");
+  const withNote = caseBrief({ input, today: "2026-11-20", members: [{ id: "a", name: "지은", role: "admin" }], tasks: [{ title: HEARD_NOTE, kind: "question", due_date: null, assignee_id: null, done: true, memo: "2주 뒤 실밥 제거", done_at: "2026-11-19T05:00:00Z" }], results: evaluate(input, "2026-11-20"), status: {}, hospital: "", silson24: null, packet: [] });
+  assert.match(withNote, /^- 11월 19일 들은 말: 2주 뒤 실밥 제거$/m); // 질문 없이 적은 말은 "질문 … → 들은 답"으로 쓰지 않는다
 });
 
 test("외래 리포트: 말하기 요약은 앱 지표 없이 진료에 쓸 사실만 옮긴다", async () => {
