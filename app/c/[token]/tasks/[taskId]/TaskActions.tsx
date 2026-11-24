@@ -14,7 +14,7 @@ export default function TaskActions({ auth, id, done, canClaim, mine = false, he
     try { await navigator.clipboard.writeText(helpRequestText(help!, window.location.origin)); setCopied(true); setTimeout(() => setCopied(false), 3000); } catch {}
   };
   return (
-    <div className="mt-4 space-y-2">
+    <div className="mt-6 space-y-2 border-t border-line pt-5">
       {err && <p role="alert" className="text-sm text-warn">{err}</p>}
       <button disabled={pending} onClick={() => run(() => toggleTask(auth, id, !done))}
         className={done ? "w-full rounded-full bg-accent-soft px-5 py-3.5 font-semibold text-accent" : "w-full rounded-full bg-primary px-5 py-3.5 font-semibold text-ink"}>

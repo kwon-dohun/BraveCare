@@ -126,7 +126,7 @@ export function DocsChecklist({
         <span>{sel.length}/{docs.length} 준비됨</span>
         {hasHospitalDoc && docsHref && (
           <Link href={docsHref} className="font-semibold text-accent hover:underline">
-            원무과 서류 4종 관리로 이동 ↗
+            원무과 서류 4종 관리 ›
           </Link>
         )}
       </div>

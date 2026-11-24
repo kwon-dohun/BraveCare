@@ -12,8 +12,8 @@ export default function BenefitDue({ auth, taskId, today, endDate, current }: { 
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="mt-2 w-full rounded-full bg-accent-soft px-5 py-2.5 text-sm font-semibold text-accent">
-        {current ? "신청할 날 바꾸기" : "신청할 날 정하기"}
+      <button type="button" onClick={() => setOpen(true)} className="-my-2 min-h-9 shrink-0 self-center py-2 text-sm font-semibold text-accent">
+        {current ? "바꾸기" : "정하기"}
       </button>
       <DueSheet open={open} onClose={() => setOpen(false)} today={today} endDate={endDate} initial={current ?? undefined} pending={pending} err={err}
         confirmText={(d) => `날짜 바꾸기 · ${shortDate(d)}`} onPick={(d) => run(() => setTaskDue(auth, taskId, d), () => setOpen(false))} />
