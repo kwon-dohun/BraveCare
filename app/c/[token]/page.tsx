@@ -125,6 +125,20 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         </aside>
       )}
 
+      {/* 씩씩이 질문창: 자바스크립트 없이도 동작하는 GET 폼 */}
+      <section className="mt-3 rounded-xl border border-transparent bg-card p-3 shadow-card transition-colors focus-within:border-accent" aria-label="씩씩이에게 물어보기">
+        <form action={`${base}/chat`} className="flex items-center gap-2">
+          <Mascot size={36} />
+          <label htmlFor="ask" className="sr-only">씩씩이에게 질문</label>
+          <input id="ask" name="q" maxLength={300} placeholder="씩씩이에게 무엇이든 물어보세요" className="min-h-0 min-w-0 flex-1 bg-transparent py-2 text-callout outline-none" />
+          <button aria-label="묻기" className="flex h-10 w-10 min-h-0 items-center justify-center rounded-full bg-primary text-ink"><Icon name="send" size={18} /></button>
+        </form>
+        <div className="mt-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none]">
+          {["오늘 뭐부터 하면 돼?", "다음 병원 일정은 언제야?", "실손24가 뭐야?"].map((c) => (
+            <Link key={c} href={`${base}/chat?q=${encodeURIComponent(c)}`} className="flex h-8 min-h-0 shrink-0 items-center rounded-full bg-accent-soft px-3 text-xs font-medium text-accent">{c}</Link>
+          ))}
+        </div>
+      </section>
       {isNew && (
         <section className="mt-4 rounded-xl bg-accent-soft p-4">
           <p className="font-semibold">씩씩케어가 준비됐어요</p>
@@ -212,21 +226,6 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           </div>
         )}
         {todo.length === 0 && carried.length > 0 && missed}
-      </section>
-
-      {/* 씩씩이 질문창: 자바스크립트 없이도 동작하는 GET 폼 */}
-      <section className="mt-4 rounded-xl border border-transparent bg-card p-3 shadow-card transition-colors focus-within:border-accent" aria-label="씩씩이에게 물어보기">
-        <form action={`${base}/chat`} className="flex items-center gap-2">
-          <Mascot size={36} />
-          <label htmlFor="ask" className="sr-only">씩씩이에게 질문</label>
-          <input id="ask" name="q" maxLength={300} placeholder="씩씩이에게 무엇이든 물어보세요" className="min-h-0 min-w-0 flex-1 bg-transparent py-2 text-callout outline-none" />
-          <button aria-label="묻기" className="flex h-10 w-10 min-h-0 items-center justify-center rounded-full bg-primary text-ink"><Icon name="send" size={18} /></button>
-        </form>
-        <div className="mt-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none]">
-          {["오늘 뭐부터 하면 돼?", "다음 병원 일정은 언제야?", "실손24가 뭐야?"].map((c) => (
-            <Link key={c} href={`${base}/chat?q=${encodeURIComponent(c)}`} className="flex h-8 min-h-0 shrink-0 items-center rounded-full bg-accent-soft px-3 text-xs font-medium text-accent">{c}</Link>
-          ))}
-        </div>
       </section>
 
       {/* 이번 주: 오늘부터 7일 달력 띠 (홈에서 바로 날짜별 일정 확인) */}

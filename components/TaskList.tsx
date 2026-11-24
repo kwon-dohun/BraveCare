@@ -4,7 +4,6 @@ import Link from "next/link";
 import { toggleTask, claimTask, rescheduleTaskToToday } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import { KIND_LABEL, REPEAT_LABEL } from "@/lib/timeline";
-import { EVENT_STYLE, KIND } from "@/lib/calendar";
 import { krDate, krTime } from "@/lib/format";
 import { dayDiff } from "@/lib/benefits";
 import { useAct } from "./useAct";
@@ -93,7 +92,6 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
           const pillBtn = "-my-1.5 flex min-h-9 items-center rounded-full px-3 text-xs font-semibold";
           return (
             <li key={t.id} className="flex items-stretch">
-              <span className={flat ? "hidden" : "w-1 shrink-0"} style={{ background: EVENT_STYLE[KIND[t.kind]].dot, opacity: t.done ? 0.35 : 1 }} aria-hidden />
               <div className="flex min-w-0 flex-1 items-center gap-1 py-3 pl-0.5 pr-3">
                 <button
                   aria-label={`${t.title} ${t.done ? "완료 취소" : "완료로 표시"}`}
@@ -152,7 +150,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                         <span className={`max-w-full truncate text-caption leading-none ${t.assignee_id === meId ? "font-semibold text-accent" : "text-muted"}`}>{t.assignee_id === meId ? "나" : owner}</span>
                       </div>
                     ) : (
-                      <button onClick={() => run(() => claimTask(auth, t.id))} className={`flex h-9 min-h-0 w-full items-center justify-center text-xs font-semibold text-accent transition-colors hover:opacity-90 ${flat ? "rounded-full border border-accent/40 px-2" : "rounded-full bg-accent-soft"}`}>
+                      <button onClick={() => run(() => claimTask(auth, t.id))} className={`flex h-9 min-h-0 w-full items-center justify-center text-xs font-semibold text-accent transition-colors hover:opacity-90 rounded-full border border-accent/40 px-2`}>
                         내가 할게
                       </button>
                     )}
