@@ -13,7 +13,7 @@ export default function EditTask({ auth, back, members, solo, task, sourceLabel,
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="mt-1 shrink-0 rounded-full bg-accent-soft px-3.5 py-1.5 text-sm font-semibold text-accent">수정</button>
+      <button type="button" onClick={() => setOpen(true)} className="mt-1 shrink-0 rounded-full bg-card px-3.5 py-1.5 text-sm font-semibold text-ink shadow-card">수정</button>
       <Sheet open={open} onClose={() => setOpen(false)} title="할 일 고치기">
         <p className="text-xs text-muted">출처: {sourceLabel}</p>
         {open && <TaskForm auth={auth} back={back} members={members} solo={solo} task={task} maxDate={maxDate} onSaved={() => setOpen(false)} />}
