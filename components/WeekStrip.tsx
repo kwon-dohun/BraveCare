@@ -24,8 +24,9 @@ export default function WeekStrip({
   const [selected, setSelected] = useState<string>(today);
   const eventsMap = new Map<string, CalEvent[]>(eventsData);
 
-  const selectedEvents = eventsMap.get(selected) ?? [];
   const isToday = selected === today;
+  // 오늘은 위의 "오늘 할 일"이 할 일을 보여 주니, 여기서는 지원 마감·퇴원일처럼 거기에 없는 것만
+  const selectedEvents = (eventsMap.get(selected) ?? []).filter((e) => !(isToday && e.taskId));
 
   return (
     <section className="mt-6" aria-labelledby="h-week">
@@ -81,7 +82,7 @@ export default function WeekStrip({
         </ol>
 
         {/* 선택한 날짜의 인라인 일정 표시 */}
-        <div className="mt-3 border-t border-line pt-3">
+        {(!isToday || selectedEvents.length > 0) && <div className="mt-3 border-t border-line pt-3">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold text-accent">
               {isToday ? "오늘 (선택됨)" : `${krDate(selected)} (${weekday(selected)})`}
@@ -112,7 +113,7 @@ export default function WeekStrip({
               })}
             </ul>
           )}
-        </div>
+        </div>}
       </div>
     </section>
   );

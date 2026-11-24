@@ -39,17 +39,15 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   // 놓친 일은 사라지지 않지만 오늘 할 일을 밀어내지 않게: 오늘 일 먼저, 남는 자리에 가장 최근에 놓친 일 1~2개
   const carried = work.filter((t) => !t.done && t.due_date && t.due_date < today).sort((a, b) => b.due_date!.localeCompare(a.due_date!));
   const todo = work.filter((t) => !t.done && (t.due_date ? t.due_date === today : !input.dischargeDate));
-  // 홈 오늘 할 일은 내 몫과 임자 없는 일을 나눠 보여 준다(혼자 쓰는 모드는 나누지 않는다)
-  const shown = todo.slice(0, 4);
+  // 홈 오늘 할 일: 내 몫 → 임자 없는 일 → 다른 가족이 맡은 일 순서(구분은 줄 오른쪽의 담당 표시가 한다)
+  const mine = (t: { assignee_id: string | null }) => (t.assignee_id === actor.memberId ? 0 : !t.assignee_id ? 1 : 2);
+  const shown = todo.slice(0, 4).sort((x, y) => mine(x) - mine(y));
   const missed = carried.length > 0 && (
     <Link href={`${base}/tasks?view=list`} className={`flex min-h-11 items-center justify-between bg-warn-soft px-4 py-3 text-sm font-semibold text-warn ${todo.length ? "border-t border-line" : "mt-3 rounded-xl"}`}>
       <span>놓친 일 <span className="tabular-nums">{carried.length}개</span></span>
       <span className="flex items-center gap-0.5">확인하기<Icon name="right" size={16} /></span>
     </Link>
   );
-  const groups: [string | null, typeof todo][] = data.alone
-    ? [[null, shown]]
-    : [["내가 맡은 일", shown.filter((t) => t.assignee_id === actor.memberId)], ["같이 맡을 일", shown.filter((t) => !t.assignee_id)], ["가족이 맡은 일", shown.filter((t) => t.assignee_id && t.assignee_id !== actor.memberId)]];
   const next = work.find((t) => !t.done && t.due_date && t.due_date > today);
   const noOwnerVisits = tasks.filter((t) => !t.done && t.kind === "schedule" && !t.assignee_id && (!t.due_date || t.due_date >= today)).length;
   const doneCount = work.filter((t) => t.done).length; // 일정 탭과 같게: 물어볼 것은 할 일 수에 넣지 않는다
@@ -127,20 +125,6 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         </aside>
       )}
 
-      {/* 씩씩이 질문창: 자바스크립트 없이도 동작하는 GET 폼 */}
-      <section className="mt-3 rounded-xl border border-transparent bg-card p-3 shadow-card transition-colors focus-within:border-accent" aria-label="씩씩이에게 물어보기">
-        <form action={`${base}/chat`} className="flex items-center gap-2">
-          <Mascot size={36} />
-          <label htmlFor="ask" className="sr-only">씩씩이에게 질문</label>
-          <input id="ask" name="q" maxLength={300} placeholder="씩씩이에게 무엇이든 물어보세요" className="min-h-0 min-w-0 flex-1 bg-transparent py-2 text-callout outline-none" />
-          <button aria-label="묻기" className="flex h-10 w-10 min-h-0 items-center justify-center rounded-full bg-primary text-ink"><Icon name="send" size={18} /></button>
-        </form>
-        <div className="mt-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none]">
-          {["오늘 뭐부터 하면 돼?", "다음 병원 일정은 언제야?", "실손24가 뭐야?"].map((c) => (
-            <Link key={c} href={`${base}/chat?q=${encodeURIComponent(c)}`} className="flex h-8 min-h-0 shrink-0 items-center rounded-full bg-accent-soft px-3 text-xs font-medium text-accent">{c}</Link>
-          ))}
-        </div>
-      </section>
       {isNew && (
         <section className="mt-4 rounded-xl bg-accent-soft p-4">
           <p className="font-semibold">씩씩케어가 준비됐어요</p>
@@ -223,16 +207,26 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         {todo.length === 0 && <TaskList tasks={[]} {...list} emptyText={next ? `오늘은 할 일이 없어요. 다음 할 일은 ${dateLabel(next.due_date, next.rel_day, today)}이에요` : "오늘은 할 일이 없어요"} />}
         {todo.length > 0 && (
           <div className="overflow-hidden rounded-xl bg-card shadow-card">
-            {groups.filter(([, l]) => l.length).map(([title, l]) => (
-              <div key={title ?? "all"} className="border-t border-line first:border-t-0">
-                {title && <h3 className="pb-1 pl-2.5 pt-3 text-xs font-semibold text-muted">{title}</h3>}
-                <TaskList tasks={l} {...list} hideToday compact flat />
-              </div>
-            ))}
+            <TaskList tasks={shown} {...list} hideToday compact flat />
             {carried.length > 0 && missed}
           </div>
         )}
         {todo.length === 0 && carried.length > 0 && missed}
+      </section>
+
+      {/* 씩씩이 질문창: 자바스크립트 없이도 동작하는 GET 폼 */}
+      <section className="mt-4 rounded-xl border border-transparent bg-card p-3 shadow-card transition-colors focus-within:border-accent" aria-label="씩씩이에게 물어보기">
+        <form action={`${base}/chat`} className="flex items-center gap-2">
+          <Mascot size={36} />
+          <label htmlFor="ask" className="sr-only">씩씩이에게 질문</label>
+          <input id="ask" name="q" maxLength={300} placeholder="씩씩이에게 무엇이든 물어보세요" className="min-h-0 min-w-0 flex-1 bg-transparent py-2 text-callout outline-none" />
+          <button aria-label="묻기" className="flex h-10 w-10 min-h-0 items-center justify-center rounded-full bg-primary text-ink"><Icon name="send" size={18} /></button>
+        </form>
+        <div className="mt-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none]">
+          {["오늘 뭐부터 하면 돼?", "다음 병원 일정은 언제야?", "실손24가 뭐야?"].map((c) => (
+            <Link key={c} href={`${base}/chat?q=${encodeURIComponent(c)}`} className="flex h-8 min-h-0 shrink-0 items-center rounded-full bg-accent-soft px-3 text-xs font-medium text-accent">{c}</Link>
+          ))}
+        </div>
       </section>
 
       {/* 이번 주: 오늘부터 7일 달력 띠 (홈에서 바로 날짜별 일정 확인) */}

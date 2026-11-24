@@ -152,7 +152,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                         <span className={`max-w-full truncate text-caption leading-none ${t.assignee_id === meId ? "font-semibold text-accent" : "text-muted"}`}>{t.assignee_id === meId ? "나" : owner}</span>
                       </div>
                     ) : (
-                      <button onClick={() => run(() => claimTask(auth, t.id))} className={`flex h-9 min-h-0 w-full items-center justify-center text-xs font-semibold text-accent transition-colors hover:opacity-90 ${flat ? "" : "rounded-full bg-accent-soft"}`}>
+                      <button onClick={() => run(() => claimTask(auth, t.id))} className={`flex h-9 min-h-0 w-full items-center justify-center text-xs font-semibold text-accent transition-colors hover:opacity-90 ${flat ? "rounded-full border border-accent/40 px-2" : "rounded-full bg-accent-soft"}`}>
                         내가 할게
                       </button>
                     )}
