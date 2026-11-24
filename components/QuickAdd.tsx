@@ -4,7 +4,7 @@ import { addTask } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import { useAct } from "./useAct";
 
-// 글자만 치고 엔터: 오늘 할 일로, 담당 없이 들어간다(가족이 '내가 할게'로 가져간다). 날짜·담당·병원 일정은 '+ 추가'에서.
+// 글자만 치고 엔터: 오늘 할 일로, 적은 사람이 맡는 일로 들어간다. 날짜·다른 담당·병원 일정은 '+ 추가'에서.
 export default function QuickAdd({ auth, today }: { auth: Auth; today: string }) {
   const [text, setText] = useState("");
   const { run, pending, err } = useAct();

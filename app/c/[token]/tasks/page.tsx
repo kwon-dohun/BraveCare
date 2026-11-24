@@ -96,7 +96,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
               오늘
             </Link>
           )}
-          <AddTaskButton auth={auth} defaultVisit={!isList} label={isList ? "할 일 추가" : "병원 일정이나 할 일 추가"} members={data.members} solo={data.alone} />
+          <AddTaskButton meId={me} auth={auth} defaultVisit={!isList} label={isList ? "할 일 추가" : "병원 일정이나 할 일 추가"} members={data.members} solo={data.alone} />
         </div>
       </div>
 
@@ -318,7 +318,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
                   <Icon name="plus" size={16} />이 날에 외래 일정 또는 할 일 추가
                 </span>
               </summary>
-              <div className="px-4 pb-4"><AddTask auth={auth} defaultDate={sel} defaultVisit={true} plain members={data.members} solo={data.alone} /></div>
+              <div className="px-4 pb-4"><AddTask auth={auth} defaultDate={sel} defaultVisit={true} plain members={data.members} solo={data.alone} meId={me} /></div>
             </details>
           </section>
 

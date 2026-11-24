@@ -6,8 +6,8 @@ import Icon from "@/components/Icon";
 import AddTask from "./AddTask";
 
 // 위쪽 "추가" 버튼: 작은 말풍선 대신 아래에서 올라오는 창에서 입력한다(수정 창과 같은 모양). 넣으면 창이 닫힌다.
-export default function AddTaskButton({ auth, defaultVisit, label, members, solo }: {
-  auth: Auth; defaultVisit: boolean; label: string; members: { id: string; name: string }[]; solo: boolean;
+export default function AddTaskButton({ auth, defaultVisit, label, members, solo, meId }: {
+  auth: Auth; defaultVisit: boolean; label: string; members: { id: string; name: string }[]; solo: boolean; meId: string;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -16,7 +16,7 @@ export default function AddTaskButton({ auth, defaultVisit, label, members, solo
         <Icon name="plus" size={14} />추가
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title="일정·할 일 추가">
-        {open && <AddTask auth={auth} plain defaultVisit={defaultVisit} members={members} solo={solo} onAdded={() => setOpen(false)} />}
+        {open && <AddTask auth={auth} plain defaultVisit={defaultVisit} members={members} solo={solo} meId={meId} onAdded={() => setOpen(false)} />}
       </Sheet>
     </>
   );

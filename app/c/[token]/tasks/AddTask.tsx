@@ -16,6 +16,7 @@ export default function AddTask({
   defaultVisit = false,
   members = [],
   solo = false,
+  meId = "",
   onAdded,
 }: {
   auth: Auth;
@@ -24,6 +25,7 @@ export default function AddTask({
   defaultVisit?: boolean;
   members?: { id: string; name: string }[];
   solo?: boolean;
+  meId?: string; // 담당 기본값(나)
   onAdded?: () => void;
 }) {
   const [tab, setTab] = useState<"schedule" | "custom">(defaultVisit ? "schedule" : "custom");
@@ -31,7 +33,7 @@ export default function AddTask({
   const [date, setDate] = useState(defaultDate);
   const [time, setTime] = useState("");
   const [repeat, setRepeat] = useState("");
-  const [assignee, setAssignee] = useState("");
+  const [assignee, setAssignee] = useState(meId);
   const [memo, setMemo] = useState("");
   const { run, pending, err } = useAct();
 
@@ -57,7 +59,7 @@ export default function AddTask({
         setDate(defaultDate);
         setTime("");
         setRepeat("");
-        setAssignee("");
+        setAssignee(meId);
         setMemo("");
         onAdded?.();
       }
@@ -113,10 +115,10 @@ export default function AddTask({
             <div>
               <label htmlFor="na" className="block text-sm font-semibold">담당자</label>
               <select id="na" value={assignee} onChange={(e) => setAssignee(e.target.value)} className={field}>
-                <option value="">담당자 없음</option>
-                {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                {members.map((m) => <option key={m.id} value={m.id}>{m.id === meId ? `${m.name} (나)` : m.name}</option>)}
+                <option value="">담당자 없음 (가족이 맡아 주세요)</option>
               </select>
-              <p className="mt-1 text-xs text-muted">정하면 가족에게 알려줘요.</p>
+              {assignee && assignee !== meId && <p className="mt-1 text-xs text-muted">정하면 가족에게 알려줘요.</p>}
             </div>
           )}
           <div>

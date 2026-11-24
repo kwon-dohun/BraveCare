@@ -289,11 +289,14 @@ export async function addTask(a: Auth, title: string, dueDate: string | null, ki
   if (kind === "schedule" && !isDate(dueDate)) throw new Error("병원 일정은 날짜가 필요해요");
   const due = isDate(dueDate) ? dueDate : null;
   const repeat = due && kind !== "schedule" && (extra?.repeat === "daily" || extra?.repeat === "weekly") ? extra.repeat : null; // 날짜가 있어야 반복할 수 있다
+  // 담당을 안 정하면 만든 사람이 맡는다(보통 환자 곁에서 돌보는 사람이 일을 만든다). 일부러 담당 없음(null)이면 비워 두고, 물어볼 것은 담당이 없다.
+  const wanted = extra?.assigneeId;
+  const owner = kind === "question" ? await soloOwner(actor.caseId, actor.memberId) : wanted === undefined || wanted === actor.memberId ? actor.memberId : await soloOwner(actor.caseId, actor.memberId);
   const { data: row } = await db.from("tasks").insert({
-    case_id: actor.caseId, title: t, kind, source: "manual", assignee_id: await soloOwner(actor.caseId, actor.memberId),
+    case_id: actor.caseId, title: t, kind, source: "manual", assignee_id: owner,
     due_date: due, due_time: due && isTime(dueTime) ? dueTime : null, repeat, memo: (extra?.memo ?? "").trim().slice(0, 500) || null,
   }).select("id").single();
-  if (row && extra?.assigneeId) await assignTask(a, row.id, extra.assigneeId); // 담당을 정하면 가족에게 알린다(가족인지도 여기서 확인)
+  if (row && wanted && wanted !== actor.memberId) await assignTask(a, row.id, wanted); // 다른 가족에게 맡기면 그 가족에게 알린다(가족인지도 여기서 확인)
   refresh();
 }
 
@@ -328,14 +331,14 @@ export async function setTaskMemo(a: Auth, taskId: string, memo: string) {
   refresh();
 }
 
-// 진료 직후: 다음 외래 일정과 새로 생긴 할 일을 한 번에 넣고, 가족에게는 한 줄로만 알린다. 새 할 일은 담당 없이 들어가 가족이 "내가 할게"로 가져간다(혼자 쓰는 모드는 본인 몫).
+// 진료 직후: 다음 외래 일정과 새로 생긴 할 일을 한 번에 넣고, 가족에게는 한 줄로만 알린다. 새 일은 적은 사람이 맡고, 다른 가족에게 넘기려면 상세에서 담당을 바꾼다.
 export async function recordVisit(a: Auth, v: { nextDate: string | null; nextTime: string | null; title: string; tasks: string[] }) {
   const actor = await resolve(a);
   const titles = v.tasks.map((t) => String(t).trim().slice(0, 100)).filter(Boolean).slice(0, 3);
   const next = isDate(v.nextDate) ? v.nextDate : null;
   if (next && next < todaySeoul()) throw new Error("다음 외래 날짜는 오늘 이후로 골라 주세요");
   if (!next && !titles.length) return;
-  const owner = await soloOwner(actor.caseId, actor.memberId);
+  const owner = actor.memberId; // 진료 직후 새로 생긴 일도 만든 사람이 맡는다
   const rows = [
     ...(next ? [{ title: String(v.title).trim().slice(0, 100) || "외래 진료", kind: "schedule", due_date: next, due_time: isTime(v.nextTime) ? v.nextTime : null }] : []),
     ...titles.map((title) => ({ title, kind: "custom", due_date: null, due_time: null })),
@@ -464,7 +467,7 @@ export async function createBenefitTask(a: Auth, benefitId: string, dueDate?: st
   let due = isDate(dueDate) ? dueDate : defaultBenefitDue(todaySeoul(), end); // 고른 날짜를 따르되 오늘 이전·마감 이후는 범위 안으로
   if (due < todaySeoul()) due = todaySeoul();
   if (end && due > end) due = end >= todaySeoul() ? end : todaySeoul();
-  await db.from("tasks").insert({ case_id: actor.caseId, title: benefitTaskTitle(b.name), kind: "admin", source: "benefit", benefit_id: benefitId, due_date: due, assignee_id: await soloOwner(actor.caseId, actor.memberId) });
+  await db.from("tasks").insert({ case_id: actor.caseId, title: benefitTaskTitle(b.name), kind: "admin", source: "benefit", benefit_id: benefitId, due_date: due, assignee_id: actor.memberId });
   await act(actor.caseId, `${actor.name}님이 "${b.name}" 신청을 할 일에 넣었어요`, actor.memberId);
   await logEvent(actor.caseId, "benefit_task_created", { benefit: benefitId });
   refresh();
