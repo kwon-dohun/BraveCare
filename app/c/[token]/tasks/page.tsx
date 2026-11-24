@@ -62,6 +62,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
   const common = { members: data.members, auth, meId: me, today: data.today, detailBase: `${base}/tasks`, badges, showOwner: !isSelfCare };
   const activeOpen = open.filter((t) => !t.due_date || t.due_date >= data.today);
   const pastTasks = open.filter((t) => t.due_date && t.due_date < data.today);
+  const live = total - pastTasks.length; // 진행 요약은 날짜가 지난 일을 빼고 센다(지난 일은 따로 칸이 있고, 이미 했을 수도 있다)
   const missedTab = sp.t === "missed" && pastTasks.length > 0; // 홈의 "지난 일" 줄이 바로 여기로 온다
   const mine = sort(activeOpen.filter((t) => t.assignee_id === me));
   const needOwner = sort(activeOpen.filter((t) => !t.assignee_id));
@@ -329,13 +330,13 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
         <>
           {/* 진행 요약 */}
           <section className="mt-4 flex items-center gap-4 rounded-xl bg-card p-4 shadow-card" aria-label="진행 상황">
-            <Mascot size={52} mood={total && finished === total ? "cheer" : "idle"} />
+            <Mascot size={52} mood={live && finished === live ? "cheer" : "idle"} />
             <div className="min-w-0 flex-1">
-              <p className="font-semibold">{open.length ? `할 일 ${open.length}개가 남았어요` : "할 일을 모두 끝냈어요!"}</p>
-              <div className="mt-2 h-2 rounded-full bg-line" role="progressbar" aria-label="완료 비율" aria-valuemin={0} aria-valuenow={finished} aria-valuemax={total}>
-                <div className="h-full rounded-full bg-primary" style={{ width: `${total ? Math.max(4, (finished / total) * 100) : 0}%` }} />
+              <p className="font-semibold">{activeOpen.length ? `할 일 ${activeOpen.length}개가 남았어요` : "할 일을 모두 끝냈어요!"}</p>
+              <div className="mt-2 h-2 rounded-full bg-line" role="progressbar" aria-label="완료 비율" aria-valuemin={0} aria-valuenow={finished} aria-valuemax={live}>
+                <div className="h-full rounded-full bg-primary" style={{ width: `${live ? Math.max(4, (finished / live) * 100) : 0}%` }} />
               </div>
-              <p className="mt-1 text-xs text-muted tabular-nums">{total}개 중 {finished}개 완료{needOwner.length > 0 ? ` · 맡을 사람이 필요한 일 ${needOwner.length}개` : ""}</p>
+              <p className="mt-1 text-xs text-muted tabular-nums">{live}개 중 {finished}개 완료{needOwner.length > 0 ? ` · 맡을 사람이 필요한 일 ${needOwner.length}개` : ""}</p>
             </div>
           </section>
 
