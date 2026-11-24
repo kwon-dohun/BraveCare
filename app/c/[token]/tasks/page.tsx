@@ -69,11 +69,11 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
   const sortedPast = sort(pastTasks);
   const view = f === "past" && !pastTasks.length ? "" : f;
   // 목록의 기본 축은 시간이다. 담당은 줄 오른쪽에 붙는 정보이고, 보기(칩)로 걸러 본다
-  const horizon = addDays(data.today, 7);
+  const horizon = addDays(data.today, 6); // 홈의 "이번 주 일정"과 같은 범위(오늘부터 7일)
   const shownActive = view === "mine" ? mine : view === "none" ? needOwner : activeOpen;
   const timeGroups: [string, typeof open][] = ([
     ["오늘", shownActive.filter((t) => t.due_date === data.today)],
-    ["앞으로 7일", shownActive.filter((t) => t.due_date && t.due_date > data.today && t.due_date <= horizon)],
+    ["이번 주", shownActive.filter((t) => t.due_date && t.due_date > data.today && t.due_date <= horizon)],
     ["그 이후", shownActive.filter((t) => t.due_date && t.due_date > horizon)],
     ["날짜 미정", shownActive.filter((t) => !t.due_date)],
   ] as [string, typeof open][]).map(([k, l]) => [k, sort(l)] as [string, typeof open]).filter(([, l]) => l.length);
@@ -82,12 +82,6 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
     ...(isSelfCare ? [] : [["mine", "내 일", mine.length], ["none", "맡을 사람 필요", needOwner.length]] as [string, string, number][]),
     ["past", "지난 일", pastTasks.length],
   ];
-
-  const head = (title: string, n: number, hint?: string, tone = "") => (
-    <div className="mb-2 flex items-end justify-between gap-2">
-      <div><h2 className={`font-semibold ${tone}`}>{title} <span className="tabular-nums">{n}</span></h2>{hint && <p className="text-xs text-muted">{hint}</p>}</div>
-    </div>
-  );
 
   return (
     <>
@@ -341,15 +335,14 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
       ) : (
         /* ======================= [2. 할 일 목록 뷰 (?view=list)] ======================= */
         <>
-          {/* 진행 요약 */}
-          <section className="mt-4 flex items-center gap-4 rounded-xl bg-card p-4 shadow-card" aria-label="진행 상황">
-            <Mascot size={52} mood={live && finished === live ? "cheer" : "idle"} />
-            <div className="min-w-0 flex-1">
+          {/* 진행 요약: 카드 없이 한 줄과 얇은 막대로 */}
+          <section className="mt-5" aria-label="진행 상황">
+            <div className="flex items-baseline justify-between gap-3">
               <p className="font-semibold">{activeOpen.length ? `할 일 ${activeOpen.length}개가 남았어요` : "할 일을 모두 끝냈어요!"}</p>
-              <div className="mt-2 h-2 rounded-full bg-line" role="progressbar" aria-label="완료 비율" aria-valuemin={0} aria-valuenow={finished} aria-valuemax={live}>
-                <div className="h-full rounded-full bg-primary" style={{ width: `${live ? Math.max(4, (finished / live) * 100) : 0}%` }} />
-              </div>
-              <p className="mt-1 text-xs text-muted tabular-nums">{live}개 중 {finished}개 완료</p>
+              <p className="text-xs text-muted tabular-nums">{live}개 중 {finished}개 완료</p>
+            </div>
+            <div className="mt-2 h-1.5 rounded-full bg-line" role="progressbar" aria-label="완료 비율" aria-valuemin={0} aria-valuenow={finished} aria-valuemax={live}>
+              <div className="h-full rounded-full bg-primary" style={{ width: `${live ? Math.max(4, (finished / live) * 100) : 0}%` }} />
             </div>
           </section>
 
@@ -363,13 +356,17 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
           </nav>
           {open.length === 0 && <p className="mt-4 flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card"><Mascot size={40} mood="cheer" />남은 일이 없어요. 수고했어요!</p>}
 
-          {view !== "past" && timeGroups.map(([title, l]) => (
-            <section key={title} className="mt-6" aria-label={title}>
-              {head(title, l.length)}
-              <TaskList tasks={l} {...common} hideMine={view === "mine"} hideToday={title === "오늘"} />
-            </section>
-          ))}
-          {view !== "past" && !timeGroups.length && open.length > 0 && <p className="mt-6 rounded-xl bg-card p-4 text-sm text-muted shadow-card">해당하는 일이 없어요</p>}
+          {view !== "past" && timeGroups.length > 0 && (
+            <div className="mt-4 overflow-hidden rounded-xl bg-card shadow-card">
+              {timeGroups.map(([title, l]) => (
+                <section key={title} aria-label={title} className="border-t border-line first:border-t-0">
+                  <h2 className="pb-1 pl-2.5 pt-3 text-xs font-semibold text-muted">{title}</h2>
+                  <TaskList tasks={l} {...common} flat hideMine={view === "mine"} hideToday={title === "오늘"} />
+                </section>
+              ))}
+            </div>
+          )}
+          {view !== "past" && !timeGroups.length && open.length > 0 && <p className="mt-4 rounded-xl bg-card p-4 text-sm text-muted shadow-card">해당하는 일이 없어요</p>}
 
           {/* 지난 일 (날짜가 지난 미완료 할 일): 홈의 "지난 일" 줄이 이 보기로 온다. 이미 했는데 체크만 안 한 일이 많아 압박 주는 말·색은 쓰지 않는다 */}
           {view === "past" && (
