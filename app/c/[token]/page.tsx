@@ -41,6 +41,12 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const todo = work.filter((t) => !t.done && (t.due_date ? t.due_date === today : !input.dischargeDate));
   // 홈 오늘 할 일은 내 몫과 임자 없는 일을 나눠 보여 준다(혼자 쓰는 모드는 나누지 않는다)
   const shown = todo.slice(0, 4);
+  const missed = carried.length > 0 && (
+    <Link href={`${base}/tasks?view=list`} className={`flex min-h-11 items-center justify-between bg-warn-soft px-4 py-3 text-sm font-semibold text-warn ${todo.length ? "border-t border-line" : "mt-3 rounded-xl"}`}>
+      <span>놓친 일 <span className="tabular-nums">{carried.length}개</span></span>
+      <span className="flex items-center gap-0.5">확인하기<Icon name="right" size={16} /></span>
+    </Link>
+  );
   const groups: [string | null, typeof todo][] = data.alone
     ? [[null, shown]]
     : [["내가 맡은 일", shown.filter((t) => t.assignee_id === actor.memberId)], ["같이 맡을 일", shown.filter((t) => !t.assignee_id)], ["가족이 맡은 일", shown.filter((t) => t.assignee_id && t.assignee_id !== actor.memberId)]];
@@ -215,18 +221,18 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           <Link href={`${base}/tasks`} className="flex items-center text-sm font-medium text-accent">전체 보기<span className="sr-only"> 할 일</span></Link>
         </div>
         {todo.length === 0 && <TaskList tasks={[]} {...list} emptyText={next ? `오늘은 할 일이 없어요. 다음 할 일은 ${dateLabel(next.due_date, next.rel_day, today)}이에요` : "오늘은 할 일이 없어요"} />}
-        {groups.filter(([, l]) => l.length).map(([title, l]) => (
-          <div key={title ?? "all"} className="mt-4 first:mt-0">
-            {title && <h3 className="mb-1 text-xs font-semibold text-muted">{title}</h3>}
-            <TaskList tasks={l} {...list} hideToday compact flat />
+        {todo.length > 0 && (
+          <div className="overflow-hidden rounded-xl bg-card shadow-card">
+            {groups.filter(([, l]) => l.length).map(([title, l]) => (
+              <div key={title ?? "all"} className="border-t border-line first:border-t-0">
+                {title && <h3 className="pb-1 pl-2.5 pt-3 text-xs font-semibold text-muted">{title}</h3>}
+                <TaskList tasks={l} {...list} hideToday compact flat />
+              </div>
+            ))}
+            {carried.length > 0 && missed}
           </div>
-        ))}
-        {carried.length > 0 && (
-          <Link href={`${base}/tasks?view=list`} className="mt-4 flex min-h-11 items-center justify-between rounded-xl bg-warn-soft px-4 py-3 text-sm font-semibold text-warn">
-            <span>놓친 일 <span className="tabular-nums">{carried.length}개</span></span>
-            <span className="flex items-center gap-0.5">확인하기<Icon name="right" size={16} /></span>
-          </Link>
         )}
+        {todo.length === 0 && carried.length > 0 && missed}
       </section>
 
       {/* 이번 주: 오늘부터 7일 달력 띠 (홈에서 바로 날짜별 일정 확인) */}

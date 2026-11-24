@@ -57,7 +57,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
           <button type="button" onClick={() => setToast(null)} aria-label="닫기" className="-my-2 ml-2 flex min-h-0 h-8 w-8 shrink-0 items-center justify-center opacity-60 hover:opacity-100"><Icon name="close" size={14} /></button>
         </div>
       )}
-      <ul className={flat ? "divide-y divide-line border-y border-line" : "divide-y divide-line overflow-hidden rounded-xl bg-card shadow-card"}>
+      <ul className={flat ? "divide-y divide-line" : "divide-y divide-line overflow-hidden rounded-xl bg-card shadow-card"}>
         {tasks.map((t) => {
           const isQ = t.kind === "question"; // 물어볼 것은 날짜·마감 없이 체크만 한다
           const late = !isQ && !t.done && !!t.due_date && t.due_date < today;
