@@ -210,10 +210,18 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           </div>
           <Link href={`${base}/tasks`} className="flex items-center text-sm font-medium text-accent">전체 보기<span className="sr-only"> 할 일</span></Link>
         </div>
-        <TaskList
-          tasks={[...todo.slice(0, 4), ...shownCarried]} {...list} hideToday compact
-          emptyText={next ? `오늘은 할 일이 없어요. 다음 할 일은 ${dateLabel(next.due_date, next.rel_day, today)}이에요` : "오늘은 할 일이 없어요"}
-        />
+        {(todo.length > 0 || shownCarried.length === 0) && (
+          <TaskList
+            tasks={todo.slice(0, 4)} {...list} hideToday compact
+            emptyText={next ? `오늘은 할 일이 없어요. 다음 할 일은 ${dateLabel(next.due_date, next.rel_day, today)}이에요` : "오늘은 할 일이 없어요"}
+          />
+        )}
+        {shownCarried.length > 0 && (
+          <>
+            <p className="mb-1.5 mt-4 text-xs font-semibold text-warn">놓친 일</p>
+            <TaskList tasks={shownCarried} {...list} compact />
+          </>
+        )}
         {carried.length > shownCarried.length && (
           <Link href={`${base}/tasks?view=list`} className="mt-2 flex items-center justify-between rounded-xl bg-card px-4 py-3 text-sm shadow-card">
             <span>날짜가 지난 일 <b className="tabular-nums">{carried.length}개</b> 모아 보기</span><Icon name="right" size={16} className="text-muted" />
