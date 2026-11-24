@@ -2,6 +2,8 @@ import BackLink from "@/components/BackLink";
 import Icon from "@/components/Icon";
 import Mascot from "@/components/Mascot";
 import TaskList from "@/components/TaskList";
+import QuestionAnswer from "@/components/QuestionAnswer";
+import { krDate } from "@/lib/format";
 import { adminPage } from "@/lib/page-auth";
 import AddQuestion from "../report/AddQuestion";
 
@@ -24,7 +26,7 @@ export default async function Questions(props: PageProps<"/c/[token]/questions">
       <h1 className="mt-2 font-display text-title">의료진에게 물어볼 것</h1>
       <p className="mt-1 flex gap-2 rounded-xl bg-accent-soft p-3 text-sm text-accent">
         <Icon name="help" size={18} className="mt-0.5 shrink-0" />
-        <span>회진이나 외래 때 이 화면을 보여주며 하나씩 물어보세요. 답을 들으면 체크하고 답을 메모해 두면 나중에 다시 볼 수 있어요. 데일리 체크를 하다 떠오른 것도 여기에 적어 두세요.</span>
+        <span>외래 때 이 화면을 보며 물어보고, 들은 답은 아래 &lsquo;들은 답&rsquo;에 모여요.</span>
       </p>
 
       <p className="mt-4 text-sm text-muted tabular-nums">{open.length ? `남은 질문 ${open.length}개` : "질문을 모두 확인했어요"} · 전체 {pool.length}개</p>
@@ -34,10 +36,18 @@ export default async function Questions(props: PageProps<"/c/[token]/questions">
       {open.length > 0 && <div className="mt-4"><TaskList tasks={open} {...common} /></div>}
 
       {done.length > 0 && (
-        <details className="mt-6">
-          <summary className="cursor-pointer font-semibold">확인한 질문 ({done.length})</summary>
-          <div className="mt-2"><TaskList tasks={done} {...common} /></div>
-        </details>
+        <section className="mt-8" aria-labelledby="q-heard">
+          <h2 id="q-heard" className="font-semibold">들은 답 <span className="tabular-nums text-muted">{done.length}</span></h2>
+          <ul className="mt-2 divide-y divide-line overflow-hidden rounded-xl bg-card shadow-card">
+            {[...done].sort((x, y) => (y.done_at ?? "").localeCompare(x.done_at ?? "")).map((t) => (
+              <li key={t.id} className="p-4">
+                <p className="font-medium">{t.title}</p>
+                {t.done_at && <p className="mt-0.5 text-xs text-muted">{krDate(new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date(t.done_at)))}</p>}
+                <QuestionAnswer auth={auth} task={t} full />
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </>
   );

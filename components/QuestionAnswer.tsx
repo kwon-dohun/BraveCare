@@ -7,7 +7,7 @@ import Sheet from "./Sheet";
 
 // 의료진에게 물어본 질문의 '들은 답' 메모. 저장하면 확인한 질문이 되고, 씩씩이가 이 메모를 근거로 나중에 다시 알려 준다.
 // '질문 고치기'에서 문구를 바꾸거나 질문을 지운다.
-export default function QuestionAnswer({ auth, task }: { auth: Auth; task: { id: string; title: string; memo: string | null; done: boolean } }) {
+export default function QuestionAnswer({ auth, task, full = false }: { auth: Auth; task: { id: string; title: string; memo: string | null; done: boolean }; full?: boolean }) {
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState(false);
   const [text, setText] = useState(task.memo ?? "");
@@ -22,12 +22,12 @@ export default function QuestionAnswer({ auth, task }: { auth: Auth; task: { id:
   const link = "-my-1 mt-1 min-h-0 py-1 text-xs font-semibold underline underline-offset-2 print:hidden";
   return (
     <>
-      {task.memo && <p className="mt-1.5 line-clamp-3 whitespace-pre-line rounded-lg bg-accent-soft px-2.5 py-1.5 text-sm text-ink">{task.memo}</p>}
+      {task.memo && <p className={`mt-1.5 ${full ? "" : "line-clamp-3"} whitespace-pre-line rounded-lg bg-accent-soft px-2.5 py-1.5 text-sm text-ink`}>{task.memo}</p>}
       <div className="flex gap-4">
         <button type="button" onClick={() => { setText(task.memo ?? ""); setOpen(true); }} className={`${link} text-accent`}>
           {task.memo ? "답 고치기" : "들은 답 적기"}
         </button>
-        <button type="button" onClick={() => { setTitle(task.title); setEdit(true); }} className={`${link} text-muted`}>질문 고치기</button>
+        <button type="button" onClick={() => { setTitle(task.title); setEdit(true); }} className={`${link} text-muted`}>고치기·지우기</button>
       </div>
       <Sheet open={open} onClose={() => setOpen(false)} title="의사 선생님 답변">
         <p className="mb-3 text-sm text-muted">{task.title}</p>
