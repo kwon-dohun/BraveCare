@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import Link from "next/link";
 import { toggleTask, claimTask, rescheduleTaskToToday } from "@/app/actions";
 import type { Auth } from "@/lib/db";
@@ -10,36 +9,19 @@ import { useAct } from "./useAct";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
 import Mascot from "@/components/Mascot";
-import { helpRequestText } from "@/lib/task-help";
 import QuestionAnswer from "./QuestionAnswer";
 
 export interface T { id: string; title: string; kind: keyof typeof KIND_LABEL; due_date: string | null; rel_day: number | null; assignee_id: string | null; done: boolean; done_by: string | null; source: string; source_quote: string | null; memo: string | null; due_time?: string | null; repeat?: "daily" | "weekly" | null }
 interface M { id: string; name: string }
 
-// 한 줄에 체크 · 제목 · 메타 · 담당. 왼쪽 색 막대는 달력과 같은 종류별 색이다(색만으로 구분하지 않게 메타에 종류 글자도 쓴다).
+// 한 줄에 체크 · 제목 · 메타 · 담당. 담당 없는 일을 가족에게 부탁하는 카톡 문구는 상세 화면에서만 복사한다.
 // 담당 없는 일에는 '내가 할게', 맡은 일에는 담당 아바타. 담당을 다른 사람으로 바꾸는 건 눌러서 들어가는 상세 화면에서 한다.
 export default function TaskList({ tasks, members, auth, meId, today, emptyText, detailBase, showDate = true, showOwner = true, hideToday = false, compact = false, flat = false, badges = {} }: {
   tasks: T[]; members: M[]; auth: Auth; meId: string; today: string; emptyText?: string; detailBase?: string; showDate?: boolean;
   showOwner?: boolean; hideToday?: boolean; compact?: boolean; flat?: boolean; badges?: Record<string, string>;
 }) {
   const { run, pending, err } = useAct();
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const nameOf = (id: string | null) => members.find((m) => m.id === id)?.name;
-
-  const copyHelp = async (t: T) => {
-    const when = t.due_date ? `${krDate(t.due_date)}${t.due_time ? ` ${krTime(t.due_time)}` : ""}` : "날짜 미정";
-    const text = helpRequestText({ title: t.title, when, memo: t.memo }, window.location.origin);
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedId(t.id);
-      setToast("부탁 메시지를 복사했어요. 가족 단톡방에 붙여 넣어 주세요.");
-      setTimeout(() => {
-        setCopiedId(null);
-        setToast(null);
-      }, 3000);
-    } catch {}
-  };
 
   if (!tasks.length) return (
     <p className="flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card">
@@ -50,12 +32,6 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
   return (
     <div className={pending ? "opacity-60" : ""} aria-busy={pending}>
       {err && <p role="alert" className="mb-2 text-warn">{err}</p>}
-      {toast && (
-        <div role="status" className="mb-2.5 flex items-center justify-between rounded-xl bg-accent-soft p-3 text-xs font-medium text-accent shadow-sm">
-          <span>{toast}</span>
-          <button type="button" onClick={() => setToast(null)} aria-label="닫기" className="-my-2 ml-2 flex min-h-0 h-8 w-8 shrink-0 items-center justify-center opacity-60 hover:opacity-100"><Icon name="close" size={14} /></button>
-        </div>
-      )}
       <ul className={flat ? "divide-y divide-line" : "divide-y divide-line overflow-hidden rounded-xl bg-card shadow-card"}>
         {tasks.map((t) => {
           const isQ = t.kind === "question"; // 물어볼 것은 날짜·마감 없이 체크만 한다
@@ -116,16 +92,6 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                         title="날짜를 오늘로 변경합니다"
                       >
                         오늘 하기
-                      </button>
-                    )}
-                    {!compact && showOwner && !t.done && !t.assignee_id && (
-                      <button
-                        type="button"
-                        onClick={() => copyHelp(t)}
-                        className={`${pillBtn} bg-background ${copiedId === t.id ? "text-accent" : "text-muted"}`}
-                        title="가족 단톡방에 보낼 부탁 문구를 복사합니다"
-                      >
-                        {copiedId === t.id ? "복사 완료!" : "카톡 부탁"}
                       </button>
                     )}
                     {!compact && !showOwner && !isQ && !t.done && t.due_date && (
