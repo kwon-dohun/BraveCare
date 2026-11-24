@@ -9,7 +9,6 @@ import AddTaskButton from "./AddTaskButton";
 import Segmented from "@/components/Segmented";
 import CalExport from "@/components/CalExport";
 import ClearOverdue from "@/components/ClearOverdue";
-import QuickAdd from "@/components/QuickAdd";
 import { benefitIdOfTask } from "@/lib/benefit-task";
 import { openDeadlines, sortTasks, badgeFor } from "@/lib/priority";
 import { buildEvents, monthGrid, shiftMonth, weekday, WEEKDAY, EVENT_STYLE, type EventKind } from "@/lib/calendar";
@@ -347,7 +346,6 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
             </div>
           </section>
 
-          {view !== "past" && <QuickAdd auth={auth} today={data.today} />}
           <nav aria-label="할 일 보기" className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
             {chips.filter(([k, , n]) => !k || n > 0 || k === view).map(([k, label, n]) => (
               <Link key={label} href={`${base}/tasks?view=list${k ? `&f=${k}` : ""}`} aria-current={view === k ? "page" : undefined}
