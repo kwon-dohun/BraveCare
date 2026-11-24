@@ -13,10 +13,10 @@ import { benefitIdOfTask } from "@/lib/benefit-task";
 import { openDeadlines, sortTasks, badgeFor } from "@/lib/priority";
 import { buildEvents, monthGrid, shiftMonth, weekday, WEEKDAY, EVENT_STYLE, type EventKind } from "@/lib/calendar";
 import { krDate } from "@/lib/format";
+import { addDays } from "@/lib/timeline";
 
 export const metadata = { title: "일정 · 씩씩케어" };
 
-const SHOW_FIRST = 3; // 각 섹션별 처음 3개만 노출하고 나머지는 더보기로 확장
 
 export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">) {
   const { token } = await props.params;
@@ -58,17 +58,30 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
   const dayCompleted = dayTasks.filter((t) => t.done);
 
   // 2) 할 일 목록 계산
-  const f = sp.f === "none" || sp.f === "mine" ? sp.f : "";
+  // 보기: 전체(기본) · 내 일 · 맡을 사람 필요 · 지난 일. 예전 주소(?t=missed)도 지난 일로 연다
+  const f = sp.f === "none" || sp.f === "mine" ? sp.f : sp.f === "past" || sp.t === "missed" ? "past" : "";
   const common = { members: data.members, auth, meId: me, today: data.today, detailBase: `${base}/tasks`, badges, showOwner: !isSelfCare };
   const activeOpen = open.filter((t) => !t.due_date || t.due_date >= data.today);
   const pastTasks = open.filter((t) => t.due_date && t.due_date < data.today);
   const live = total - pastTasks.length; // 진행 요약은 날짜가 지난 일을 빼고 센다(지난 일은 따로 칸이 있고, 이미 했을 수도 있다)
-  const missedTab = sp.t === "missed" && pastTasks.length > 0; // 홈의 "지난 일" 줄이 바로 여기로 온다
-  const mine = sort(activeOpen.filter((t) => t.assignee_id === me));
-  const needOwner = sort(activeOpen.filter((t) => !t.assignee_id));
-  const others = sort(activeOpen.filter((t) => t.assignee_id && t.assignee_id !== me));
-  // 필터(내 일/맡을 사람 필요)를 켜도 기한 지난 일이 사라지지 않게 같은 기준으로 거른다
-  const sortedPast = sort(pastTasks.filter((t) => f === "none" ? !t.assignee_id : f === "mine" ? t.assignee_id === me : true));
+  const mine = activeOpen.filter((t) => t.assignee_id === me);
+  const needOwner = activeOpen.filter((t) => !t.assignee_id);
+  const sortedPast = sort(pastTasks);
+  const view = f === "past" && !pastTasks.length ? "" : f;
+  // 목록의 기본 축은 시간이다. 담당은 줄 오른쪽에 붙는 정보이고, 보기(칩)로 걸러 본다
+  const horizon = addDays(data.today, 7);
+  const shownActive = view === "mine" ? mine : view === "none" ? needOwner : activeOpen;
+  const timeGroups: [string, typeof open][] = ([
+    ["오늘", shownActive.filter((t) => t.due_date === data.today)],
+    ["앞으로 7일", shownActive.filter((t) => t.due_date && t.due_date > data.today && t.due_date <= horizon)],
+    ["그 이후", shownActive.filter((t) => t.due_date && t.due_date > horizon)],
+    ["날짜 미정", shownActive.filter((t) => !t.due_date)],
+  ] as [string, typeof open][]).map(([k, l]) => [k, sort(l)] as [string, typeof open]).filter(([, l]) => l.length);
+  const chips: [string, string, number][] = [
+    ["", "전체", activeOpen.length],
+    ...(isSelfCare ? [] : [["mine", "내 일", mine.length], ["none", "맡을 사람 필요", needOwner.length]] as [string, string, number][]),
+    ["past", "지난 일", pastTasks.length],
+  ];
 
   const head = (title: string, n: number, hint?: string, tone = "") => (
     <div className="mb-2 flex items-end justify-between gap-2">
@@ -336,100 +349,30 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
               <div className="mt-2 h-2 rounded-full bg-line" role="progressbar" aria-label="완료 비율" aria-valuemin={0} aria-valuenow={finished} aria-valuemax={live}>
                 <div className="h-full rounded-full bg-primary" style={{ width: `${live ? Math.max(4, (finished / live) * 100) : 0}%` }} />
               </div>
-              <p className="mt-1 text-xs text-muted tabular-nums">{live}개 중 {finished}개 완료{needOwner.length > 0 ? ` · 맡을 사람이 필요한 일 ${needOwner.length}개` : ""}</p>
+              <p className="mt-1 text-xs text-muted tabular-nums">{live}개 중 {finished}개 완료</p>
             </div>
           </section>
 
-          {pastTasks.length > 0 && (
-            <div className="mt-3">
-              <Segmented label="할 일 구분" active={missedTab ? 1 : 0} items={[
-                { label: `할 일 ${f === "none" ? needOwner.length : f === "mine" ? mine.length : activeOpen.length}`, href: `${base}/tasks?view=list${f ? `&f=${f}` : ""}` },
-                { label: `지난 일 ${sortedPast.length}`, href: `${base}/tasks?view=list&t=missed${f ? `&f=${f}` : ""}` },
-              ]} />
-            </div>
-          )}
-          {f && (
-            <Link href={`${base}/tasks?view=list`} className="mt-3 flex items-center justify-between rounded-xl bg-card px-4 py-2 text-sm text-accent shadow-card">
-              {f === "none" ? "맡을 사람이 필요한 일만 보는 중" : "내가 맡은 일만 보는 중"}<span className="font-semibold">전체 보기</span>
-            </Link>
-          )}
+          <nav aria-label="할 일 보기" className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
+            {chips.filter(([k, , n]) => !k || n > 0 || k === view).map(([k, label, n]) => (
+              <Link key={label} href={`${base}/tasks?view=list${k ? `&f=${k}` : ""}`} aria-current={view === k ? "page" : undefined}
+                className={`flex min-h-9 shrink-0 items-center rounded-full border px-4 text-sm transition-colors ${view === k ? "border-foreground bg-foreground font-semibold text-white" : "border-line bg-card text-muted"}`}>
+                {label} <span className="ml-1 tabular-nums">{n}</span>
+              </Link>
+            ))}
+          </nav>
           {open.length === 0 && <p className="mt-4 flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card"><Mascot size={40} mood="cheer" />남은 일이 없어요. 수고했어요!</p>}
 
-          {/* 셀프 케어 모드: 가족 분담 없이 하나의 깔끔한 체크리스트 */}
-          {!missedTab && (isSelfCare ? (
-            <section className="mt-6" aria-label="할 일 목록">
-              {head("챙길 일", activeOpen.length, "날짜가 가까운 일부터 먼저 나와요")}
-              {activeOpen.length > 0 ? (
-                <>
-                  <TaskList tasks={sort(activeOpen).slice(0, SHOW_FIRST)} {...common} />
-                  {activeOpen.length > SHOW_FIRST && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {activeOpen.length - SHOW_FIRST}개 보기</summary>
-                      <div className="mt-2"><TaskList tasks={sort(activeOpen).slice(SHOW_FIRST)} {...common} /></div>
-                    </details>
-                  )}
-                </>
-              ) : (
-                <p className="rounded-xl bg-card p-4 text-sm text-muted shadow-card">남은 할 일이 없어요.</p>
-              )}
+          {view !== "past" && timeGroups.map(([title, l]) => (
+            <section key={title} className="mt-6" aria-label={title}>
+              {head(title, l.length)}
+              <TaskList tasks={l} {...common} hideMine={view === "mine"} hideToday={title === "오늘"} />
             </section>
-          ) : (
-            <>
-              {/* 1) 내가 맡은 일 */}
-              {f !== "none" && open.length > 0 && (
-                <section className="mt-6" aria-label="내가 맡은 일">
-                  {head("내가 맡은 일", mine.length, mine.length ? "오늘 할 일과 앞으로 해야 할 일이에요" : undefined)}
-                  {mine.length ? (
-                    <>
-                      <TaskList tasks={mine.slice(0, SHOW_FIRST)} {...common} hideMine />
-                      {mine.length > SHOW_FIRST && (
-                        <details className="mt-2">
-                          <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {mine.length - SHOW_FIRST}개 보기</summary>
-                          <div className="mt-2"><TaskList tasks={mine.slice(SHOW_FIRST)} {...common} hideMine /></div>
-                        </details>
-                      )}
-                    </>
-                  ) : (
-                    <p className="rounded-xl bg-card p-4 text-sm text-muted shadow-card">{needOwner.length ? "아직 맡은 일이 없어요." : "맡은 일이 없어요."}</p>
-                  )}
-                </section>
-              )}
-
-              {/* 2) 맡을 사람이 필요한 일 */}
-              {f !== "mine" && needOwner.length > 0 && (
-                <section className="mt-6" aria-label="맡을 사람이 필요한 일">
-                  {head("맡을 사람이 필요해요", needOwner.length, "날짜가 가까운 일부터 먼저 나와요", "text-warn")}
-                  <TaskList tasks={needOwner.slice(0, SHOW_FIRST)} {...common} />
-                  {needOwner.length > SHOW_FIRST && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {needOwner.length - SHOW_FIRST}개 보기</summary>
-                      <div className="mt-2"><TaskList tasks={needOwner.slice(SHOW_FIRST)} {...common} /></div>
-                    </details>
-                  )}
-                </section>
-              )}
-
-              {/* 3) 다른 가족이 맡은 일 */}
-              {f === "" && others.length > 0 && (
-                <details className="mt-6">
-                  <summary className="cursor-pointer font-semibold">다른 가족이 맡은 일 <span className="tabular-nums">{others.length}</span></summary>
-                  <p className="mt-1 text-xs text-muted">담당을 바꾸려면 항목을 눌러 들어가세요. 바꾸면 가족에게 알려줘요.</p>
-                  <div className="mt-2">
-                    <TaskList tasks={others.slice(0, SHOW_FIRST)} {...common} />
-                    {others.length > SHOW_FIRST && (
-                      <details className="mt-2">
-                        <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {others.length - SHOW_FIRST}개 보기</summary>
-                        <div className="mt-2"><TaskList tasks={others.slice(SHOW_FIRST)} {...common} /></div>
-                      </details>
-                    )}
-                  </div>
-                </details>
-              )}
-            </>
           ))}
+          {view !== "past" && !timeGroups.length && open.length > 0 && <p className="mt-6 rounded-xl bg-card p-4 text-sm text-muted shadow-card">해당하는 일이 없어요</p>}
 
-          {/* 4) 지난 일 (날짜가 지난 미완료 할 일): 홈의 "지난 일" 줄이 이 탭으로 온다. 이미 했는데 체크만 안 한 일이 많아 압박 주는 말·색은 쓰지 않는다 */}
-          {missedTab && (
+          {/* 지난 일 (날짜가 지난 미완료 할 일): 홈의 "지난 일" 줄이 이 보기로 온다. 이미 했는데 체크만 안 한 일이 많아 압박 주는 말·색은 쓰지 않는다 */}
+          {view === "past" && (
             <section className="mt-4" aria-label="지난 일">
               <ClearOverdue auth={auth} skipped={sortedPast.filter((t) => t.repeat || benefitIdOfTask(t)).length} items={sortedPast.filter((t) => !t.repeat && !benefitIdOfTask(t)).map((t) => ({ id: t.id, title: t.title }))} />
               <div className="mt-1"><TaskList tasks={sortedPast} {...common} /></div>
