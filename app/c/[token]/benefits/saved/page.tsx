@@ -32,7 +32,7 @@ export default async function SavedBenefits(props: PageProps<"/c/[token]/benefit
 
       {basic.length + extra.length === 0 && (
         <p className="mt-6 flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card">
-          <Mascot size={40} mood="rest" />아직 찜한 지원이 없어요. 지원 목록에서 하트를 눌러 보세요.
+          <Mascot size={40} mood="rest" />아직 찜한 지원이 없어요.
         </p>
       )}
 

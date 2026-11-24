@@ -348,7 +348,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
 
       <section className="mt-8" aria-labelledby="kp">
         <h2 id="kp" className="font-semibold">내 서류함 <span className="tabular-nums text-muted">{docs.length}</span></h2>
-        <p className="text-sm text-muted">찍은 서류의 글자가 여기 모여요. 눌러서 전체를 볼 수 있고, 씩씩이는 이 내용을 보고 답해요.</p>
+        <p className="text-sm text-muted">찍은 서류의 글자가 여기 모여요. 씩씩이는 이 내용을 보고 답해요.</p>
         {docs.length > 0 ? (
           <Kept
             auth={auth}

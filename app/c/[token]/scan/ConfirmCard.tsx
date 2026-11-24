@@ -69,7 +69,7 @@ export default function ConfirmCard({ auth, id, type: t0, fields: f0, onDone, on
                 </div>
                 {suggest[m.name]?.length > 0 && (
                   <div className="mt-1.5 text-sm text-ink">
-                    혹시 이 중 하나인가요? <span className="text-xs text-muted">식약처 허가 목록 기준, 눌러서 바꾸기</span>
+                    혹시 이 중 하나인가요? <span className="text-xs text-muted">식약처 허가 목록 기준</span>
                     <div className="mt-1 flex flex-wrap gap-1.5">
                       {suggest[m.name].map((s) => (
                         <button key={s} type="button" onClick={() => setMed(i, { name: m.name.replace(baseName(m.name), s) })} className="min-h-0 rounded-full bg-accent-soft px-3 py-1.5 font-semibold text-accent">{s}</button>

@@ -141,7 +141,6 @@ export default function PacketForm({
             {post ? "요청할 때 보여주기" : "창구에서 보여주기"}
           </button>
         </div>
-        <p className="mt-1 text-xs text-muted">받은 서류는 체크해 두세요</p>
 
         {scannedDocs.length > 0 && (
           <aside className="mt-3 rounded-xl bg-accent-soft p-3 text-sm text-accent" aria-label="보관함 연동 안내">

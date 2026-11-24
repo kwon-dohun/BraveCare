@@ -24,7 +24,7 @@ export default async function Questions(props: PageProps<"/c/[token]/questions">
       <h1 className="mt-2 font-display text-title">의료진에게 물어볼 것</h1>
       <p className="mt-1 flex gap-2 rounded-xl bg-accent-soft p-3 text-sm text-accent">
         <Icon name="help" size={18} className="mt-0.5 shrink-0" />
-        <span>회진이나 외래 때 이 화면을 보여주며 하나씩 물어보세요. 답을 들으면 체크하고, 눌러서 답을 메모해 두면 나중에 다시 볼 수 있어요. 데일리 체크를 하다 떠오른 것도 여기에 적어 두세요.</span>
+        <span>회진이나 외래 때 이 화면을 보여주며 하나씩 물어보세요. 답을 들으면 체크하고 답을 메모해 두면 나중에 다시 볼 수 있어요. 데일리 체크를 하다 떠오른 것도 여기에 적어 두세요.</span>
       </p>
 
       <p className="mt-4 text-sm text-muted tabular-nums">{open.length ? `남은 질문 ${open.length}개` : "질문을 모두 확인했어요"} · 전체 {pool.length}개</p>

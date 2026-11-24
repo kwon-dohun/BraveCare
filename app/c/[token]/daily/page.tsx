@@ -27,7 +27,7 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
         <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-accent-soft p-3.5 text-accent">
           <div>
             <p className="text-sm font-semibold">회복 완료 상태</p>
-            <p className="text-xs opacity-90 mt-0.5">데일리 체크를 마쳤어요. 다시 기록하려면 오른쪽을 눌러주세요.</p>
+            <p className="text-xs opacity-90 mt-0.5">데일리 체크를 마쳤어요.</p>
           </div>
           <DailyCompleteToggle auth={auth} completed={true} variant="card" />
         </div>

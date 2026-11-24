@@ -378,7 +378,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
                       )}
                     </>
                   ) : (
-                    <p className="rounded-xl bg-card p-4 text-sm text-muted shadow-card">{needOwner.length ? "아직 맡은 일이 없어요. 아래에서 ‘내가 할게’를 눌러 보세요." : "맡은 일이 없어요."}</p>
+                    <p className="rounded-xl bg-card p-4 text-sm text-muted shadow-card">{needOwner.length ? "아직 맡은 일이 없어요." : "맡은 일이 없어요."}</p>
                   )}
                 </section>
               )}
@@ -386,7 +386,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
               {/* 2) 맡을 사람이 필요한 일 */}
               {f !== "mine" && needOwner.length > 0 && (
                 <section className="mt-6" aria-label="맡을 사람이 필요한 일">
-                  {head("맡을 사람이 필요해요", needOwner.length, "마감이 가까운 일부터 먼저 나와요. ‘내가 할게’를 눌러보세요", "text-warn")}
+                  {head("맡을 사람이 필요해요", needOwner.length, "마감이 가까운 일부터 먼저 나와요", "text-warn")}
                   <TaskList tasks={needOwner.slice(0, SHOW_FIRST)} {...common} />
                   {needOwner.length > SHOW_FIRST && (
                     <details className="mt-2">

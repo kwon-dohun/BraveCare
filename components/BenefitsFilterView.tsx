@@ -136,11 +136,10 @@ export default function BenefitsFilterView({
         <div className="mt-6 flex flex-col items-center justify-center rounded-2xl bg-card p-6 text-center shadow-card">
           <Mascot size={48} mood="rest" />
           <p className="mt-3 font-semibold text-ink">{search ? "검색한 지원을 찾지 못했어요" : results.length ? "이 분류에는 지원이 없어요" : "지금은 보여 드릴 지원이 없어요"}</p>
-          <p className="mt-1 text-xs text-muted">
+          {(search || !results.length) && <p className="mt-1 text-xs text-muted">
             {search ? `‘${search}’ 대신 다른 단어로 찾아보거나 아래 '더 알아볼 곳'을 확인해 보세요.`
-              : results.length ? "'전체'를 누르면 확인해 볼 지원을 모두 볼 수 있어요."
               : "병원 의료사회복지팀이나 주민센터에 퇴원 후 받을 수 있는 지원을 물어보세요. 아래 '더 알아볼 곳'에 물어볼 곳을 정리해 두었어요."}
-          </p>
+          </p>}
           {search && (
             <button
               type="button"
