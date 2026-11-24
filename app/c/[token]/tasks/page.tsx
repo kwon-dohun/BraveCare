@@ -7,7 +7,7 @@ import Icon from "@/components/Icon";
 import AddTask from "./AddTask";
 import AddTaskButton from "./AddTaskButton";
 import Segmented from "@/components/Segmented";
-import CalSyncLink from "@/components/CalSyncLink";
+import CalExport from "@/components/CalExport";
 import { openDeadlines, sortTasks, badgeFor } from "@/lib/priority";
 import { buildEvents, monthGrid, shiftMonth, weekday, WEEKDAY, EVENT_STYLE, type EventKind } from "@/lib/calendar";
 import { krDate } from "@/lib/format";
@@ -309,16 +309,15 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
             </details>
           </section>
 
-          {/* 스마트폰 캘린더 전체 일정 연동 (Webcal / iCalendar Feed) */}
+          {/* 스마트폰 캘린더로 옮기기: 범위를 골라 그 일정만 내려받는다 */}
           <section className="mt-8 rounded-2xl bg-card p-4 shadow-card" aria-labelledby="h-cal-sync">
-            <h3 id="h-cal-sync" className="text-sm font-semibold text-ink">스마트폰 캘린더에 전체 일정 넣기</h3>
-            <p className="mt-1 text-xs text-muted">
-              애플, 구글, 삼성 캘린더에 전체 일정을 한 번에 등록하고, 전날 저녁과 당일 아침 알람을 받을 수 있어요.
-            </p>
-            <CalSyncLink
-              href={`/ics/${auth.k}/${auth.v}/feed`}
-              downloadName="bravecare-schedule.ics"
-            />
+            <h3 id="h-cal-sync" className="text-sm font-semibold text-ink">스마트폰 캘린더에 넣기</h3>
+            <p className="mt-1 text-xs text-muted">전날 저녁과 당일 아침에 알람이 울려요.</p>
+            <CalExport href={`/ics/${auth.k}/${auth.v}/feed`} alone={data.alone} counts={(() => {
+              const ex = data.tasks.filter((t) => t.kind !== "question" && t.due_date);
+              const dis = data.input.dischargeDate ? 1 : 0;
+              return { all: ex.length + dis, mine: ex.filter((t) => t.assignee_id === me).length, visit: ex.filter((t) => t.kind === "schedule").length + dis };
+            })()} />
           </section>
         </>
       ) : (
