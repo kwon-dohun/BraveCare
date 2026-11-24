@@ -42,7 +42,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const next = work.find((t) => !t.done && t.due_date && t.due_date > today);
   const shownCarried = carried.slice(0, Math.max(0, Math.min(2, 4 - todo.length)));
   const noOwnerVisits = tasks.filter((t) => !t.done && t.kind === "schedule" && !t.assignee_id && (!t.due_date || t.due_date >= today)).length;
-  const doneCount = tasks.filter((t) => t.done).length;
+  const doneCount = work.filter((t) => t.done).length; // 일정 탭과 같게: 물어볼 것은 할 일 수에 넣지 않는다
   const highCount = results.filter((r) => r.verdict === "high").length;
   // 히어로는 큰 숫자 하나 + 설명 한 줄로 나눈다 (셀프 케어 모드 시 1인칭 맞춤)
   const hero = heroLabel(input.dischargeDate, today, data.isSelfCare);
@@ -93,10 +93,10 @@ export default async function Home(props: PageProps<"/c/[token]">) {
             <Mascot size={76} mood={mood} className="mascot-bob -mb-2 mt-1" />
           </div>
         </div>
-        <div className="mt-4 h-2 rounded-full bg-card/80" role="progressbar" aria-label="할 일 진행률" aria-valuemin={0} aria-valuenow={doneCount} aria-valuemax={tasks.length}>
-          <div className="h-full rounded-full bg-primary" style={{ width: `${tasks.length ? Math.max(4, (doneCount / tasks.length) * 100) : 0}%` }} />
+        <div className="mt-4 h-2 rounded-full bg-card/80" role="progressbar" aria-label="할 일 진행률" aria-valuemin={0} aria-valuenow={doneCount} aria-valuemax={work.length}>
+          <div className="h-full rounded-full bg-primary" style={{ width: `${work.length ? Math.max(4, (doneCount / work.length) * 100) : 0}%` }} />
         </div>
-        <p className="mt-1.5 text-xs text-accent tabular-nums">할 일 {tasks.length}개 중 {doneCount}개 완료</p>
+        <p className="mt-1.5 text-xs text-accent tabular-nums">할 일 {work.length}개 중 {doneCount}개 완료</p>
         {!input.dischargeDate && (
           <Link href={`${base}/settings`} className="mt-3 flex items-center justify-center rounded-full bg-card px-4 py-2.5 text-sm font-semibold text-ink shadow-card">퇴원일 확정하기</Link>
         )}

@@ -373,6 +373,18 @@ export async function deleteTask(a: Auth, taskId: string) {
   refresh();
 }
 
+// 날짜가 지난 일을 한꺼번에 끝냄으로 정리한다. 지원 신청 할 일은 끝내면 '신청함'으로 바뀌어 버리고, 반복하는 일은 다음 회차가 이어져야 해서 둘은 남겨 둔다.
+export async function clearOverdue(a: Auth) {
+  const actor = await resolve(a);
+  const { data } = await db.from("tasks").select("id,title,source,benefit_id").eq("case_id", actor.caseId).eq("done", false).neq("kind", "question").lt("due_date", todaySeoul()).is("repeat", null);
+  const ids = (data ?? []).filter((t) => !benefitIdOfTask(t)).map((t) => t.id);
+  if (!ids.length) return;
+  await db.from("tasks").update({ done: true, done_at: new Date().toISOString(), done_by: actor.name }).in("id", ids).eq("case_id", actor.caseId);
+  await act(actor.caseId, `${actor.name}님이 날짜가 지난 일 ${ids.length}개를 정리했어요`, actor.memberId);
+  await logEvent(actor.caseId, "overdue_cleared", { count: ids.length });
+  refresh();
+}
+
 // 지난 할 일을 오늘 날짜로 즉시 변경
 export async function rescheduleTaskToToday(a: Auth, taskId: string, todayDate: string) {
   const actor = await resolve(a);

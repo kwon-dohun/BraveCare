@@ -8,6 +8,8 @@ import AddTask from "./AddTask";
 import AddTaskButton from "./AddTaskButton";
 import Segmented from "@/components/Segmented";
 import CalExport from "@/components/CalExport";
+import ClearOverdue from "@/components/ClearOverdue";
+import { benefitIdOfTask } from "@/lib/benefit-task";
 import { openDeadlines, sortTasks, badgeFor } from "@/lib/priority";
 import { buildEvents, monthGrid, shiftMonth, weekday, WEEKDAY, EVENT_STYLE, type EventKind } from "@/lib/calendar";
 import { krDate } from "@/lib/format";
@@ -345,7 +347,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
           {/* 셀프 케어 모드: 가족 분담 없이 하나의 깔끔한 체크리스트 */}
           {isSelfCare ? (
             <section className="mt-6" aria-label="할 일 목록">
-              {head("챙길 일", activeOpen.length, "마감이 가까운 일부터 먼저 나와요")}
+              {head("챙길 일", activeOpen.length, "날짜가 가까운 일부터 먼저 나와요")}
               {activeOpen.length > 0 ? (
                 <>
                   <TaskList tasks={sort(activeOpen).slice(0, SHOW_FIRST)} {...common} />
@@ -385,7 +387,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
               {/* 2) 맡을 사람이 필요한 일 */}
               {f !== "mine" && needOwner.length > 0 && (
                 <section className="mt-6" aria-label="맡을 사람이 필요한 일">
-                  {head("맡을 사람이 필요해요", needOwner.length, "마감이 가까운 일부터 먼저 나와요", "text-warn")}
+                  {head("맡을 사람이 필요해요", needOwner.length, "날짜가 가까운 일부터 먼저 나와요", "text-warn")}
                   <TaskList tasks={needOwner.slice(0, SHOW_FIRST)} {...common} />
                   {needOwner.length > SHOW_FIRST && (
                     <details className="mt-2">
@@ -420,9 +422,10 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
             <section className="mt-6" aria-label="기한이 지난 할 일">
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-warn">이월된 지난 일 <span className="tabular-nums">{sortedPast.length}</span></h2>
-                <span className="text-xs text-muted">마감일을 오늘로 바꾸거나 확인해보세요</span>
+                <span className="text-xs text-muted">날짜를 오늘로 바꾸거나 확인해보세요</span>
               </div>
-              <TaskList tasks={sortedPast.slice(0, SHOW_FIRST)} {...common} />
+              <ClearOverdue auth={auth} titles={sortedPast.filter((t) => !t.repeat && !benefitIdOfTask(t)).map((t) => t.title)} />
+              <div className="mt-2"><TaskList tasks={sortedPast.slice(0, SHOW_FIRST)} {...common} /></div>
               {sortedPast.length > SHOW_FIRST && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {sortedPast.length - SHOW_FIRST}개 보기</summary>
