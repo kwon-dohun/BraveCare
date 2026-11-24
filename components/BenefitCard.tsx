@@ -24,7 +24,7 @@ export function Badge({ verdict, needsIncome, demoted }: { verdict: Result["verd
 export default function BenefitCard({ r, href, status, auth, saved = false }: { r: Result; href: string; status?: string; auth?: Auth; saved?: boolean }) {
   const d = r.deadline;
   const card = (
-    <Link href={href} className="block rounded-xl bg-card shadow-card p-4">
+    <Link href={href} className="block rounded-xl bg-card shadow-card p-5">
       <div className={`flex flex-wrap items-center gap-2 ${auth ? "pr-9" : ""}`}>
         <Badge verdict={r.verdict} needsIncome={r.needsIncome} demoted={r.demoted} />
         {d.state === "open" && (d.daysLeft! <= 30
@@ -38,7 +38,6 @@ export default function BenefitCard({ r, href, status, auth, saved = false }: { 
       </div>
       <p className="mt-2.5 font-semibold tracking-tight">{r.benefit.name}</p>
       <p className="mt-1 text-sm text-muted">{r.benefit.summary}</p>
-      <p className="mt-2.5 rounded-lg bg-background px-3 py-2 text-xs text-muted">판정 근거 · {r.reason}</p>
     </Link>
   );
   if (!auth) return card;
