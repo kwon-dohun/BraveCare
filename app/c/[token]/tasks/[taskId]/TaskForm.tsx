@@ -13,7 +13,7 @@ interface Props {
   task: { id: string; title: string; due_date: string | null; rel_day: number | null; assignee_id: string | null; memo: string | null; due_time: string | null; repeat: "daily" | "weekly" | null };
 }
 
-export default function TaskForm({ auth, back, members, task, solo = false, onSaved }: Props & { solo?: boolean; onSaved?: () => void }) {
+export default function TaskForm({ auth, back, members, task, solo = false, maxDate, onSaved }: Props & { solo?: boolean; maxDate?: string; onSaved?: () => void }) {
   const router = useRouter();
   const [title, setTitle] = useState(task.title);
   const [date, setDate] = useState(task.due_date ?? "");
@@ -46,7 +46,7 @@ export default function TaskForm({ auth, back, members, task, solo = false, onSa
       </div>
       <div>
         <label htmlFor="td" className="font-semibold">날짜</label>
-        <input id="td" type="date" value={date} onChange={(e) => setDate(e.target.value)} className={field} />
+        <input id="td" type="date" max={maxDate} value={date} onChange={(e) => setDate(e.target.value)} className={field} />
         {task.rel_day !== null && (
           <p className="mt-1 text-sm text-muted">지금은 퇴원일 기준으로 자동 계산돼요. 날짜를 직접 바꾸면 퇴원일이 바뀌어도 이 날짜는 그대로 유지돼요.</p>
         )}
