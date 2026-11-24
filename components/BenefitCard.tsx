@@ -30,6 +30,8 @@ export default function BenefitCard({ r, href, status, auth, saved = false }: { 
         {d.state === "open" && (d.daysLeft! <= 30
           ? <span className="rounded-full bg-warn-soft px-2.5 py-0.5 text-xs font-semibold text-warn">{dday(d.daysLeft!)}</span>
           : <span className="text-xs text-muted">{dday(d.daysLeft!)}</span>)}
+        {/* 기한이 없는 제도만 상시. 기한은 있는데 퇴원일이 없어 계산을 못 하는 경우는 아무것도 안 보여 준다 */}
+        {!r.benefit.deadline && <span className="text-xs text-muted">상시 신청</span>}
         {d.state === "closed" && <span className="text-xs text-muted">신청 기간 종료</span>}
         {status && status !== "none" && <span className="text-xs font-medium text-accent">· {STATUS_LABEL[status]}</span>}
         <span className="ml-auto text-xs text-muted">{r.benefit.operator}</span>
