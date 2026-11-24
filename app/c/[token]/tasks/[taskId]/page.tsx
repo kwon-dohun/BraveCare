@@ -5,7 +5,6 @@ import { KIND_LABEL, REPEAT_LABEL } from "@/lib/timeline";
 import { EVENT_STYLE, KIND, weekday } from "@/lib/calendar";
 import { dateLabel, krDate, krTime } from "@/lib/format";
 import TaskActions from "./TaskActions";
-import { taskHelp } from "@/lib/task-help";
 import CalSyncLink from "@/components/CalSyncLink";
 import EditTask from "./EditTask";
 import Link from "next/link";
@@ -28,7 +27,6 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
   const day = t.due_date ? `${t.due_date === data.today ? "오늘 · " : ""}${krDate(t.due_date)} (${weekday(t.due_date)})` : dateLabel(null, t.rel_day, data.today);
   const when = [day, t.due_time ? krTime(t.due_time) : "", t.repeat ? `${REPEAT_LABEL[t.repeat]} 반복` : ""].filter(Boolean).join(" · ");
   const late = !t.done && !!t.due_date && t.due_date < data.today;
-  const help = taskHelp(t.title, data.isSelfCare);
   const bid = benefitIdOfTask(t);
   const br = bid ? data.results.find((r) => r.benefit.id === bid) : undefined; // 이 할 일이 신청하려는 지원
   const ways = br ? applyWays(br.apply.place, br.apply.phone).map((w) => (w === "전화" ? "전화 문의" : `${w} 신청`)).join(" · ") : "";
@@ -59,7 +57,6 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
         ))}
       </dl>
       {br && !t.done && <BenefitDue auth={auth} taskId={t.id} today={data.today} endDate={br.deadline.state === "open" ? br.deadline.endDate : undefined} current={t.due_date} />}
-      {help && !br && <p className="mt-3 rounded-xl bg-accent-soft p-3 text-sm leading-relaxed text-accent"><span className="font-semibold">왜 해요? </span>{help}</p>}
       {t.source_quote && <p className="mt-3 rounded-xl bg-background p-3 text-sm">안내문 원문: “{t.source_quote}”</p>}
       {br && (
         <>
