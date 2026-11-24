@@ -1,4 +1,5 @@
 import CopyText from "./CopyText";
+import Icon from "./Icon";
 
 // 지원 상세와 지원 신청 할 일이 함께 쓰는 "어떻게 신청하나" 묶음: 신청처 글, 전화 버튼, 말할 문장, 공식 안내
 export default function ApplyGuide({ place, phone, script, sourceUrl, sourceLabel, soft = false }: {
@@ -8,8 +9,8 @@ export default function ApplyGuide({ place, phone, script, sourceUrl, sourceLabe
     <>
       <p className="mt-1">{place}</p>
       {phone && (
-        <a href={`tel:${phone.replaceAll("-", "")}`} className={`mt-3 flex items-center justify-center rounded-xl px-5 py-3.5 font-semibold ${soft ? "bg-accent-soft text-accent" : "bg-primary text-ink"}`}>
-          {phone} 전화 걸기
+        <a href={`tel:${phone.replaceAll("-", "")}`} className={`mt-3 flex items-center justify-center rounded-xl px-5 py-3.5 font-semibold ${soft ? "gap-2 bg-card text-ink shadow-card" : "bg-primary text-ink"}`}>
+          {soft && <Icon name="phone" size={18} className="text-accent" />}{phone} 전화 걸기
         </a>
       )}
       {script && (
