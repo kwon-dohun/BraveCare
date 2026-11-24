@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { toggleTask, claimTask, rescheduleTaskToToday } from "@/app/actions";
+import { toggleTask, claimTask, rescheduleTaskToToday, dismissTask, restoreTask } from "@/app/actions";
+import { weekday } from "@/lib/calendar";
 import { announceUndo } from "./UndoToast";
 import type { Auth } from "@/lib/db";
 import { KIND_LABEL, REPEAT_LABEL } from "@/lib/timeline";
@@ -44,8 +45,8 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
               const diff = dayDiff(t.due_date, today);
               const plan = t.source === "benefit"; // 할 일의 날짜는 정한 날일 뿐 마감이 아니다(진짜 마감은 지원의 '마감 D-n' 뱃지가 따로 보여 준다)
               if (diff === 0) { dueText = hideToday ? "" : plan ? "오늘 신청하기" : "오늘"; isUrgent = true; } // 홈의 오늘 할 일은 오늘 것이라는 게 뻔해서 뺀다
-              else if (diff === 1) { dueText = plan ? "내일 신청하기" : "내일 (D-1)"; isUrgent = true; }
-              else if (diff > 1) { dueText = `${krDate(t.due_date)} (D-${diff})`; }
+              else if (diff === 1) { dueText = plan ? "내일 신청하기" : `내일 ${weekday(t.due_date)}요일`; isUrgent = true; }
+              else if (diff > 1) { dueText = `${krDate(t.due_date)} ${weekday(t.due_date)}요일 · ${diff}일 뒤`; }
               else { dueText = plan ? `정한 날 지남 (${krDate(t.due_date)})` : `날짜 지남 (${krDate(t.due_date)})`; }
             } else if (t.rel_day !== null) {
               dueText = t.rel_day === 0 ? "퇴원 당일 예정" : t.rel_day < 0 ? `퇴원 ${-t.rel_day}일 전 예정` : `퇴원 ${t.rel_day}일 후 예정`;
@@ -91,6 +92,16 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                         title="날짜를 오늘로 변경합니다"
                       >
                         오늘 하기<Icon name="right" size={14} />
+                      </button>
+                    )}
+                    {late && !t.done && (
+                      <button
+                        type="button"
+                        onClick={() => run(async () => { const row = await dismissTask(auth, t.id); announceUndo(`치웠어요 · ${t.title}`, () => restoreTask(auth, row)); })}
+                        className="-my-2 flex min-h-9 items-center py-2 text-xs font-semibold text-muted"
+                        title="하지 않아도 되는 일이에요. 목록에서 치워요"
+                      >
+                        해당 없어요
                       </button>
                     )}
                     {!compact && !showOwner && !isQ && !t.done && t.due_date && (

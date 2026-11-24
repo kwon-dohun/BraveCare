@@ -395,6 +395,24 @@ export async function reopenTasks(a: Auth, ids: string[]) {
   refresh();
 }
 
+// 지난 일 중 하지 않아도 되는 일을 목록에서 치운다. 끝냈다고 거짓으로 표시하지 않으려고 완료가 아니라 삭제로 처리하고, 되돌리기가 같은 내용으로 다시 만든다.
+const RESTORE_COLS = ["title", "kind", "source", "due_date", "due_time", "rel_day", "assignee_id", "memo", "repeat", "benefit_id", "source_quote", "done", "done_at", "done_by"] as const;
+export async function dismissTask(a: Auth, taskId: string) {
+  const actor = await resolve(a);
+  const { data: t } = await db.from("tasks").select(RESTORE_COLS.join(",")).eq("id", taskId).eq("case_id", actor.caseId).maybeSingle();
+  if (!t) throw new Error("할 일을 찾을 수 없어요");
+  await db.from("tasks").delete().eq("id", taskId).eq("case_id", actor.caseId);
+  refresh();
+  return t as unknown as Record<string, unknown>;
+}
+export async function restoreTask(a: Auth, row: Record<string, unknown>) {
+  const actor = await resolve(a);
+  const clean = Object.fromEntries(RESTORE_COLS.filter((k) => k in row).map((k) => [k, typeof row[k] === "string" ? String(row[k]).slice(0, 500) : row[k]]));
+  if (typeof clean.title !== "string" || !clean.title) throw new Error("되돌릴 수 없어요");
+  await db.from("tasks").insert({ ...clean, case_id: actor.caseId });
+  refresh();
+}
+
 // 지난 할 일을 오늘 날짜로 즉시 변경
 export async function rescheduleTaskToToday(a: Auth, taskId: string, todayDate: string) {
   const actor = await resolve(a);
