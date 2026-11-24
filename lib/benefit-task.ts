@@ -3,13 +3,14 @@
 import { BENEFITS } from "./benefits.ts";
 import { addDays } from "./timeline.ts";
 
-export const benefitTaskTitle = (name: string) => `${name} 신청하기`;
+// 이름이 이미 "신청"으로 끝나면(노인장기요양 등급 신청) "신청 신청하기"가 되지 않게 "하기"만 붙인다
+export const benefitTaskTitle = (name: string) => (name.endsWith("신청") ? `${name}하기` : `${name} 신청하기`);
 
 // 할 일이 어느 지원의 것인지. benefit_id가 있으면 그것, 예전에 자동으로 만든 "○○ 신청 알아보기"는 제목으로 찾는다.
 export function benefitIdOfTask(t: { benefit_id?: string | null; source: string; title: string }): string | null {
   if (t.benefit_id) return t.benefit_id;
   if (t.source !== "benefit") return null;
-  return BENEFITS.find((b) => t.title === benefitTaskTitle(b.name) || t.title === `${b.name} 신청 알아보기`)?.id ?? null;
+  return BENEFITS.find((b) => t.title === benefitTaskTitle(b.name) || t.title === `${b.name} 신청하기` || t.title === `${b.name} 신청 알아보기`)?.id ?? null;
 }
 
 // 신청 방법 글에서 온라인·방문·전화 중 무엇이 가능한지 짐작해 표시한다(글자 기준이라 참고용).

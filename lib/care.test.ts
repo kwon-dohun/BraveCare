@@ -273,6 +273,8 @@ test("지원↔할 일: 제목·benefit_id로 지원을 찾고, 신청 방법 �
   assert.equal(benefitIdOfTask({ source: "benefit", title: `${b.name} 신청 알아보기` }), b.id); // 예전에 자동으로 만든 할 일
   assert.equal(benefitIdOfTask({ source: "benefit", title: benefitTaskTitle(b.name) }), b.id);
   assert.equal(benefitIdOfTask({ source: "template", title: `${b.name} 신청 알아보기` }), null);
+  assert.equal(benefitTaskTitle("노인장기요양 등급 신청"), "노인장기요양 등급 신청하기"); // "신청 신청하기"가 되지 않는다
+  assert.equal(benefitTaskTitle("긴급복지지원"), "긴급복지지원 신청하기");
   assert.deepEqual(applyWays("주민센터·보건소 전화 문의 후 방문(신분증 지참), 또는 공유누리(eshare.go.kr) 온라인 예약"), ["온라인", "방문", "전화"]);
   assert.deepEqual(applyWays("복지로에서 신청"), ["온라인"]);
   assert.deepEqual(applyWays("", "1577-1000"), ["전화"]);

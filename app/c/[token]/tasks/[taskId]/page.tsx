@@ -38,7 +38,7 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
     ...(data.alone ? [] : [["담당", t.assignee_id === actor.memberId ? "나" : owner ?? "아직 없어요"] as [string, string]]),
     ...(ways ? [["방식", ways] as [string, string]] : []),
     ...(t.memo ? [[t.kind === "question" ? "들은 답" : "메모", t.memo] as [string, string]] : []),
-    ["상태", t.done ? `끝냈어요${t.done_by ? ` (${t.done_by})` : ""}` : late ? "날짜가 지났어요" : "할 일"],
+    ["상태", t.done ? `끝냈어요${t.done_by ? ` (${t.done_by})` : ""}` : late ? (br ? "정한 날이 지났어요" : "날짜가 지났어요") : "할 일"],
   ];
 
   // 먼저 무엇을 언제 누가 하는지 보여주고, 고치기는 제목 옆 수정 버튼(아래에서 올라오는 창)으로 둔다
@@ -59,7 +59,7 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
         ))}
       </dl>
       {br && !t.done && <BenefitDue auth={auth} taskId={t.id} today={data.today} endDate={br.deadline.state === "open" ? br.deadline.endDate : undefined} current={t.due_date} />}
-      {help && <p className="mt-3 rounded-xl bg-accent-soft p-3 text-sm leading-relaxed text-accent"><span className="font-semibold">왜 해요? </span>{help}</p>}
+      {help && !br && <p className="mt-3 rounded-xl bg-accent-soft p-3 text-sm leading-relaxed text-accent"><span className="font-semibold">왜 해요? </span>{help}</p>}
       {t.source_quote && <p className="mt-3 rounded-xl bg-background p-3 text-sm">안내문 원문: “{t.source_quote}”</p>}
       {br && (
         <>

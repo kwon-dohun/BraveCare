@@ -3,7 +3,7 @@ import { useState } from "react";
 import { dueOptions, recommendedDue, shortDate } from "@/lib/due-options";
 import Sheet from "./Sheet";
 
-// 신청 날짜를 고르는 시트. 마감이 있으면 마감일 안에서만 고르게 한다. 새로 넣을 때와 이미 있는 할 일의 날짜를 바꿀 때 같이 쓴다.
+// 신청할 날을 고르는 시트(마감일이 아니라 내가 신청하러 갈 날). 마감이 있으면 마감일 안에서만 고르게 한다. 새로 넣을 때와 이미 있는 할 일의 날짜를 바꿀 때 같이 쓴다.
 export default function DueSheet({ open, onClose, today, endDate, initial, pending, err, confirmText, onPick }: {
   open: boolean; onClose: () => void; today: string; endDate?: string; initial?: string;
   pending: boolean; err: string; confirmText: (d: string) => string; onPick: (d: string) => void;
@@ -12,9 +12,9 @@ export default function DueSheet({ open, onClose, today, endDate, initial, pendi
   const [pick, setPick] = useState(initial && initial >= today && (!endDate || initial <= endDate) ? initial : recommendedDue(opts));
   const custom = !opts.some((o) => o.date === pick);
   return (
-    <Sheet open={open} onClose={onClose} title="언제까지 신청할까요?">
+    <Sheet open={open} onClose={onClose} title="언제 신청할까요?">
       {endDate && <p className="mb-3 text-sm text-warn">신청 마감은 {shortDate(endDate)}이에요</p>}
-      <div role="radiogroup" aria-label="신청 날짜" className="space-y-2">
+      <div role="radiogroup" aria-label="신청할 날" className="space-y-2">
         {opts.map((o) => (
           <label key={o.date} className={`flex items-center gap-3 rounded-xl p-3 ${pick === o.date ? "bg-accent-soft font-semibold text-accent ring-[1.5px] ring-primary" : "bg-card shadow-card"}`}>
             <input type="radio" name="due" checked={pick === o.date} onChange={() => setPick(o.date)} className="h-5 w-5" />

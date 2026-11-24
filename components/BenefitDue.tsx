@@ -13,7 +13,7 @@ export default function BenefitDue({ auth, taskId, today, endDate, current }: { 
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className="mt-2 w-full rounded-full bg-accent-soft px-5 py-2.5 text-sm font-semibold text-accent">
-        {current ? "신청 날짜 바꾸기" : "신청 날짜 정하기"}
+        {current ? "신청할 날 바꾸기" : "신청할 날 정하기"}
       </button>
       <DueSheet open={open} onClose={() => setOpen(false)} today={today} endDate={endDate} initial={current ?? undefined} pending={pending} err={err}
         confirmText={(d) => `날짜 바꾸기 · ${shortDate(d)}`} onPick={(d) => run(() => setTaskDue(auth, taskId, d), () => setOpen(false))} />
