@@ -34,7 +34,6 @@ export default function BenefitCard({ r, href, status, auth, saved = false }: { 
         {!r.benefit.deadline && <span className="text-xs text-muted">상시 신청</span>}
         {d.state === "closed" && <span className="text-xs text-muted">신청 기간 종료</span>}
         {status && status !== "none" && <span className="text-xs font-medium text-accent">· {STATUS_LABEL[status]}</span>}
-        <span className="ml-auto text-xs text-muted">{r.benefit.operator}</span>
       </div>
       <p className="mt-2.5 font-semibold tracking-tight">{r.benefit.name}</p>
       <p className="mt-1 text-sm text-muted">{r.benefit.summary}</p>
