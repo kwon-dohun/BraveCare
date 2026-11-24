@@ -77,7 +77,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
           }
 
           const metaParts = [
-            t.kind === "schedule" ? "병원 방문" : isQ ? "" : EVENT_STYLE[KIND[t.kind]].label, // 왼쪽 색 막대와 같은 뜻을 글자로도 적는다
+            t.kind === "schedule" ? "병원 방문" : "",
             dueText,
             t.due_time ? krTime(t.due_time) : "",
             t.repeat ? `${REPEAT_LABEL[t.repeat]} 반복` : "",
