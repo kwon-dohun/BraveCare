@@ -19,9 +19,9 @@ interface M { id: string; name: string }
 
 // 한 줄에 체크 · 제목 · 메타 · 담당. 왼쪽 색 막대는 달력과 같은 종류별 색이다(색만으로 구분하지 않게 메타에 종류 글자도 쓴다).
 // 담당 없는 일에는 '내가 할게', 맡은 일에는 담당 아바타. 담당을 다른 사람으로 바꾸는 건 눌러서 들어가는 상세 화면에서 한다.
-export default function TaskList({ tasks, members, auth, meId, today, emptyText, detailBase, showDate = true, showOwner = true, hideToday = false, badges = {} }: {
+export default function TaskList({ tasks, members, auth, meId, today, emptyText, detailBase, showDate = true, showOwner = true, hideToday = false, compact = false, badges = {} }: {
   tasks: T[]; members: M[]; auth: Auth; meId: string; today: string; emptyText?: string; detailBase?: string; showDate?: boolean;
-  showOwner?: boolean; hideToday?: boolean; badges?: Record<string, string>;
+  showOwner?: boolean; hideToday?: boolean; compact?: boolean; badges?: Record<string, string>;
 }) {
   const { run, pending, err } = useAct();
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -89,6 +89,8 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
           const title = `line-clamp-2 text-callout font-medium leading-snug ${t.done ? "text-muted line-through" : "text-ink"}`;
           // 줄 안의 작은 글자 버튼: 전역 44px 최소 높이를 풀고, 위아래 여백으로 누르는 면적만 키운다
           const inlineBtn = "-my-1 min-h-0 py-1 text-xs font-semibold underline underline-offset-2";
+          // 눌러야 하는 줄 안 버튼은 작은 글씨가 아니라 알약 모양으로(누르는 면적 36px)
+          const pillBtn = "-my-1.5 flex min-h-9 items-center rounded-full px-3 text-xs font-semibold";
           return (
             <li key={t.id} className="flex items-stretch">
               <span className="w-1 shrink-0" style={{ background: EVENT_STYLE[KIND[t.kind]].dot, opacity: t.done ? 0.35 : 1 }} aria-hidden />
@@ -112,23 +114,23 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                       <button
                         type="button"
                         onClick={() => run(() => rescheduleTaskToToday(auth, t.id, today))}
-                        className={`${inlineBtn} text-accent`}
+                        className={`${pillBtn} bg-accent-soft text-accent`}
                         title="날짜를 오늘로 변경합니다"
                       >
                         오늘 하기
                       </button>
                     )}
-                    {showOwner && !t.done && !t.assignee_id && (
+                    {!compact && showOwner && !t.done && !t.assignee_id && (
                       <button
                         type="button"
                         onClick={() => copyHelp(t)}
-                        className={`${inlineBtn} ${copiedId === t.id ? "text-accent" : "text-muted"}`}
+                        className={`${pillBtn} bg-background ${copiedId === t.id ? "text-accent" : "text-muted"}`}
                         title="가족 단톡방에 보낼 부탁 문구를 복사합니다"
                       >
                         {copiedId === t.id ? "복사 완료!" : "카톡 부탁"}
                       </button>
                     )}
-                    {!showOwner && !isQ && !t.done && t.due_date && (
+                    {!compact && !showOwner && !isQ && !t.done && t.due_date && (
                       <a
                         href={`/ics/${auth.k}/${auth.v}/${t.id}`}
                         download={`${t.title}.ics`}

@@ -70,7 +70,7 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
           </section>
         </>
       )}
-      <TaskActions auth={auth} id={t.id} done={t.done} canClaim={!data.alone && !t.assignee_id} mine={!data.alone && t.assignee_id === actor.memberId} />
+      <TaskActions auth={auth} id={t.id} done={t.done} canClaim={!data.alone && !t.assignee_id} help={{ title: t.title, when: when || "날짜 미정", memo: t.memo }} mine={!data.alone && t.assignee_id === actor.memberId} />
       {br && !t.done && <p className="mt-2 text-center text-xs text-muted">끝내면 지원 상태가 ‘신청함’으로 바뀌어요</p>}
       {(data.alone || t.assignee_id === actor.memberId) && !t.done && t.due_date && (
         <CalSyncLink
