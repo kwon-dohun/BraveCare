@@ -39,8 +39,12 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   // 놓친 일은 사라지지 않지만 오늘 할 일을 밀어내지 않게: 오늘 일 먼저, 남는 자리에 가장 최근에 놓친 일 1~2개
   const carried = work.filter((t) => !t.done && t.due_date && t.due_date < today).sort((a, b) => b.due_date!.localeCompare(a.due_date!));
   const todo = work.filter((t) => !t.done && (t.due_date ? t.due_date === today : !input.dischargeDate));
+  // 홈 오늘 할 일은 내 몫과 임자 없는 일을 나눠 보여 준다(혼자 쓰는 모드는 나누지 않는다)
+  const shown = todo.slice(0, 4);
+  const groups: [string | null, typeof todo][] = data.alone
+    ? [[null, shown]]
+    : [["내가 맡은 일", shown.filter((t) => t.assignee_id === actor.memberId)], ["같이 맡을 일", shown.filter((t) => !t.assignee_id)], ["가족이 맡은 일", shown.filter((t) => t.assignee_id && t.assignee_id !== actor.memberId)]];
   const next = work.find((t) => !t.done && t.due_date && t.due_date > today);
-  const shownCarried = carried.slice(0, Math.max(0, Math.min(2, 4 - todo.length)));
   const noOwnerVisits = tasks.filter((t) => !t.done && t.kind === "schedule" && !t.assignee_id && (!t.due_date || t.due_date >= today)).length;
   const doneCount = work.filter((t) => t.done).length; // 일정 탭과 같게: 물어볼 것은 할 일 수에 넣지 않는다
   const highCount = results.filter((r) => r.verdict === "high").length;
@@ -201,30 +205,26 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         <Link href={`${base}/tasks?view=list&f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={18} /></Link>
       )}
 
-      {/* 오늘 할 일: 오늘 일 먼저(최대 4개), 남는 자리에 놓친 일 1~2개, 나머지는 한 줄로 모아 보기 */}
+      {/* 오늘 할 일: 오늘 일 최대 4개(내 몫과 임자 없는 일로 나눔), 놓친 일은 한 줄 배너로 */}
       <section className="mt-6" aria-labelledby="h-today">
         <div className="mb-2 flex items-end justify-between">
           <div>
             <h2 id="h-today" className="font-display text-headline">{input.dischargeDate ? "오늘 할 일" : "먼저 할 일"}</h2>
-            <p className="text-xs text-muted tabular-nums">오늘 {todo.length}개{carried.length ? ` · 놓친 일 ${carried.length}개` : ""}</p>
+            <p className="text-xs text-muted tabular-nums">오늘 {todo.length}개</p>
           </div>
           <Link href={`${base}/tasks`} className="flex items-center text-sm font-medium text-accent">전체 보기<span className="sr-only"> 할 일</span></Link>
         </div>
-        {(todo.length > 0 || shownCarried.length === 0) && (
-          <TaskList
-            tasks={todo.slice(0, 4)} {...list} hideToday compact
-            emptyText={next ? `오늘은 할 일이 없어요. 다음 할 일은 ${dateLabel(next.due_date, next.rel_day, today)}이에요` : "오늘은 할 일이 없어요"}
-          />
-        )}
-        {shownCarried.length > 0 && (
-          <>
-            <p className="mb-1.5 mt-4 text-xs font-semibold text-warn">놓친 일</p>
-            <TaskList tasks={shownCarried} {...list} compact />
-          </>
-        )}
-        {carried.length > shownCarried.length && (
-          <Link href={`${base}/tasks?view=list`} className="mt-2 flex items-center justify-between rounded-xl bg-card px-4 py-3 text-sm shadow-card">
-            <span>날짜가 지난 일 <b className="tabular-nums">{carried.length}개</b> 모아 보기</span><Icon name="right" size={16} className="text-muted" />
+        {todo.length === 0 && <TaskList tasks={[]} {...list} emptyText={next ? `오늘은 할 일이 없어요. 다음 할 일은 ${dateLabel(next.due_date, next.rel_day, today)}이에요` : "오늘은 할 일이 없어요"} />}
+        {groups.filter(([, l]) => l.length).map(([title, l]) => (
+          <div key={title ?? "all"} className="mt-4 first:mt-0">
+            {title && <h3 className="mb-1 text-xs font-semibold text-muted">{title}</h3>}
+            <TaskList tasks={l} {...list} hideToday compact flat />
+          </div>
+        ))}
+        {carried.length > 0 && (
+          <Link href={`${base}/tasks?view=list`} className="mt-4 flex min-h-11 items-center justify-between rounded-xl bg-warn-soft px-4 py-3 text-sm font-semibold text-warn">
+            <span>놓친 일 <span className="tabular-nums">{carried.length}개</span></span>
+            <span className="flex items-center gap-0.5">확인하기<Icon name="right" size={16} /></span>
           </Link>
         )}
       </section>

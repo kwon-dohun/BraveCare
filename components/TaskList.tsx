@@ -19,9 +19,9 @@ interface M { id: string; name: string }
 
 // 한 줄에 체크 · 제목 · 메타 · 담당. 왼쪽 색 막대는 달력과 같은 종류별 색이다(색만으로 구분하지 않게 메타에 종류 글자도 쓴다).
 // 담당 없는 일에는 '내가 할게', 맡은 일에는 담당 아바타. 담당을 다른 사람으로 바꾸는 건 눌러서 들어가는 상세 화면에서 한다.
-export default function TaskList({ tasks, members, auth, meId, today, emptyText, detailBase, showDate = true, showOwner = true, hideToday = false, compact = false, badges = {} }: {
+export default function TaskList({ tasks, members, auth, meId, today, emptyText, detailBase, showDate = true, showOwner = true, hideToday = false, compact = false, flat = false, badges = {} }: {
   tasks: T[]; members: M[]; auth: Auth; meId: string; today: string; emptyText?: string; detailBase?: string; showDate?: boolean;
-  showOwner?: boolean; hideToday?: boolean; compact?: boolean; badges?: Record<string, string>;
+  showOwner?: boolean; hideToday?: boolean; compact?: boolean; flat?: boolean; badges?: Record<string, string>;
 }) {
   const { run, pending, err } = useAct();
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -57,7 +57,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
           <button type="button" onClick={() => setToast(null)} aria-label="닫기" className="-my-2 ml-2 flex min-h-0 h-8 w-8 shrink-0 items-center justify-center opacity-60 hover:opacity-100"><Icon name="close" size={14} /></button>
         </div>
       )}
-      <ul className="divide-y divide-line overflow-hidden rounded-xl bg-card shadow-card">
+      <ul className={flat ? "divide-y divide-line border-y border-line" : "divide-y divide-line overflow-hidden rounded-xl bg-card shadow-card"}>
         {tasks.map((t) => {
           const isQ = t.kind === "question"; // 물어볼 것은 날짜·마감 없이 체크만 한다
           const late = !isQ && !t.done && !!t.due_date && t.due_date < today;
@@ -93,7 +93,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
           const pillBtn = "-my-1.5 flex min-h-9 items-center rounded-full px-3 text-xs font-semibold";
           return (
             <li key={t.id} className="flex items-stretch">
-              <span className="w-1 shrink-0" style={{ background: EVENT_STYLE[KIND[t.kind]].dot, opacity: t.done ? 0.35 : 1 }} aria-hidden />
+              <span className={flat ? "hidden" : "w-1 shrink-0"} style={{ background: EVENT_STYLE[KIND[t.kind]].dot, opacity: t.done ? 0.35 : 1 }} aria-hidden />
               <div className="flex min-w-0 flex-1 items-center gap-1 py-3 pl-0.5 pr-3">
                 <button
                   aria-label={`${t.title} ${t.done ? "완료 취소" : "완료로 표시"}`}
@@ -152,7 +152,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                         <span className={`max-w-full truncate text-caption leading-none ${t.assignee_id === meId ? "font-semibold text-accent" : "text-muted"}`}>{t.assignee_id === meId ? "나" : owner}</span>
                       </div>
                     ) : (
-                      <button onClick={() => run(() => claimTask(auth, t.id))} className="flex h-9 min-h-0 w-full items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent transition-colors hover:opacity-90">
+                      <button onClick={() => run(() => claimTask(auth, t.id))} className={`flex h-9 min-h-0 w-full items-center justify-center text-xs font-semibold text-accent transition-colors hover:opacity-90 ${flat ? "" : "rounded-full bg-accent-soft"}`}>
                         내가 할게
                       </button>
                     )}
