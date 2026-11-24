@@ -211,7 +211,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           <Link href={`${base}/tasks`} className="flex items-center text-sm font-medium text-accent">전체 보기<span className="sr-only"> 할 일</span></Link>
         </div>
         <TaskList
-          tasks={[...todo.slice(0, 4), ...shownCarried]} {...list}
+          tasks={[...todo.slice(0, 4), ...shownCarried]} {...list} hideToday
           emptyText={next ? `오늘은 할 일이 없어요. 다음 할 일은 ${dateLabel(next.due_date, next.rel_day, today)}이에요` : "오늘은 할 일이 없어요"}
         />
         {carried.length > shownCarried.length && (

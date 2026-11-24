@@ -19,9 +19,9 @@ interface M { id: string; name: string }
 
 // 한 줄에 체크 · 제목 · 메타 · 담당. 왼쪽 색 막대는 달력과 같은 종류별 색이다(색만으로 구분하지 않게 메타에 종류 글자도 쓴다).
 // 담당 없는 일에는 '내가 할게', 맡은 일에는 담당 아바타. 담당을 다른 사람으로 바꾸는 건 눌러서 들어가는 상세 화면에서 한다.
-export default function TaskList({ tasks, members, auth, meId, today, emptyText, detailBase, showDate = true, showOwner = true, badges = {} }: {
+export default function TaskList({ tasks, members, auth, meId, today, emptyText, detailBase, showDate = true, showOwner = true, hideToday = false, badges = {} }: {
   tasks: T[]; members: M[]; auth: Auth; meId: string; today: string; emptyText?: string; detailBase?: string; showDate?: boolean;
-  showOwner?: boolean; badges?: Record<string, string>;
+  showOwner?: boolean; hideToday?: boolean; badges?: Record<string, string>;
 }) {
   const { run, pending, err } = useAct();
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -67,7 +67,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
             if (t.due_date) {
               const diff = dayDiff(t.due_date, today);
               const plan = t.source === "benefit"; // 지원 신청은 내가 정한 날이라 '마감'이라고 하지 않는다
-              if (diff === 0) { dueText = plan ? "오늘 신청하기" : "오늘 마감 (D-Day)"; isUrgent = true; }
+              if (diff === 0) { dueText = hideToday ? "" : plan ? "오늘 신청하기" : "오늘 마감 (D-Day)"; isUrgent = true; } // 홈의 오늘 할 일은 오늘 것이라는 게 뻔해서 뺀다
               else if (diff === 1) { dueText = plan ? "내일 신청하기" : "내일 마감 (D-1)"; isUrgent = true; }
               else if (diff > 1) { dueText = `${krDate(t.due_date)}${plan ? "" : "까지"} (D-${diff})`; }
               else { dueText = plan ? `정한 날 지남 (${krDate(t.due_date)})` : `마감 기한 지남 (${krDate(t.due_date)} 예정)`; }
