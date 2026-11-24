@@ -244,6 +244,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
                   today={today}
                   detailBase={`${base}/tasks`}
                   showDate={false}
+                  hideMine
                 />
               </div>
             )}
@@ -379,11 +380,11 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
                   {head("내가 맡은 일", mine.length, mine.length ? "오늘 할 일과 앞으로 해야 할 일이에요" : undefined)}
                   {mine.length ? (
                     <>
-                      <TaskList tasks={mine.slice(0, SHOW_FIRST)} {...common} />
+                      <TaskList tasks={mine.slice(0, SHOW_FIRST)} {...common} hideMine />
                       {mine.length > SHOW_FIRST && (
                         <details className="mt-2">
                           <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {mine.length - SHOW_FIRST}개 보기</summary>
-                          <div className="mt-2"><TaskList tasks={mine.slice(SHOW_FIRST)} {...common} /></div>
+                          <div className="mt-2"><TaskList tasks={mine.slice(SHOW_FIRST)} {...common} hideMine /></div>
                         </details>
                       )}
                     </>

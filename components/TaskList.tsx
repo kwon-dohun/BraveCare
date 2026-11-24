@@ -16,9 +16,9 @@ interface M { id: string; name: string }
 
 // 한 줄에 체크 · 제목 · 메타 · 담당. 담당 없는 일을 가족에게 부탁하는 카톡 문구는 상세 화면에서만 복사한다.
 // 담당 없는 일에는 '내가 할게', 맡은 일에는 담당 아바타. 담당을 다른 사람으로 바꾸는 건 눌러서 들어가는 상세 화면에서 한다.
-export default function TaskList({ tasks, members, auth, meId, today, emptyText, detailBase, showDate = true, showOwner = true, hideToday = false, compact = false, flat = false, badges = {} }: {
+export default function TaskList({ tasks, members, auth, meId, today, emptyText, detailBase, showDate = true, showOwner = true, hideToday = false, hideMine = false, compact = false, flat = false, badges = {} }: {
   tasks: T[]; members: M[]; auth: Auth; meId: string; today: string; emptyText?: string; detailBase?: string; showDate?: boolean;
-  showOwner?: boolean; hideToday?: boolean; compact?: boolean; flat?: boolean; badges?: Record<string, string>;
+  showOwner?: boolean; hideToday?: boolean; hideMine?: boolean; compact?: boolean; flat?: boolean; badges?: Record<string, string>;
 }) {
   const { run, pending, err } = useAct();
   const nameOf = (id: string | null) => members.find((m) => m.id === id)?.name;
@@ -106,7 +106,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                   {badge && <span className="mt-1.5 inline-block rounded-full bg-warn-soft px-2 py-0.5 text-caption font-semibold text-warn">{badge}</span>}
                   {t.kind === "question" ? <QuestionAnswer auth={auth} task={t} /> : t.memo && <p className="mt-1 truncate text-xs text-muted">메모: {t.memo}</p>}
                 </div>
-                {showOwner && !t.done && (
+                {showOwner && !t.done && !(hideMine && t.assignee_id === meId) && ( // 내 일만 모은 구역에서는 "나" 표시가 중복이라 뺀다
                   <div className="flex w-16 shrink-0 justify-center">
                     {t.assignee_id ? (
                       <div className="flex w-14 flex-col items-center gap-1" title={`담당: ${owner ?? ""}`}>
