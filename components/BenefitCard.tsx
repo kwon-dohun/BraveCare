@@ -27,7 +27,9 @@ export default function BenefitCard({ r, href, status, auth, saved = false }: { 
     <Link href={href} className="block rounded-xl bg-card shadow-card p-4">
       <div className={`flex flex-wrap items-center gap-2 ${auth ? "pr-9" : ""}`}>
         <Badge verdict={r.verdict} needsIncome={r.needsIncome} demoted={r.demoted} />
-        {d.state === "open" && <span className="rounded-full bg-warn-soft px-2.5 py-0.5 text-xs font-semibold text-warn">{dday(d.daysLeft!)}</span>}
+        {d.state === "open" && (d.daysLeft! <= 30
+          ? <span className="rounded-full bg-warn-soft px-2.5 py-0.5 text-xs font-semibold text-warn">{dday(d.daysLeft!)}</span>
+          : <span className="text-xs text-muted">{dday(d.daysLeft!)}</span>)}
         {d.state === "closed" && <span className="text-xs text-muted">신청 기간 종료</span>}
         {status && status !== "none" && <span className="text-xs font-medium text-accent">· {STATUS_LABEL[status]}</span>}
         <span className="ml-auto text-xs text-muted">{r.benefit.operator}</span>

@@ -29,9 +29,7 @@ export default function BenefitsFilterView({
 }) {
   const [filter, setFilter] = useState<string>(initialFilter);
   const [search, setSearch] = useState<string>("");
-  const [sortBy, setSortBy] = useState<"deadline" | "verdict">("deadline");
 
-  const sort = filter ? "deadline" : sortBy; // 가능성 높음·확인 필요 탭 안에서는 가능성순이 의미 없다
   const highCount = results.filter((r) => r.verdict === "high").length;
   const checkCount = results.filter((r) => r.verdict === "check").length;
 
@@ -67,10 +65,10 @@ export default function BenefitsFilterView({
     });
   }, [tabFiltered, search]);
 
-  // 3차: 가능성순은 서버가 준 순서(sortResults) 그대로, 마감 임박순만 다시 정렬
+  // 3차: 마감 임박순. 마감이 없는 지원끼리는 서버가 준 순서(가능성순)가 그대로 남는다
   const sortedList = useMemo(
-    () => sort === "verdict" ? searchFiltered : [...searchFiltered].sort((a, b) => deadlineScore(a) - deadlineScore(b)),
-    [searchFiltered, sort],
+    () => [...searchFiltered].sort((a, b) => deadlineScore(a) - deadlineScore(b)),
+    [searchFiltered],
   );
 
   const card = (r: Result) => (
@@ -125,43 +123,14 @@ export default function BenefitsFilterView({
         )}
       </div>
 
-      {/* 정렬 및 검색 안내 바 */}
-      <div className="mt-3 flex items-center justify-between px-1">
-        <span className="text-xs text-muted">
-          {search.trim() ? (
-            <>‘{search.trim()}’ 검색 결과 <strong className="text-ink tabular-nums">{sortedList.length}개</strong></>
-          ) : (
-            <>총 <strong className="text-ink tabular-nums">{sortedList.length}개</strong> 지원 제도</>
-          )}
-        </span>
-        {!filter && <div className="flex items-center gap-1 text-xs">
-          <button
-            type="button"
-            onClick={() => setSortBy("deadline")}
-            className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
-              sortBy === "deadline"
-                ? "bg-foreground font-semibold text-white"
-                : "border border-line bg-card text-muted hover:text-ink"
-            }`}
-          >
-            마감 임박순
-          </button>
-          <button
-            type="button"
-            onClick={() => setSortBy("verdict")}
-            className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
-              sortBy === "verdict"
-                ? "bg-foreground font-semibold text-white"
-                : "border border-line bg-card text-muted hover:text-ink"
-            }`}
-          >
-            가능성순
-          </button>
-        </div>}
-      </div>
+      {search.trim() && (
+        <p className="mt-3 px-1 text-xs text-muted">
+          ‘{search.trim()}’ 검색 결과 <strong className="text-ink tabular-nums">{sortedList.length}개</strong>
+        </p>
+      )}
 
-      {/* 필터·정렬을 바꾸면 목록이 살짝 떠오르며 바뀐다 (검색은 글자마다 흔들리지 않게 제외) */}
-      <div key={filter + sort} className="view-in">
+      {/* 필터를 바꾸면 목록이 살짝 떠오르며 바뀐다 (검색은 글자마다 흔들리지 않게 제외) */}
+      <div key={filter} className="view-in">
       {/* 검색 결과가 없을 때 */}
       {sortedList.length === 0 ? (
         <div className="mt-6 flex flex-col items-center justify-center rounded-2xl bg-card p-6 text-center shadow-card">
@@ -182,18 +151,10 @@ export default function BenefitsFilterView({
             </button>
           )}
         </div>
-      ) : sort === "deadline" ? (
-        /* 마감 임박순: 기한이 급한 지원부터 최우선 노출 */
-        <>
-          <ul className="mt-4 space-y-3">{sortedList.map(card)}</ul>
-        </>
-      ) : filter === "high" || filter === "check" || search.trim() ? (
-        /* 가능성순 단일 탭 / 검색 플랫 리스트 */
-        <ul className="mt-4 space-y-3">
-          {sortedList.map(card)}
-        </ul>
+      ) : filter || search.trim() ? (
+        <ul className="mt-4 space-y-3">{sortedList.map(card)}</ul>
       ) : (
-        /* 전체 탭 & 가능성순: 섹션별 묶음 표시 */
+        /* 전체 탭: 가능성 높음을 먼저, 각 묶음 안은 마감 임박순 */
         <>
           <section className="mt-5">
             <h2 className="mb-2 font-semibold text-sm text-accent">대상 가능성 높음 ({highCount})</h2>
