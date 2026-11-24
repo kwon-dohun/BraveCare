@@ -32,7 +32,8 @@ export default function ConfirmCard({ auth, id, type: t0, fields: f0, onDone, on
     kcdCheck(auth, code).then((hit) => setKcd({ asked: code.trim(), hit })).catch(() => {});
   };
   useEffect(() => {
-    if (t0 === "certificate") checkKcd(f0.values["질병코드"] ?? "");
+    const code = f0.values["질병코드"]?.trim();
+    if (t0 === "certificate" && code) kcdCheck(auth, code).then((hit) => setKcd({ asked: code, hit })).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 처음 읽은 코드로 한 번만
   }, []);
   useEffect(() => {

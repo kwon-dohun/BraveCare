@@ -34,6 +34,7 @@ export default function DailyForm({ auth, today, yesterday }: { auth: Auth; toda
             type="button"
             disabled={pending}
             onClick={() => {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars -- 어제 날짜만 빼고 불러온다
               const { check_date, ...rest } = yesterday;
               set(rest);
             }}
