@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { toggleTask, claimTask, rescheduleTaskToToday } from "@/app/actions";
+import { announceUndo } from "./UndoToast";
 import type { Auth } from "@/lib/db";
 import { KIND_LABEL, REPEAT_LABEL } from "@/lib/timeline";
 import { krDate, krTime } from "@/lib/format";
@@ -69,7 +70,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
               <div className="flex min-w-0 flex-1 items-center gap-1 py-3 pl-0.5 pr-3">
                 <button
                   aria-label={`${t.title} ${t.done ? "완료 취소" : "완료로 표시"}`}
-                  onClick={() => run(() => toggleTask(auth, t.id, !t.done))}
+                  onClick={() => run(async () => { await toggleTask(auth, t.id, !t.done); if (!t.done) announceUndo(`끝냈어요 · ${t.title}`, () => toggleTask(auth, t.id, false)); })}
                   className="group -my-1 flex h-11 w-11 shrink-0 items-center justify-center"
                 >
                   <span className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-[color,background-color,border-color,transform] duration-150 group-active:scale-90 ${t.done ? "border-primary bg-primary text-ink" : "border-[#9fb8ac] bg-card group-hover:border-accent"}`}>

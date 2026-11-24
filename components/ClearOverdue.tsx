@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { clearOverdue } from "@/app/actions";
+import { clearOverdue, reopenTasks } from "@/app/actions";
+import { announceUndo } from "./UndoToast";
 import type { Auth } from "@/lib/db";
 import { useAct } from "./useAct";
 import Sheet from "./Sheet";
@@ -32,7 +33,7 @@ export default function ClearOverdue({ auth, items, skipped = 0 }: { auth: Auth;
         {err && <p role="alert" className="mt-2 text-warn">{err}</p>}
         <div className="mt-4 flex gap-2">
           <button type="button" onClick={() => setOpen(false)} className="flex-1 rounded-full bg-background px-5 py-3 font-semibold text-muted">취소</button>
-          <button type="button" disabled={pending || !picked.length} onClick={() => run(() => clearOverdue(auth, picked.map((t) => t.id)), () => setOpen(false))} className="flex-[2] rounded-full bg-primary px-5 py-3 font-semibold text-ink disabled:opacity-40">{picked.length}개 끝냄으로 정리</button>
+          <button type="button" disabled={pending || !picked.length} onClick={() => run(async () => { const ids = await clearOverdue(auth, picked.map((t) => t.id)); if (ids.length) announceUndo(`지난 일 ${ids.length}개를 정리했어요`, () => reopenTasks(auth, ids)); }, () => setOpen(false))} className="flex-[2] rounded-full bg-primary px-5 py-3 font-semibold text-ink disabled:opacity-40">{picked.length}개 끝냄으로 정리</button>
         </div>
       </Sheet>
     </>

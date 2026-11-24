@@ -374,15 +374,24 @@ export async function deleteTask(a: Auth, taskId: string) {
 }
 
 // 날짜가 지난 일 중 이미 끝낸 것을 골라 한꺼번에 끝냄으로 정리한다. 지원 신청 할 일은 끝내면 '신청함'으로 바뀌어 버리고, 반복하는 일은 다음 회차가 이어져야 해서 둘은 남겨 둔다.
-export async function clearOverdue(a: Auth, picked: string[]) {
+export async function clearOverdue(a: Auth, picked: string[]): Promise<string[]> {
   const actor = await resolve(a);
-  if (!Array.isArray(picked) || !picked.length) return;
+  if (!Array.isArray(picked) || !picked.length) return [];
   const { data } = await db.from("tasks").select("id,title,source,benefit_id").eq("case_id", actor.caseId).eq("done", false).neq("kind", "question").lt("due_date", todaySeoul()).is("repeat", null).in("id", picked.slice(0, 200).map(String));
   const ids = (data ?? []).filter((t) => !benefitIdOfTask(t)).map((t) => t.id);
-  if (!ids.length) return;
+  if (!ids.length) return [];
   await db.from("tasks").update({ done: true, done_at: new Date().toISOString(), done_by: actor.name }).in("id", ids).eq("case_id", actor.caseId);
   await act(actor.caseId, `${actor.name}님이 날짜가 지난 일 ${ids.length}개를 정리했어요`, actor.memberId);
   await logEvent(actor.caseId, "overdue_cleared", { count: ids.length });
+  refresh();
+  return ids;
+}
+
+// 방금 끝낸 일을 미완료로 되돌린다(지난 일 한꺼번에 정리의 실행 취소)
+export async function reopenTasks(a: Auth, ids: string[]) {
+  const actor = await resolve(a);
+  if (!Array.isArray(ids) || !ids.length) return;
+  await db.from("tasks").update({ done: false, done_at: null, done_by: null }).in("id", ids.slice(0, 200).map(String)).eq("case_id", actor.caseId).eq("done", true);
   refresh();
 }
 
