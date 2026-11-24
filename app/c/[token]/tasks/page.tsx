@@ -62,6 +62,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
   const common = { members: data.members, auth, meId: me, today: data.today, detailBase: `${base}/tasks`, badges, showOwner: !isSelfCare };
   const activeOpen = open.filter((t) => !t.due_date || t.due_date >= data.today);
   const pastTasks = open.filter((t) => t.due_date && t.due_date < data.today);
+  const missedTab = sp.t === "missed" && pastTasks.length > 0; // 홈의 "놓친 일 확인하기"가 바로 여기로 온다
   const mine = sort(activeOpen.filter((t) => t.assignee_id === me));
   const needOwner = sort(activeOpen.filter((t) => !t.assignee_id));
   const others = sort(activeOpen.filter((t) => t.assignee_id && t.assignee_id !== me));
@@ -337,6 +338,14 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
             </div>
           </section>
 
+          {pastTasks.length > 0 && (
+            <div className="mt-3">
+              <Segmented label="할 일 구분" active={missedTab ? 1 : 0} items={[
+                { label: `할 일 ${f === "none" ? needOwner.length : f === "mine" ? mine.length : activeOpen.length}`, href: `${base}/tasks?view=list${f ? `&f=${f}` : ""}` },
+                { label: `놓친 일 ${sortedPast.length}`, href: `${base}/tasks?view=list&t=missed${f ? `&f=${f}` : ""}` },
+              ]} />
+            </div>
+          )}
           {f && (
             <Link href={`${base}/tasks?view=list`} className="mt-3 flex items-center justify-between rounded-xl bg-card px-4 py-2 text-sm text-accent shadow-card">
               {f === "none" ? "맡을 사람이 필요한 일만 보는 중" : "내가 맡은 일만 보는 중"}<span className="font-semibold">전체 보기</span>
@@ -345,7 +354,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
           {open.length === 0 && <p className="mt-4 flex items-center gap-3 rounded-xl bg-card p-4 text-sm text-muted shadow-card"><Mascot size={40} mood="cheer" />남은 일이 없어요. 수고했어요!</p>}
 
           {/* 셀프 케어 모드: 가족 분담 없이 하나의 깔끔한 체크리스트 */}
-          {isSelfCare ? (
+          {!missedTab && (isSelfCare ? (
             <section className="mt-6" aria-label="할 일 목록">
               {head("챙길 일", activeOpen.length, "날짜가 가까운 일부터 먼저 나와요")}
               {activeOpen.length > 0 ? (
@@ -415,15 +424,12 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
                 </details>
               )}
             </>
-          )}
+          ))}
 
-          {/* 4) 지난 일 (기한이 지난 미완료 할 일) */}
-          {sortedPast.length > 0 && (
-            <section className="mt-6" aria-label="기한이 지난 할 일">
-              <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-warn">이월된 지난 일 <span className="tabular-nums">{sortedPast.length}</span></h2>
-                <span className="text-xs text-muted">날짜를 오늘로 바꾸거나 확인해보세요</span>
-              </div>
+          {/* 4) 놓친 일 (날짜가 지난 미완료 할 일): 홈의 "놓친 일" 배너가 이 탭으로 온다 */}
+          {missedTab && (
+            <section className="mt-4" aria-label="놓친 일">
+              <p className="text-xs text-muted">날짜를 오늘로 바꾸거나 끝낸 일은 체크해 주세요</p>
               <ClearOverdue auth={auth} titles={sortedPast.filter((t) => !t.repeat && !benefitIdOfTask(t)).map((t) => t.title)} />
               <div className="mt-2"><TaskList tasks={sortedPast.slice(0, SHOW_FIRST)} {...common} /></div>
               {sortedPast.length > SHOW_FIRST && (

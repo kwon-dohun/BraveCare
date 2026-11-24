@@ -43,7 +43,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const mine = (t: { assignee_id: string | null }) => (t.assignee_id === actor.memberId ? 0 : !t.assignee_id ? 1 : 2);
   const shown = todo.slice(0, 4).sort((x, y) => mine(x) - mine(y));
   const missed = carried.length > 0 && (
-    <Link href={`${base}/tasks?view=list`} className={`flex min-h-11 items-center justify-between bg-warn-soft px-4 py-3 text-sm font-semibold text-warn ${todo.length ? "border-t border-line" : "mt-3 rounded-xl"}`}>
+    <Link href={`${base}/tasks?view=list&t=missed`} className={`flex min-h-11 items-center justify-between bg-warn-soft px-4 py-3 text-sm font-semibold text-warn ${todo.length ? "border-t border-line" : "mt-3 rounded-xl"}`}>
       <span>놓친 일 <span className="tabular-nums">{carried.length}개</span></span>
       <span className="flex items-center gap-0.5">확인하기<Icon name="right" size={16} /></span>
     </Link>
