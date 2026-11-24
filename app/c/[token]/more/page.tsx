@@ -20,22 +20,22 @@ export default async function More(props: PageProps<"/c/[token]/more">) {
 
   const groups: [string, Tile[]][] = [
     ["돌봄", [
-      ...(data.isSelfCare ? [["/solo-guide", "heart", "퇴원 안심 가이드", "안심동행·긴급돌봄·119", "bg-[#ffe9dc] text-[#9a3f12]"] as Tile] : []),
+      ...(data.isSelfCare ? [["/solo-guide", "heart", "퇴원 안심 가이드", "안심동행·긴급돌봄·119", "bg-accent-soft text-accent"] as Tile] : []),
       ["/daily", "heart", "데일리 체크",
-        data.input.dailyCompleted ? "회복 완료로 기록을 마쳤어요" : checkedToday ? "오늘 기록했어요" : "오늘 아직 안 남겼어요", "bg-[#ffe4ea] text-[#a3324f]"],
-      ["/questions", "help", "물어볼 것", qLeft ? `의료진에게 ${qLeft}개` : "회진·외래 때 보여주기", "bg-[#f1e9ff] text-[#5b3aa6]"],
-      ["/report", "chart", "외래 리포트", "진료실에서 보여줄 한 장", "bg-[#e3f0ff] text-[#1f5aa6]"],
+        data.input.dailyCompleted ? "회복 완료로 기록을 마쳤어요" : checkedToday ? "오늘 기록했어요" : "오늘 아직 안 남겼어요", "bg-accent-soft text-accent"],
+      ["/questions", "help", "물어볼 것", qLeft ? `의료진에게 ${qLeft}개` : "회진·외래 때 보여주기", "bg-accent-soft text-accent"],
+      ["/report", "chart", "외래 리포트", "진료실에서 보여줄 한 장", "bg-accent-soft text-accent"],
       data.alone
-        ? ["/family", "users", "함께 챙길 사람 초대", "병원 동행·서류를 나눠 맡길 수 있어요", "bg-[#e3f0ff] text-[#1f5aa6]"]
-        : ["/family", "users", data.isSelfCare ? "함께 챙기는 사람" : "가족과 나누기", `${data.members.length}명 참여 중`, "bg-[#ffe9dc] text-[#9a3f12]"],
+        ? ["/family", "users", "함께 챙길 사람 초대", "병원 동행·서류를 나눠 맡길 수 있어요", "bg-accent-soft text-accent"]
+        : ["/family", "users", data.isSelfCare ? "함께 챙기는 사람" : "가족과 나누기", `${data.members.length}명 참여 중`, "bg-accent-soft text-accent"],
     ]],
     ["서류", [
-      ["/scan", "camera", "서류 찍어서 정리", "안내문·약봉투·병원 문자", "bg-[#f1e9ff] text-[#5b3aa6]"],
-      ["/docs", "file", "보험 청구 서류", `${data.packet.length}/${PACKET.length}개 준비`, "bg-[#fff4cc] text-[#7a5a00]"],
+      ["/scan", "camera", "서류 찍어서 정리", "안내문·약봉투·병원 문자", "bg-accent-soft text-accent"],
+      ["/docs", "file", "보험 청구 서류", `${data.packet.length}/${PACKET.length}개 준비`, "bg-accent-soft text-accent"],
     ]],
     ["도움말", [
-      ["/glossary", "book", "쉬운 용어 사전", "외래·산정특례·실손24…", "bg-[#dff7ec] text-[#0b7a57]"],
-      ["/help", "help", "도움말·문의", "자주 묻는 질문", "bg-[#e3f0ff] text-[#1f5aa6]"],
+      ["/glossary", "book", "쉬운 용어 사전", "외래·산정특례·실손24…", "bg-accent-soft text-accent"],
+      ["/help", "help", "도움말·문의", "자주 묻는 질문", "bg-accent-soft text-accent"],
     ]],
   ];
 

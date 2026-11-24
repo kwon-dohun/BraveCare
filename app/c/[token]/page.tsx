@@ -143,7 +143,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       {isNew && (
         <section className="mt-4 rounded-xl bg-accent-soft p-4">
           <p className="font-semibold">씩씩케어가 준비됐어요</p>
-          <p className="mt-1 text-sm">로그인이 없어서 <b>이 주소가 곧 열쇠</b>예요. 이 기기에서는 첫 화면에서 다시 열 수 있고, 다른 기기에서 쓰려면 설정에서 주소를 복사해두세요.</p>
+          <p className="mt-1 text-sm">로그인이 없어서 <b>이 주소가 곧 열쇠</b>예요. 다른 기기에서 쓰려면 설정에서 주소를 복사해 두세요.</p>
         </section>
       )}
 
@@ -161,7 +161,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
       )}
       {stage === "pre" && (
         <section className={card} aria-labelledby="h-stage">
-          <h2 id="h-stage" className="font-semibold">퇴원할 때 받아둘 서류</h2>
+          <h2 id="h-stage" className="font-semibold">보험 청구 서류 받아두기</h2>
           <p className="mt-1 text-sm text-muted">
             보험 청구 서류 {data.packet.length}/{PACKET.length} 준비 · 실손24 {data.silson24 === "yes" ? "전산 청구 가능" : data.silson24 === "no" ? "미지원 병원 (종이 서류 필요)" : "아직 확인 전"}
           </p>

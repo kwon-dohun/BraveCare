@@ -334,6 +334,17 @@ test("챗봇 자료: 외래 때 적은 답 메모가 한 줄로 들어가고, �
   assert.match(withNote, /^- 11월 19일 들은 말: 2주 뒤 실밥 제거$/m); // 질문 없이 적은 말은 "질문 … → 들은 답"으로 쓰지 않는다
 });
 
+test("할 일 바로 가기: 기본 할 일이 앱 안의 맞는 화면으로 이어진다", async () => {
+  const { taskLink } = await import("./task-link.ts");
+  assert.equal(taskLink("첫 외래 전날: 외래 리포트와 물어볼 것 확인하기")?.path, "/report"); // 외래 리포트가 물어볼 것보다 먼저
+  assert.equal(taskLink("퇴원 일주일, 불편한 점을 환자에게 물어보고 외래 때 물어볼 것 적어두기")?.path, "/questions");
+  assert.equal(taskLink("데일리 체크 시작하기 (하루 10초)")?.path, "/daily");
+  assert.equal(taskLink("퇴원 안내문과 약봉투를 사진으로 남기기")?.path, "/scan");
+  assert.equal(taskLink("원무과에서 보험 청구 서류 4종 받기")?.path, "/docs");
+  assert.equal(taskLink("퇴원 30일 점검: 아직 신청하지 않은 지원 확인하기")?.path, "/benefits");
+  assert.equal(taskLink("휠체어 대여"), null);
+});
+
 test("외래 리포트: 말하기 요약은 앱 지표 없이 진료에 쓸 사실만 옮긴다", async () => {
   const { summarize, speakScript } = await import("./report.ts");
   const day = (d: string, o = {}) => ({ check_date: d, med_morning: true, med_lunch: true, med_dinner: true, side_effect: false, temp: "normal" as const, wound_issue: false, pain: 3, bowel: "good" as const, ...o });

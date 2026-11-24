@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Icon from "@/components/Icon";
 import AddBenefitTask from "@/components/AddBenefitTask";
 import ApplyGuide from "@/components/ApplyGuide";
-import { applyWays, benefitIdOfTask, callScript } from "@/lib/benefit-task";
+import { benefitIdOfTask, callScript } from "@/lib/benefit-task";
 import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
 import { loadSaved } from "@/lib/load";
@@ -31,7 +31,6 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
   const active = r.verdict !== "no" && d.state !== "closed";
   const linked = data.tasks.find((t) => benefitIdOfTask(t) === b.id); // 이 지원과 이어진 할 일
   const period = b.deadline ? (b.deadline.toDaysAfter === 0 ? "퇴원 전까지" : `퇴원 후 ${b.deadline.toDaysAfter}일까지`) : "상시";
-  const ways = applyWays(r.apply.place, r.apply.phone);
   const script = active
     ? callScript({ name: b.name, reason: data.input.reason, dischargeDate: data.input.dischargeDate ?? null, today: data.today, selfCare: data.isSelfCare, check: r.verdict === "check" })
     : null;
@@ -52,15 +51,12 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
       <p className="text-muted">{b.operator}</p>
       <p className="mt-3">{b.summary}</p>
 
-      {/* 한눈에: 해당 여부·혜택·기간·방식을 먼저, 바로 할 일로 넣는 버튼까지 첫 화면에 */}
+      {/* 한눈에: 해당 여부·혜택·기간을 먼저, 바로 할 일로 넣는 버튼까지 첫 화면에 */}
       <section className="mt-5 rounded-xl bg-card p-4 shadow-card">
         <dl className="divide-y divide-line">
           <Row label="나는 해당될까요?">{r.reason}</Row>
           <Row label="혜택·비용">{b.cost}</Row>
           <Row label="신청 기간">{period}{d.state === "open" ? ` · ${krDateYear(d.endDate!)}까지` : ""}</Row>
-          {ways.length > 0 && (
-            <Row label="신청 방식">{ways.map((w) => (w === "전화" ? "전화 문의" : `${w} 신청`)).join(" · ")}</Row>
-          )}
         </dl>
         {active && (
           <div className="mt-3 border-t border-line pt-3">
@@ -84,7 +80,7 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
 
       <section className="mt-6">
         <h2 className="font-semibold">신청 방법</h2>
-        <ApplyGuide place={r.apply.place} phone={active ? r.apply.phone : undefined} script={script} sourceUrl={b.source.url} sourceLabel={b.source.label} />
+        <ApplyGuide soft place={r.apply.place} phone={active ? r.apply.phone : undefined} script={script} sourceUrl={b.source.url} sourceLabel={b.source.label} />
       </section>
 
       <section className="mt-6">

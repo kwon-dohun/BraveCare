@@ -109,7 +109,7 @@ export default function BenefitsFilterView({
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="필요한 키워드로 찾기 (예: 휠체어, 간병, 긴급, 식사)"
+          placeholder="키워드로 찾기 (예: 휠체어, 간병)"
           className="w-full rounded-2xl border border-line bg-card py-2.5 pl-10 pr-12 text-sm placeholder:text-muted focus:border-accent focus:outline-none shadow-card"
         />
         {search && (

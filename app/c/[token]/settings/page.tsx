@@ -9,7 +9,7 @@ import DailyCompleteToggle from "@/components/DailyCompleteToggle";
 
 export const metadata = { title: "설정 · 씩씩케어" };
 
-// 구역 순서: 화면 → 환자 정보 → 기록 → 알림 → 내 계정 → (맨 아래, 되돌릴 수 없는 일)
+// 구역 순서: 화면 → 환자 정보 → 기록 → 알림 → 다시 들어오기 → (맨 아래, 되돌릴 수 없는 일)
 export default async function Settings(props: PageProps<"/c/[token]/settings">) {
   const { token } = await props.params;
   const { actor, data, auth, base } = await adminPage(token);
@@ -59,12 +59,18 @@ export default async function Settings(props: PageProps<"/c/[token]/settings">) 
 
       <section className="mt-8" aria-labelledby="s3">
         <h2 id="s3" className="font-semibold">알림</h2>
-        <p className="text-sm text-muted">씩씩케어 앱에서는 매일 저녁 8시 안부 체크, 맡은 할 일의 전날 저녁과 당일, 지원 신청 마감 3일 전과 당일에 알림이 와요.{data.alone ? "" : " 가족이 일을 맡거나 끝내면 바로 알려줘요."} 알림을 끄려면 휴대폰 설정 &gt; 알림 &gt; 씩씩케어에서 종류별로 끌 수 있어요. 앱이 없으면 할 일의 ‘내 캘린더에 넣기’로 캘린더 알림을 쓸 수 있어요.</p>
+        <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-muted">
+          <li>매일 저녁 8시 안부 체크</li>
+          <li>맡은 할 일: 전날 저녁과 당일</li>
+          <li>지원 신청 마감: 3일 전과 당일</li>
+          {!data.alone && <li>가족이 일을 맡거나 끝냈을 때</li>}
+        </ul>
+        <p className="mt-1.5 text-xs text-muted">앱에서만 와요. 끄려면 휴대폰 설정 &gt; 알림 &gt; 씩씩케어에서 종류별로 끌 수 있고, 앱이 없으면 일정 탭의 &lsquo;스마트폰 캘린더에 넣기&rsquo;를 쓰세요.</p>
       </section>
 
       {/* 주소와 카카오는 같은 목적(기기를 바꾸거나 주소를 잃어버렸을 때 다시 들어오기)이라 한 곳에 */}
       <section className="mt-8" aria-labelledby="s2">
-        <h2 id="s2" className="font-semibold">내 계정</h2>
+        <h2 id="s2" className="font-semibold">다시 들어오기</h2>
         <p className="text-sm text-muted">휴대폰을 바꾸거나 주소를 잃어버려도 다시 들어올 수 있게 해 두세요.</p>
         <div className="mt-2 divide-y divide-line rounded-xl bg-card shadow-card">
           <div className="p-4">

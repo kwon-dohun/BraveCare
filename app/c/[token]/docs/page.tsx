@@ -16,7 +16,7 @@ export default async function Docs(props: PageProps<"/c/[token]/docs">) {
   return (
     <>
       <BackLink href={`${base}/more`}>전체</BackLink>
-      <h1 className="mt-2 text-title font-display">{post ? "병원에서 받을 서류" : "퇴원할 때 받아둘 서류"}</h1>
+      <h1 className="mt-2 text-title font-display">보험 청구 서류</h1>
       <p className="mt-1 text-muted">
         {post
           ? "이미 퇴원했어도 괜찮아요. 보험 청구에 필요한 서류는 병원에서 나중에도 발급받을 수 있어요."

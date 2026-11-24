@@ -27,7 +27,6 @@ export default function QuestionAnswer({ auth, task, full = false }: { auth: Aut
         <button type="button" onClick={() => { setText(task.memo ?? ""); setOpen(true); }} className={`${link} text-accent`}>
           {task.memo ? "답 고치기" : "들은 답 적기"}
         </button>
-        <button type="button" onClick={() => { setTitle(task.title); setEdit(true); }} className={`${link} text-muted`}>고치기·지우기</button>
       </div>
       <Sheet open={open} onClose={() => setOpen(false)} title="의사 선생님 답변">
         <p className="mb-3 text-sm text-muted">{task.title}</p>
@@ -36,6 +35,7 @@ export default function QuestionAnswer({ auth, task, full = false }: { auth: Aut
         <p className="mt-1.5 text-xs text-muted">저장하면 확인한 질문으로 옮겨지고, 씩씩이가 나중에 &ldquo;그때 뭐라고 하셨지?&rdquo;에 이 메모로 답해요.</p>
         {err && <p role="alert" className="mt-2 text-warn">{err}</p>}
         <button type="button" disabled={pending || !text.trim()} onClick={save} className="mt-4 w-full rounded-full bg-primary px-5 py-3 font-semibold text-ink disabled:opacity-40">저장</button>
+        <button type="button" onClick={() => { setOpen(false); setTitle(task.title); setEdit(true); }} className="mt-3 w-full min-h-0 py-2 text-sm text-muted underline underline-offset-2">질문 고치기·지우기</button>
       </Sheet>
       <Sheet open={edit} onClose={() => setEdit(false)} title="질문 고치기">
         <label htmlFor={`qt-${task.id}`} className="mb-2 block text-sm text-muted">물어볼 내용</label>

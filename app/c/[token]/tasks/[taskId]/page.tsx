@@ -10,6 +10,7 @@ import EditTask from "./EditTask";
 import Link from "next/link";
 import { DocsChecklist } from "@/components/StatusPicker";
 import { benefitIdOfTask, callScript } from "@/lib/benefit-task";
+import { taskLink } from "@/lib/task-link";
 import ApplyGuide from "@/components/ApplyGuide";
 import Icon from "@/components/Icon";
 
@@ -52,6 +53,12 @@ export default async function TaskDetail(props: PageProps<"/c/[token]/tasks/[tas
           </div>
         ))}
       </dl>
+      {!br && !t.done && taskLink(t.title) && (
+        <Link href={`${base}${taskLink(t.title)!.path}`} className="mt-3 flex items-center justify-between rounded-xl bg-card px-4 py-3 shadow-card">
+          <span className="text-sm font-semibold">{taskLink(t.title)!.label}</span>
+          <Icon name="right" size={18} className="text-muted" />
+        </Link>
+      )}
       {t.source_quote && <p className="mt-3 rounded-xl bg-background p-3 text-sm">안내문 원문: “{t.source_quote}”</p>}
       {br && (
         <>

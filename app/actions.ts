@@ -65,7 +65,7 @@ export async function createCase(raw: CaseInput, adminName: string, consented: b
   await db.from("benefit_status").insert(results.filter((r) => r.verdict !== "no").map((r) => ({ case_id: c.id, benefit_id: r.benefit.id })));
   await db.from("tasks").insert(
     seedTasks(input, results).filter((t) => !(t.preOnly && input.dischargeDate && addDays(input.dischargeDate, t.rel) < today)).map((t) => ({
-      case_id: c.id, title: t.title, kind: t.kind, rel_day: t.rel, source: t.source, benefit_id: t.benefitId ?? null, assignee_id: input.isSelfCare ? me?.id ?? null : null,
+      case_id: c.id, title: t.title, kind: t.kind, rel_day: t.rel, source: t.source, benefit_id: t.benefitId ?? null, assignee_id: t.kind === "question" && !input.isSelfCare ? null : me?.id ?? null, // 곁에서 돌보는 사람이 만들었으니 기본 할 일도 그 사람 몫으로 시작
       due_date: input.dischargeDate ? addDays(input.dischargeDate, t.rel) : null,
     })),
   );
