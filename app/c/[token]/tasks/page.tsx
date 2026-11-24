@@ -431,7 +431,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
           {/* 4) 지난 일 (날짜가 지난 미완료 할 일): 홈의 "지난 일" 줄이 이 탭으로 온다. 이미 했는데 체크만 안 한 일이 많아 압박 주는 말·색은 쓰지 않는다 */}
           {missedTab && (
             <section className="mt-4" aria-label="지난 일">
-              <ClearOverdue auth={auth} items={sortedPast.filter((t) => !t.repeat && !benefitIdOfTask(t)).map((t) => ({ id: t.id, title: t.title }))} />
+              <ClearOverdue auth={auth} skipped={sortedPast.filter((t) => t.repeat || benefitIdOfTask(t)).length} items={sortedPast.filter((t) => !t.repeat && !benefitIdOfTask(t)).map((t) => ({ id: t.id, title: t.title }))} />
               <div className="mt-1"><TaskList tasks={sortedPast} {...common} /></div>
             </section>
           )}

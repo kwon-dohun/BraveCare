@@ -7,7 +7,7 @@ import Sheet from "./Sheet";
 
 // 날짜가 지난 일 중 이미 끝낸 것을 골라 끝냄으로 정리한다. 대부분 이미 했을 거라 처음엔 전부 체크해 두고, 안 한 것만 풀게 한다.
 // 지원 신청과 반복 일은 여기 넣지 않는다(목록에서 하나씩 처리).
-export default function ClearOverdue({ auth, items }: { auth: Auth; items: { id: string; title: string }[] }) {
+export default function ClearOverdue({ auth, items, skipped = 0 }: { auth: Auth; items: { id: string; title: string }[]; skipped?: number }) {
   const [open, setOpen] = useState(false);
   const [off, setOff] = useState<Set<string>>(new Set());
   const { run, pending, err } = useAct();
@@ -18,6 +18,7 @@ export default function ClearOverdue({ auth, items }: { auth: Auth; items: { id:
       <button type="button" onClick={() => setOpen(true)} className="flex min-h-9 w-full items-center justify-end gap-1 text-sm font-semibold text-accent">지난 일 정리하기</button>
       <Sheet open={open} onClose={() => setOpen(false)} title="이미 끝낸 일 정리">
         <p className="text-sm text-muted">체크한 일을 끝냄으로 바꿔요. 아직 안 한 일은 체크를 풀어 주세요.</p>
+        {skipped > 0 && <p className="mt-1 text-xs text-muted">지원 신청과 반복하는 일 {skipped}개는 여기 안 나와요. 목록에서 하나씩 정리해 주세요.</p>}
         <ul className="mt-3 max-h-[45vh] space-y-1.5 overflow-y-auto text-sm">
           {items.map((t) => (
             <li key={t.id}>
