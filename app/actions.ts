@@ -327,6 +327,24 @@ export async function setTaskMemo(a: Auth, taskId: string, memo: string) {
   refresh();
 }
 
+// 진료 직후: 다음 외래 일정과 새로 생긴 할 일을 한 번에 넣고, 가족에게는 한 줄로만 알린다. 새 할 일은 담당 없이 들어가 가족이 "내가 할게"로 가져간다(혼자 쓰는 모드는 본인 몫).
+export async function recordVisit(a: Auth, v: { nextDate: string | null; nextTime: string | null; title: string; tasks: string[] }) {
+  const actor = await resolve(a);
+  const titles = v.tasks.map((t) => String(t).trim().slice(0, 100)).filter(Boolean).slice(0, 3);
+  const next = isDate(v.nextDate) ? v.nextDate : null;
+  if (next && next < todaySeoul()) throw new Error("다음 외래 날짜는 오늘 이후로 골라 주세요");
+  if (!next && !titles.length) return;
+  const owner = await soloOwner(actor.caseId, actor.memberId);
+  const rows = [
+    ...(next ? [{ title: String(v.title).trim().slice(0, 100) || "외래 진료", kind: "schedule", due_date: next, due_time: isTime(v.nextTime) ? v.nextTime : null }] : []),
+    ...titles.map((title) => ({ title, kind: "custom", due_date: null, due_time: null })),
+  ].map((r) => ({ case_id: actor.caseId, source: "manual", assignee_id: owner, repeat: null, memo: null, ...r }));
+  await db.from("tasks").insert(rows);
+  await act(actor.caseId, `${actor.name}님이 진료 결과를 남겼어요${next ? `. 다음 외래 ${krDate(next)}` : ""}${titles.length ? `, 새 할 일 ${titles.length}개` : ""}`, actor.memberId);
+  await logEvent(actor.caseId, "visit_recorded", { next: !!next, tasks: titles.length });
+  refresh();
+}
+
 // 물어볼 것의 문구만 고친다(날짜·담당이 없는 질문용)
 export async function renameTask(a: Auth, taskId: string, title: string) {
   const actor = await resolve(a);

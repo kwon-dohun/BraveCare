@@ -2,7 +2,7 @@ import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import { adminPage } from "@/lib/page-auth";
 import { loadDaily } from "@/lib/daily";
-import { summarize, speakScript, askForm, feverText, BOWEL_LABEL } from "@/lib/report";
+import { summarize, speakScript, askForm, feverText, pickVisitQuestions, BOWEL_LABEL } from "@/lib/report";
 import { dayDiff } from "@/lib/benefits";
 import { REASON_LABEL } from "@/lib/options";
 import { krDateYear } from "@/lib/format";
@@ -22,7 +22,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
   const s = summarize(checks, data.input.dischargeDate && first && data.input.dischargeDate < first ? data.input.dischargeDate : first ?? data.today, data.today);
   const asked = data.tasks.filter((t) => t.kind === "question" && !t.done);
   const allAsked = asked.length;
-  const questions = [...asked.filter((t) => t.source === "manual"), ...asked.filter((t) => t.source !== "manual" && (t.rel_day ?? 0) > 0)].slice(0, 5);
+  const questions = pickVisitQuestions(data.tasks);
 
   const md = (d: string) => `${Number(d.slice(5, 7))}/${Number(d.slice(8))}`;
   const dc = data.input.dischargeDate;
@@ -63,7 +63,7 @@ export default async function Report(props: PageProps<"/c/[token]/report">) {
         <div className="flex items-center justify-between print:hidden">
           <BackLink href={`${base}/daily`}>데일리 체크</BackLink>
           {s.days > 0 && (
-            <DoctorView auth={auth} questions={questions.map((q) => ({ id: q.id, text: askForm(q.title) }))}>
+            <DoctorView auth={auth} questions={questions.map((q) => ({ id: q.id, text: askForm(q.title) }))} visitTitle={data.tasks.find((t) => t.kind === "schedule" && t.due_date === data.today)?.title ?? "외래 진료"} scanHref={`${base}/scan`} today={data.today}>
               <div className="mx-auto max-w-5xl pt-10">
                 <h1 className="pr-24 text-3xl font-bold">
                   {REASON_LABEL.find(([k]) => k === data.input.reason)?.[1]} · {data.input.birthYear}년생 (만 {age}세 전후)

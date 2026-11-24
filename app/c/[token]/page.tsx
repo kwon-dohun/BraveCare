@@ -13,6 +13,8 @@ import WeekStrip from "@/components/WeekStrip";
 import Icon from "@/components/Icon";
 import RefreshIfSeen from "@/components/RefreshIfSeen";
 import Mascot, { Logo } from "@/components/Mascot";
+import VisitDoneButton from "@/components/VisitDoneButton";
+import { askForm, pickVisitQuestions } from "@/lib/report";
 
 export default async function Home(props: PageProps<"/c/[token]">) {
   const { token } = await props.params;
@@ -141,6 +143,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           <h2 id="h-stage" className="font-semibold">오늘은 병원 가는 날이에요</h2>
           <p className="mt-1 text-sm text-muted">{visit!.title}</p>
           <Link href={`${base}/report`} className={cta}>외래 리포트 열기</Link>
+          <VisitDoneButton auth={auth} questions={pickVisitQuestions(tasks).map((q) => ({ id: q.id, text: askForm(q.title) }))} visitTitle={visit!.title} scanHref={`${base}/scan`} today={today} />
           <div className="mt-2.5 flex items-center justify-between text-xs text-muted">
             <span>진료실에서 휴대폰을 가로로 돌려 보여주세요</span>
             <Link href={`${base}/daily`} className="text-accent underline underline-offset-2">진료 전 데일리 체크</Link>

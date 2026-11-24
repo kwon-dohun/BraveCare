@@ -41,6 +41,12 @@ export function speakScript(s: ReturnType<typeof summarize>, elapsed: number | n
 }
 
 // 할 일 말투('~물어보기', '~문의하기')를 의사가 읽는 질문으로. 규칙에 안 맞으면 원문을 해치지 않고 '~에 대해 알려 주세요'로 둔다.
+// 진료실에 가져갈 질문: 내가 적은 것과 퇴원 뒤 기본 질문 중 아직 답을 못 들은 것, 최대 5개
+export const pickVisitQuestions = <T extends { kind: string; done: boolean; source: string; rel_day: number | null }>(tasks: T[]): T[] => {
+  const asked = tasks.filter((t) => t.kind === "question" && !t.done);
+  return [...asked.filter((t) => t.source === "manual"), ...asked.filter((t) => t.source !== "manual" && (t.rel_day ?? 0) > 0)].slice(0, 5);
+};
+
 export function askForm(title: string): string {
   const quoted = title.match(/['"‘“]([^'"’”]+[?？])['"’”]/);
   if (quoted) return quoted[1];
