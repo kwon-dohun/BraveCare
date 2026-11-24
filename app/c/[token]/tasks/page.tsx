@@ -429,9 +429,8 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
           {/* 4) 놓친 일 (날짜가 지난 미완료 할 일): 홈의 "놓친 일" 배너가 이 탭으로 온다 */}
           {missedTab && (
             <section className="mt-4" aria-label="놓친 일">
-              <p className="text-xs text-muted">날짜를 오늘로 바꾸거나 끝낸 일은 체크해 주세요</p>
               <ClearOverdue auth={auth} titles={sortedPast.filter((t) => !t.repeat && !benefitIdOfTask(t)).map((t) => t.title)} />
-              <div className="mt-2"><TaskList tasks={sortedPast.slice(0, SHOW_FIRST)} {...common} /></div>
+              <div className="mt-1"><TaskList tasks={sortedPast.slice(0, SHOW_FIRST)} {...common} /></div>
               {sortedPast.length > SHOW_FIRST && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {sortedPast.length - SHOW_FIRST}개 보기</summary>

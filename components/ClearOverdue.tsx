@@ -12,7 +12,7 @@ export default function ClearOverdue({ auth, titles }: { auth: Auth; titles: str
   if (!titles.length) return null;
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="mt-2 flex min-h-11 w-full items-center justify-center rounded-full bg-accent-soft px-5 text-sm font-semibold text-accent">놓친 일 한 번에 정리하기</button>
+      <button type="button" onClick={() => setOpen(true)} className="flex min-h-9 w-full items-center justify-end gap-1 text-sm font-semibold text-accent">놓친 일 한 번에 정리하기</button>
       <Sheet open={open} onClose={() => setOpen(false)} title={`놓친 일 ${titles.length}개 정리`}>
         <p className="text-sm text-muted">아래 일을 끝냄으로 바꿔요. 지원 신청과 반복하는 일은 남겨 둬요.</p>
         <ul className="mt-3 max-h-[45vh] space-y-1.5 overflow-y-auto text-sm">

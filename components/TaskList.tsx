@@ -64,8 +64,6 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
           const title = `line-clamp-2 text-callout font-medium leading-snug ${t.done ? "text-muted line-through" : "text-ink"}`;
           // 줄 안의 작은 글자 버튼: 전역 44px 최소 높이를 풀고, 위아래 여백으로 누르는 면적만 키운다
           const inlineBtn = "-my-1 min-h-0 py-1 text-xs font-semibold underline underline-offset-2";
-          // 눌러야 하는 줄 안 버튼은 작은 글씨가 아니라 알약 모양으로(누르는 면적 36px)
-          const pillBtn = "-my-1.5 flex min-h-9 items-center rounded-full px-3 text-xs font-semibold";
           return (
             <li key={t.id} className="flex items-stretch">
               <div className="flex min-w-0 flex-1 items-center gap-1 py-3 pl-0.5 pr-3">
@@ -88,10 +86,10 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                       <button
                         type="button"
                         onClick={() => run(() => rescheduleTaskToToday(auth, t.id, today))}
-                        className={`${pillBtn} bg-accent-soft text-accent`}
+                        className="-my-2 flex min-h-9 items-center gap-0.5 py-2 text-xs font-semibold text-accent"
                         title="날짜를 오늘로 변경합니다"
                       >
-                        오늘 하기
+                        오늘 하기<Icon name="right" size={14} />
                       </button>
                     )}
                     {!compact && !showOwner && !isQ && !t.done && t.due_date && (
