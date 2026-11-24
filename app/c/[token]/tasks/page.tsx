@@ -62,7 +62,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
   const common = { members: data.members, auth, meId: me, today: data.today, detailBase: `${base}/tasks`, badges, showOwner: !isSelfCare };
   const activeOpen = open.filter((t) => !t.due_date || t.due_date >= data.today);
   const pastTasks = open.filter((t) => t.due_date && t.due_date < data.today);
-  const missedTab = sp.t === "missed" && pastTasks.length > 0; // 홈의 "놓친 일 확인하기"가 바로 여기로 온다
+  const missedTab = sp.t === "missed" && pastTasks.length > 0; // 홈의 "지난 일" 줄이 바로 여기로 온다
   const mine = sort(activeOpen.filter((t) => t.assignee_id === me));
   const needOwner = sort(activeOpen.filter((t) => !t.assignee_id));
   const others = sort(activeOpen.filter((t) => t.assignee_id && t.assignee_id !== me));
@@ -343,7 +343,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
             <div className="mt-3">
               <Segmented label="할 일 구분" active={missedTab ? 1 : 0} items={[
                 { label: `할 일 ${f === "none" ? needOwner.length : f === "mine" ? mine.length : activeOpen.length}`, href: `${base}/tasks?view=list${f ? `&f=${f}` : ""}` },
-                { label: `놓친 일 ${sortedPast.length}`, href: `${base}/tasks?view=list&t=missed${f ? `&f=${f}` : ""}` },
+                { label: `지난 일 ${sortedPast.length}`, href: `${base}/tasks?view=list&t=missed${f ? `&f=${f}` : ""}` },
               ]} />
             </div>
           )}
@@ -427,17 +427,11 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
             </>
           ))}
 
-          {/* 4) 놓친 일 (날짜가 지난 미완료 할 일): 홈의 "놓친 일" 배너가 이 탭으로 온다 */}
+          {/* 4) 지난 일 (날짜가 지난 미완료 할 일): 홈의 "지난 일" 줄이 이 탭으로 온다. 이미 했는데 체크만 안 한 일이 많아 압박 주는 말·색은 쓰지 않는다 */}
           {missedTab && (
-            <section className="mt-4" aria-label="놓친 일">
-              <ClearOverdue auth={auth} titles={sortedPast.filter((t) => !t.repeat && !benefitIdOfTask(t)).map((t) => t.title)} />
-              <div className="mt-1"><TaskList tasks={sortedPast.slice(0, SHOW_FIRST)} {...common} /></div>
-              {sortedPast.length > SHOW_FIRST && (
-                <details className="mt-2">
-                  <summary className="cursor-pointer text-sm font-semibold text-accent">나머지 {sortedPast.length - SHOW_FIRST}개 보기</summary>
-                  <div className="mt-2"><TaskList tasks={sortedPast.slice(SHOW_FIRST)} {...common} /></div>
-                </details>
-              )}
+            <section className="mt-4" aria-label="지난 일">
+              <ClearOverdue auth={auth} items={sortedPast.filter((t) => !t.repeat && !benefitIdOfTask(t)).map((t) => ({ id: t.id, title: t.title }))} />
+              <div className="mt-1"><TaskList tasks={sortedPast} {...common} /></div>
             </section>
           )}
 

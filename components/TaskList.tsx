@@ -79,7 +79,7 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
                 <div className="min-w-0 flex-1">
                   {detailBase ? <Link href={`${detailBase}/${t.id}`} className={`block min-h-0 ${title}`}>{t.title}</Link> : <p className={title}>{t.title}</p>}
                   <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-snug">
-                    <span className={late ? "font-medium text-warn" : isUrgent ? "font-semibold text-accent" : "text-muted"}>
+                    <span className={late ? "text-muted" : isUrgent ? "font-semibold text-accent" : "text-muted"}>
                       {metaParts.join(" · ")}
                     </span>
                     {late && !t.done && (

@@ -43,9 +43,9 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const mine = (t: { assignee_id: string | null }) => (t.assignee_id === actor.memberId ? 0 : !t.assignee_id ? 1 : 2);
   const shown = todo.slice(0, 4).sort((x, y) => mine(x) - mine(y));
   const missed = carried.length > 0 && (
-    <Link href={`${base}/tasks?view=list&t=missed`} className={`flex min-h-11 items-center justify-between bg-warn-soft px-4 py-3 text-sm font-semibold text-warn ${todo.length ? "border-t border-line" : "mt-3 rounded-xl"}`}>
-      <span>놓친 일 <span className="tabular-nums">{carried.length}개</span></span>
-      <span className="flex items-center gap-0.5">확인하기<Icon name="right" size={16} /></span>
+    <Link href={`${base}/tasks?view=list&t=missed`} className={`flex min-h-11 items-center justify-between bg-card px-4 py-3 text-sm ${todo.length ? "border-t border-line" : "mt-3 rounded-xl shadow-card"}`}>
+      <span className="text-muted">날짜가 지난 일 <span className="tabular-nums">{carried.length}개</span></span>
+      <span className="flex items-center gap-0.5 font-semibold text-accent">정리하기<Icon name="right" size={16} /></span>
     </Link>
   );
   const next = work.find((t) => !t.done && t.due_date && t.due_date > today);
@@ -209,7 +209,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         <Link href={`${base}/tasks?view=list&f=none`} className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-warn-soft px-4 py-3 font-medium text-warn">병원 일정 {noOwnerVisits}개에 같이 갈 사람이 정해지지 않았어요<Icon name="right" size={18} /></Link>
       )}
 
-      {/* 오늘 할 일: 오늘 일 최대 4개(내 몫과 임자 없는 일로 나눔), 놓친 일은 한 줄 배너로 */}
+      {/* 오늘 할 일: 오늘 일 최대 4개(내 몫과 임자 없는 일로 나눔), 날짜가 지난 일은 차분한 한 줄로 */}
       <section className="mt-6" aria-labelledby="h-today">
         <div className="mb-2 flex items-end justify-between">
           <div>
