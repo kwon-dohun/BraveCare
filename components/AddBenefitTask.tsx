@@ -14,7 +14,7 @@ export default function AddBenefitTask({ auth, benefitId, today, endDate }: { au
     <>
       <button onClick={() => setOpen(true)} className="w-full rounded-full bg-primary px-5 py-3.5 font-semibold text-ink">할 일에 넣기</button>
       <DueSheet open={open} onClose={() => setOpen(false)} today={today} endDate={endDate} pending={pending} err={err}
-        confirmText={(d) => `${shortDate(d)}까지 할 일에 넣기`} onPick={(d) => run(() => createBenefitTask(auth, benefitId, d), () => setOpen(false))} />
+        confirmText={(d) => `${shortDate(d)} 할 일에 넣기`} onPick={(d) => run(() => createBenefitTask(auth, benefitId, d), () => setOpen(false))} />
     </>
   );
 }

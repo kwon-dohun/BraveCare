@@ -66,10 +66,11 @@ export default function TaskList({ tasks, members, auth, meId, today, emptyText,
           if (showDate && !isQ) {
             if (t.due_date) {
               const diff = dayDiff(t.due_date, today);
-              if (diff === 0) { dueText = "오늘 마감 (D-Day)"; isUrgent = true; }
-              else if (diff === 1) { dueText = "내일 마감 (D-1)"; isUrgent = true; }
-              else if (diff > 1) { dueText = `${krDate(t.due_date)}까지 (D-${diff})`; }
-              else { dueText = `마감 기한 지남 (${krDate(t.due_date)} 예정)`; }
+              const plan = t.source === "benefit"; // 지원 신청은 내가 정한 날이라 '마감'이라고 하지 않는다
+              if (diff === 0) { dueText = plan ? "오늘 신청하기" : "오늘 마감 (D-Day)"; isUrgent = true; }
+              else if (diff === 1) { dueText = plan ? "내일 신청하기" : "내일 마감 (D-1)"; isUrgent = true; }
+              else if (diff > 1) { dueText = `${krDate(t.due_date)}${plan ? "" : "까지"} (D-${diff})`; }
+              else { dueText = plan ? `정한 날 지남 (${krDate(t.due_date)})` : `마감 기한 지남 (${krDate(t.due_date)} 예정)`; }
             } else if (t.rel_day !== null) {
               dueText = t.rel_day === 0 ? "퇴원 당일 예정" : t.rel_day < 0 ? `퇴원 ${-t.rel_day}일 전 예정` : `퇴원 ${t.rel_day}일 후 예정`;
             }

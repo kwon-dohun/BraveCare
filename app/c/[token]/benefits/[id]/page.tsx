@@ -30,7 +30,7 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
   const d = r.deadline;
   const active = r.verdict !== "no" && d.state !== "closed";
   const linked = data.tasks.find((t) => benefitIdOfTask(t) === b.id); // 이 지원과 이어진 할 일
-  const period = b.deadline ? (b.deadline.toDaysAfter === 0 ? "퇴원 전까지" : `퇴원 후 ${b.deadline.toDaysAfter}일까지`) : "따로 정해진 기한이 없어요";
+  const period = b.deadline ? (b.deadline.toDaysAfter === 0 ? "퇴원 전까지" : `퇴원 후 ${b.deadline.toDaysAfter}일까지`) : "상시";
   const ways = applyWays(r.apply.place, r.apply.phone);
   const script = active
     ? callScript({ name: b.name, reason: data.input.reason, dischargeDate: data.input.dischargeDate ?? null, today: data.today, selfCare: data.isSelfCare, check: r.verdict === "check" })
@@ -68,7 +68,7 @@ export default async function BenefitDetail(props: PageProps<"/c/[token]/benefit
               <Link href={`${base}/tasks/${linked.id}`} className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm text-muted">할 일에 있어요</p>
-                  <p className="font-semibold">{linked.done ? "신청을 마쳤어요" : linked.due_date ? `${krDate(linked.due_date)}까지 신청하기` : "신청하기"}</p>
+                  <p className="font-semibold">{linked.done ? "신청을 마쳤어요" : linked.due_date ? `${krDate(linked.due_date)}에 신청하기` : "신청하기"}</p>
                 </div>
                 <Icon name="right" size={18} className="shrink-0 text-muted" />
               </Link>
