@@ -123,7 +123,7 @@ export default function AddTask({
           )}
           <div>
             <label htmlFor="nm" className="block text-sm font-semibold">메모</label>
-            <textarea id="nm" rows={3} maxLength={500} value={memo} onChange={(e) => setMemo(e.target.value)} placeholder={solo ? "메모 (예: 진료 예약증은 냉장고 옆에 있어요)" : "가족에게 남길 말 (예: 진료 예약증은 냉장고 옆에 있어요)"} className={field} />
+            <textarea id="nm" rows={3} maxLength={500} value={memo} onChange={(e) => setMemo(e.target.value)} placeholder={solo ? "메모 (예: 진료 예약증은 냉장고 옆에 있어요)" : "가족에게 남길 말 (예: 진료 예약증은 냉장고 옆에 있어요)"} className={`${field} field-sizing-content max-h-72`} />
           </div>
         </div>
       </details>

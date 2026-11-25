@@ -85,7 +85,7 @@ export default function TaskForm({ auth, back, members, task, solo = false, maxD
       </div>}
       <div>
         <label htmlFor="tm" className="font-semibold">메모</label>
-        <textarea id="tm" rows={3} maxLength={500} value={memo} onChange={(e) => setMemo(e.target.value)} placeholder={solo ? "메모 (예: 진료 예약증은 냉장고 옆에 있어요)" : "가족에게 남길 말 (예: 진료 예약증은 냉장고 옆에 있어요)"} className={field} />
+        <textarea id="tm" rows={3} maxLength={500} value={memo} onChange={(e) => setMemo(e.target.value)} placeholder={solo ? "메모 (예: 진료 예약증은 냉장고 옆에 있어요)" : "가족에게 남길 말 (예: 진료 예약증은 냉장고 옆에 있어요)"} className={`${field} field-sizing-content max-h-72`} />
       </div>
       {err && <p role="}alert" className="text-warn">{err}</p>}
       <button disabled={pending || !title.trim()} className="w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-40">{pending ? "저장하는 중…" : "저장"}</button>
