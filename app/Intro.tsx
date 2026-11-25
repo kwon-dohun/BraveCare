@@ -49,7 +49,7 @@ export default function Intro({ notice, kakao }: { notice: keyof typeof NOTICE |
       <div className="relative mt-8 flex h-36 items-end justify-center overflow-hidden rounded-3xl bg-accent-soft">
         <span className="absolute left-5 top-5 rounded-2xl bg-card px-3 py-1.5 text-xs font-medium text-ink shadow-card">
           퇴원 준비, 같이 해요!
-          <i aria-hidden className="absolute -bottom-1 right-6 h-2.5 w-2.5 rotate-45 rounded-br-[3px] bg-card" />
+          <i aria-hidden className="absolute -bottom-2 right-4 h-0 w-0 border-l-[10px] border-t-[10px] border-l-transparent border-t-card" />
         </span>
         <Mascot size={120} mood="cheer" className="mascot-bob -mb-5" />
       </div>

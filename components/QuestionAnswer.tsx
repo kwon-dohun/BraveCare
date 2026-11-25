@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { deleteTask, renameTask, setTaskMemo, toggleTask } from "@/app/actions";
 import type { Auth } from "@/lib/db";
 import { useAct } from "./useAct";
@@ -8,6 +10,7 @@ import Sheet from "./Sheet";
 // 의료진에게 물어본 질문의 '들은 답' 메모. 저장하면 확인한 질문이 되고, 씩씩이가 이 메모를 근거로 나중에 다시 알려 준다.
 // '질문 고치기'에서 문구를 바꾸거나 질문을 지운다.
 export default function QuestionAnswer({ auth, task, full = false }: { auth: Auth; task: { id: string; title: string; memo: string | null; done: boolean }; full?: boolean }) {
+  const { token } = useParams<{ token: string }>();
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState(false);
   const [text, setText] = useState(task.memo ?? "");
@@ -27,6 +30,10 @@ export default function QuestionAnswer({ auth, task, full = false }: { auth: Aut
         <button type="button" onClick={() => { setText(task.memo ?? ""); setOpen(true); }} className={`${link} text-accent`}>
           {task.memo ? "답 고치기" : "들은 답 적기"}
         </button>
+        {/* 첫 외래 날짜는 들은 뒤 병원 일정으로 넣어야 달력·외래 당일 홈에 잡힌다 */}
+        {/외래 예약일/.test(task.title) && (
+          <Link href={`/c/${token}/tasks?add=visit`} className={`${link} text-accent`}>병원 일정으로 넣기</Link>
+        )}
       </div>
       <Sheet open={open} onClose={() => setOpen(false)} title="의사 선생님 답변">
         <p className="mb-3 text-sm text-muted">{task.title}</p>

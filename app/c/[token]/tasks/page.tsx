@@ -95,7 +95,7 @@ export default async function SchedulePage(props: PageProps<"/c/[token]/tasks">)
               오늘
             </Link>
           )}
-          <AddTaskButton meId={me} auth={auth} defaultVisit={!isList} label={isList ? "할 일 추가" : "병원 일정이나 할 일 추가"} members={data.members} solo={data.alone} />
+          <AddTaskButton meId={me} auth={auth} autoOpen={sp.add === "visit"} defaultVisit={!isList || sp.add === "visit"} label={isList ? "할 일 추가" : "병원 일정이나 할 일 추가"} members={data.members} solo={data.alone} />
         </div>
       </div>
 
