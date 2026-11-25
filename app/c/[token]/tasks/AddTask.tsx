@@ -99,14 +99,14 @@ export default function AddTask({
 
       <details className="mt-3 rounded-xl bg-background">
         <summary className="cursor-pointer px-3.5 py-2.5 text-sm font-semibold">
-          더 자세히 입력하기 <span className="font-normal text-muted">({[!isSchedule && "반복", showAssignee && "담당자", "메모"].filter(Boolean).join("·")})</span>
+          더 자세히 입력하기 <span className="font-normal text-muted">({[!isSchedule && date && "반복", showAssignee && "담당자", "메모"].filter(Boolean).join("·")})</span>
         </summary>
         <div className="space-y-3 px-3.5 pb-3.5">
           {!isSchedule && date && (
             <div>
               <label htmlFor="nr" className="block text-sm font-semibold">반복</label>
               <select id="nr" value={repeat} onChange={(e) => setRepeat(e.target.value)} className={field}>
-                <option value="">안 함</option><option value="daily">매일</option><option value="weekly">매주</option>
+                <option value="">안 함</option><option value="weekly">매주</option>
               </select>
               {repeat && <p className="mt-1 text-xs text-muted">끝냈다고 체크하면 다음 {repeat === "daily" ? "날" : "주"} 할 일이 자동으로 생겨요.</p>}
             </div>

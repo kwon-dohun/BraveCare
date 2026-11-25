@@ -60,7 +60,7 @@ export default function TaskForm({ auth, back, members, task, solo = false, maxD
           <div>
             <label htmlFor="tr" className="font-semibold">반복</label>
             <select id="tr" value={repeat} onChange={(e) => setRepeat(e.target.value)} className={field}>
-              <option value="">안 함</option><option value="daily">매일</option><option value="weekly">매주</option>
+              <option value="">안 함</option>{task.repeat === "daily" && <option value="daily">매일</option>}<option value="weekly">매주</option>
             </select>
           </div>
           {repeat && <p className="col-span-2 text-sm text-muted">끝냈다고 체크하면 다음 {repeat === "daily" ? "날" : "주"} 할 일이 자동으로 생겨요.</p>}
