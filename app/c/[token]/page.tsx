@@ -98,8 +98,11 @@ export default async function Home(props: PageProps<"/c/[token]">) {
             <p className="mt-2 text-sm font-medium text-accent">{hero.sub}</p>
           </div>
           <div className="flex w-32 shrink-0 flex-col items-end">
-            <span className="rounded-2xl rounded-br-sm bg-card px-3 py-1.5 text-xs font-medium text-ink shadow-card">{cheer}</span>
-            <Mascot size={76} mood={mood} className="mascot-bob -mb-2 mt-1" />
+            <span className="relative rounded-2xl bg-card px-3 py-1.5 text-xs font-medium text-ink shadow-card">
+              {cheer}
+              <i aria-hidden className="absolute -bottom-1 right-8 h-2.5 w-2.5 rotate-45 rounded-br-[3px] bg-card" />
+            </span>
+            <Mascot size={76} mood={mood} className="mascot-bob -mb-2 mt-2" />
           </div>
         </div>
         <div className="mt-4 h-2 rounded-full bg-card/80" role="progressbar" aria-label="할 일 진행률" aria-valuemin={0} aria-valuenow={doneCount} aria-valuemax={liveCount}>

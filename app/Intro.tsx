@@ -47,7 +47,10 @@ export default function Intro({ notice, kakao }: { notice: keyof typeof NOTICE |
       {notice && <p role="status" className="mb-6 rounded-xl bg-accent-soft p-4 text-accent">{NOTICE[notice]}</p>}
       <Logo />
       <div className="relative mt-8 flex h-36 items-end justify-center overflow-hidden rounded-3xl bg-accent-soft">
-        <span className="absolute left-5 top-5 rounded-2xl rounded-bl-sm bg-card px-3 py-1.5 text-xs font-medium text-ink shadow-card">퇴원 준비, 같이 해요!</span>
+        <span className="absolute left-5 top-5 rounded-2xl bg-card px-3 py-1.5 text-xs font-medium text-ink shadow-card">
+          퇴원 준비, 같이 해요!
+          <i aria-hidden className="absolute -bottom-1 right-6 h-2.5 w-2.5 rotate-45 rounded-br-[3px] bg-card" />
+        </span>
         <Mascot size={120} mood="cheer" className="mascot-bob -mb-5" />
       </div>
       <h1 className="mt-7 text-[1.875rem] font-display leading-tight">
