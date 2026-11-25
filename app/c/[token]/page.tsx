@@ -10,6 +10,7 @@ import { dayDiff } from "@/lib/benefits";
 import TaskList from "@/components/TaskList";
 import Remember from "@/components/Remember";
 import WeekStrip from "@/components/WeekStrip";
+import NextVisitAsk from "@/components/NextVisitAsk";
 import Icon from "@/components/Icon";
 import RefreshIfSeen from "@/components/RefreshIfSeen";
 import Mascot, { Logo } from "@/components/Mascot";
@@ -59,7 +60,9 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   const kstHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", hour: "numeric", hour12: false }).format(new Date()));
   const daysSince = input.dischargeDate ? -dayDiff(input.dischargeDate, today) : undefined;
   const cheer = timeContextCheer(stage, checkedToday, kstHour, daysSince, data.isSelfCare);
-  const weekendWarning = weekendDischargeWarning(input.dischargeDate, today);
+  // 퇴원 당일~이틀 동안, 앞으로의 병원 일정이 하나도 없을 때만 다음 외래 날짜를 묻는다
+  const askVisit = daysSince !== undefined && daysSince >= 0 && daysSince <= 2 && !tasks.some((t) => t.kind === "schedule" && t.due_date && t.due_date >= today);
+  const weekendWarning =weekendDischargeWarning(input.dischargeDate, today);
   const mood = stage === "recovery" && checkedToday ? "cheer" : "idle";
   const list = { members, auth, meId: actor.memberId, today, detailBase: `${base}/tasks`, showOwner: !data.alone };
   // 이번 주 띠와 다가오는 일정(할 일 중 병원 일정 + 퇴원일 + 지원 마감)
@@ -150,6 +153,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
         </section>
       )}
 
+      {askVisit && <NextVisitAsk base={base} />}
       {stage === "visit" && (
         <section className={card} aria-labelledby="h-stage">
           <h2 id="h-stage" className="font-semibold">오늘은 병원 가는 날이에요</h2>
