@@ -3,7 +3,8 @@ import { act } from "@/lib/push";
 import { todaySeoul } from "@/lib/load";
 import { addDays } from "@/lib/timeline";
 
-// 환자가 직접 안부를 남기던 집에서 오늘 안부가 아직 없으면 저녁에 가족에게 알린다. Vercel Cron이 매일 한 번 부른다(vercel.json, 20:00 KST).
+// 환자가 직접 안부를 남기던 집에서 오늘 안부가 아직 없으면 저녁에 가족에게 알린다.
+// 아직 켜지 않았다: 켜려면 vercel.json crons에 { "path": "/api/cron/patient-check", "schedule": "0 11 * * *" }(20:00 KST)를 추가한다.
 // 마지막 환자 안부가 최근 3일 안이어야 하므로 안부를 멈춘 날부터 최대 3번만 알리고 그 뒤로는 조용하다(잔소리 방지).
 // 한 번도 안부를 남기지 않은 집, 회복 완료로 마친 집은 보내지 않는다. ?dry=1이면 보내지 않고 대상 수만 센다.
 const QUIET_AFTER_DAYS = 3;
