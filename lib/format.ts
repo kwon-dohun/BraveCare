@@ -51,7 +51,34 @@ export function dateLabel(date: string | null, rel: number | null, today: string
 }
 
 // 시간대와 회복 단계에 맞춘 씩씩이 감성 한마디
-export function timeContextCheer(stage: "visit" | "pre" | "recovery", checkedToday: boolean, hour: number, daysSince?: number, isSelfCare = false) {
+// 상황이 없는 평소 시간대에 돌려 쓰는 한마디. 시간 단위로 바뀌고 같은 시간엔 새로고침해도 같다. 의료 지시 없이 쉬라는 말만 담는다.
+const CHEER_MORNING = [
+  "오늘 할 일은 하나만 정해 봐요", "아침 챙기셨어요? 돌보는 사람이 먼저 든든해야 해요", "창문 열고 바람 한 번 쐬어요",
+  "오늘도 천천히, 할 수 있는 만큼만요", "물 한 잔으로 하루를 시작해요", "씩씩이는 오늘도 옆에 있어요",
+  "오늘 못 끝내도 괜찮아요. 내일 또 있어요", "컨디션 먼저 살피고 시작해요", "급한 일부터 하나, 나머지는 천천히요",
+  "오늘 도움이 필요하면 가족에게 하나만 부탁해요", "잠깐 햇빛 보러 나가 봐요",
+];
+const CHEER_DAY = [
+  "점심은 거르지 않았죠? 꼭 챙겨 드세요", "잠깐 앉아서 쉬어 가요", "오전에 한 일, 충분히 잘했어요",
+  "물 한 잔 마시고 기지개 한 번 켜요", "할 일이 밀려도 괜찮아요. 하나씩 해요", "혼자 다 하려고 하지 않아도 돼요",
+  "지금 쉬어도 늦지 않았어요", "잠깐 눈 감고 숨 크게 한 번 쉬어요", "모르는 건 씩씩이에게 물어봐요",
+  "오늘 급한 것 하나만 보면 돼요", "오후도 천천히 가요",
+];
+const CHEER_EVENING = [
+  "오늘 하루 고생했어요. 이제 좀 쉬어요", "저녁은 챙겨 드셨어요?", "오늘 한 일 중 하나만 떠올려 봐요. 충분히 했어요",
+  "내일 할 일은 내일의 내가 해요", "따뜻한 물로 몸 풀고 쉬어요", "오늘도 무사히 지나갔어요",
+  "하루 마무리, 10초만 기록하고 쉬어요", "불 끄기 전에 휴대폰은 내려놓아요", "가족에게 오늘 어땠는지 한마디 건네 봐요",
+  "잘 쉬는 것도 돌봄이에요", "오늘 못 한 일은 내일 해도 돼요",
+];
+// seed가 없으면 항상 첫 줄(기본 문구). 있으면 기본 문구와 돌려 쓰는 문구 중 하나
+const pickCheer = (first: string, pool: string[], seed?: string) => {
+  if (!seed) return first;
+  let h = 0;
+  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return [first, ...pool][h % (pool.length + 1)];
+};
+
+export function timeContextCheer(stage: "visit" | "pre" | "recovery", checkedToday: boolean, hour: number, daysSince?: number, isSelfCare = false, seed?: string) {
   if (hour >= 0 && hour < 6) return isSelfCare ? "늦은 밤 갑자기 아프면 망설이지 말고 119" : "늦은 밤 간병 힘내세요. 응급 시엔 119";
   if (stage === "visit") return hour < 12 ? (isSelfCare ? "오늘 외래 진료! 신분증과 카드 챙기기" : "오늘 외래 진료! 신분증 챙기기") : (isSelfCare ? "진료 잘 받으시고 조심히 귀가하세요" : "병원 진료 동행, 힘내세요");
   if (stage === "pre") {
@@ -66,9 +93,10 @@ export function timeContextCheer(stage: "visit" | "pre" | "recovery", checkedTod
     if (hour >= 18) return isSelfCare ? `퇴원 ${daysSince}일째, 오늘 컨디션을 기록해 둘까요?` : `퇴원 ${daysSince}일째, 데일리 체크를 남겨보세요`;
     return isSelfCare ? `퇴원 ${daysSince}일째, 놓친 서류와 지원금부터 챙겨 드릴게요` : `퇴원 ${daysSince}일째, 놓친 서류와 미신청 지원금부터 점검해 드릴게요`;
   }
-  if (hour >= 18) return isSelfCare ? "오늘 하루 고생 많으셨어요. 10초 안부를 남겨볼까요?" : "10초 데일리 체크를 남겨보세요";
-  if (hour < 12) return isSelfCare ? "좋은 아침! 오늘 컨디션은 어떠세요?" : "좋은 아침! 밤새 편안하셨나요?";
-  return isSelfCare ? "오늘도 씩씩하게 회복해요" : "오늘도 씩씩하게 회복해요";
+  const s = seed && `${seed}:${hour}`;
+  if (hour >= 18) return pickCheer(isSelfCare ? "오늘 하루 고생 많으셨어요. 10초 안부를 남겨볼까요?" : "10초 데일리 체크를 남겨보세요", CHEER_EVENING, s || undefined);
+  if (hour < 12) return pickCheer(isSelfCare ? "좋은 아침! 오늘 컨디션은 어떠세요?" : "좋은 아침! 밤새 편안하셨나요?", CHEER_MORNING, s || undefined);
+  return pickCheer("오늘도 씩씩하게 회복해요", CHEER_DAY, s || undefined);
 }
 
 // 퇴원일 전후 주말 원무과·주민센터 휴무 사전 경고 (D-1 주말 보정)

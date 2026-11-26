@@ -173,6 +173,13 @@ test("시간대별 씩씩이 멘트: 새벽, 오전, 저녁 맞춤", () => {
   assert.equal(timeContextCheer("recovery", true, 20), "오늘 데일리 체크 완료! 푹 쉬세요");
 });
 
+test("평소 멘트는 날짜·시간에 따라 다양하게 돌고, 같은 때엔 같다", () => {
+  const at = (day: string, h: number) => timeContextCheer("recovery", false, h, 20, false, day);
+  assert.equal(at("2026-11-27", 10), at("2026-11-27", 10));
+  const seen = new Set(Array.from({ length: 30 }, (_, i) => at(`2026-11-${String(i + 1).padStart(2, "0")}`, 20)));
+  assert.ok(seen.size >= 6, `서로 다른 멘트가 ${seen.size}개뿐`);
+});
+
 test("주말 퇴원 보정: 월요일 퇴원 시 주말 원무과 휴무 사전 경고", () => {
   // 2026-11-23은 월요일. 2026-11-21(토요일)은 D-2
   const warn = weekendDischargeWarning("2026-11-23", "2026-11-21");

@@ -59,7 +59,7 @@ export default async function Home(props: PageProps<"/c/[token]">) {
   // 씩씩이 감성 한마디: 한국 시간 기준 시간대(새벽/오전/오후/저녁)와 회복 단계, 사후 가입 여부, 셀프 케어 모드에 맞춤
   const kstHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", hour: "numeric", hour12: false }).format(new Date()));
   const daysSince = input.dischargeDate ? -dayDiff(input.dischargeDate, today) : undefined;
-  const cheer = timeContextCheer(stage, checkedToday, kstHour, daysSince, data.isSelfCare);
+  const cheer = timeContextCheer(stage, checkedToday, kstHour, daysSince, data.isSelfCare, today);
   // 퇴원 당일~이틀 동안, 앞으로의 병원 일정이 하나도 없을 때만 다음 외래 날짜를 묻는다
   const askVisit = daysSince !== undefined && daysSince >= 0 && daysSince <= 2 && !tasks.some((t) => t.kind === "schedule" && t.due_date && t.due_date >= today);
   const weekendWarning =weekendDischargeWarning(input.dischargeDate, today);
