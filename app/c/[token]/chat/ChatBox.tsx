@@ -113,10 +113,15 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
             {t.a ? (
               <Answer a={t.a} onGrow={() => end.current?.scrollIntoView({ block: "end" })}>
                 {t.a.sourceQuote ? (
-                  <div className="mt-2.5 rounded-lg bg-background px-3 py-2">
-                    <p className="text-caption font-semibold text-accent">근거 · {t.a.source}</p>
-                    <p className="mt-0.5 text-sm leading-relaxed text-ink/80">“{t.a.sourceQuote}”</p>
-                  </div>
+                  <details className="group mt-2 rounded-lg" onToggle={() => end.current?.scrollIntoView({ block: "end" })}>
+                    <summary className="flex min-h-0 w-fit cursor-pointer list-none items-center gap-1 py-1 text-caption font-semibold text-accent [&::-webkit-details-marker]:hidden">
+                      근거 보기 <Icon name="right" size={14} className="rotate-90 transition-transform group-open:-rotate-90" />
+                    </summary>
+                    <div className="mt-1 rounded-lg bg-background px-3 py-2">
+                      <p className="text-caption font-semibold text-accent">{t.a.source}</p>
+                      <p className="mt-0.5 text-sm leading-relaxed text-ink/80">“{t.a.sourceQuote}”</p>
+                    </div>
+                  </details>
                 ) : t.a.unverified && (
                   <p className="mt-2 text-caption text-muted">서류 문장과 정확히 맞춰 보지 못한 답이에요. 중요한 건 서류나 병원에 한 번 더 확인해 주세요.</p>
                 )}
