@@ -276,13 +276,15 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       </label>
       <p className="mt-2 text-sm text-muted">사진은 글자만 읽고 저장하지 않아요. 한 번에 최대 {MAX}장까지 고를 수 있어요.</p>
 
-      <details className="mt-4 rounded-xl bg-card shadow-card p-4">
+      <details className="mt-4 rounded-xl bg-card px-4 shadow-card">
         <summary className="cursor-pointer font-semibold">병원 문자·알림톡 붙여넣기</summary>
-        <p className="mt-2 text-sm text-muted">예약 안내 문자를 복사해서 붙여넣으면 날짜가 적힌 줄을 일정으로 만들어요.</p>
+        <div className="pb-4">
+        <p className="text-sm text-muted">예약 안내 문자를 복사해서 붙여넣으면 날짜가 적힌 줄을 일정으로 만들어요.</p>
         <button type="button" onClick={fromClipboard} className="mt-2 w-full rounded-xl border border-line px-4 py-2">복사한 글 붙여넣기</button>
         <label htmlFor="pt" className="sr-only">병원 문자 내용</label>
         <textarea id="pt" rows={4} maxLength={2000} value={paste} onChange={(e) => setPaste(e.target.value)} placeholder="예: [OO병원] 11월 27일(금) 14:00 정형외과 외래 예약" className="mt-2 w-full rounded-xl border border-line px-3 py-2" />
         <button type="button" disabled={!!busy || paste.trim().length < 5} onClick={onPaste} className="mt-2 w-full rounded-full bg-accent-soft px-4 py-3 font-semibold text-accent disabled:opacity-40">일정 찾기</button>
+        </div>
       </details>
 
       {busy ? (
@@ -347,8 +349,7 @@ export default function ScanFlow({ auth, base, initialDocs = [] }: { auth: Auth;
       )}
 
       <section className="mt-8" aria-labelledby="kp">
-        <h2 id="kp" className="font-semibold">내 서류함 <span className="tabular-nums text-muted">{docs.length}</span></h2>
-        <p className="text-sm text-muted">찍은 서류의 글자가 여기 모여요. 씩씩이는 이 내용을 보고 답해요.</p>
+        <h2 id="kp" className="font-semibold">넣어 둔 서류 <span className="tabular-nums text-muted">{docs.length}장</span></h2>
         {docs.length > 0 ? (
           <Kept
             auth={auth}

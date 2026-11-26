@@ -6,7 +6,7 @@ import ScanFlow from "./ScanFlow";
 
 export const maxDuration = 60; // 사진 읽기는 AI 호출이라 10초를 넘길 수 있다. 서버 액션은 이 화면의 값을 따른다
 
-export const metadata = { title: "서류 정리 · 씩씩케어" };
+export const metadata = { title: "내 서류함 · 씩씩케어" };
 
 export default async function Scan(props: PageProps<"/c/[token]/scan">) {
   const { token } = await props.params;
@@ -20,8 +20,8 @@ export default async function Scan(props: PageProps<"/c/[token]/scan">) {
   return (
     <>
       <BackLink href={`${base}/more`}>전체</BackLink>
-      <h1 className="mt-2 text-title font-display">서류 찍어서 정리</h1>
-      <p className="mb-5 mt-1 text-muted">진단서, 퇴원 안내문, 약봉투, 영수증을 찍으면 글자를 읽어 내 서류함에 넣어 둬요. 나중에 꺼내 보거나 씩씩이에게 물어보면 이 내용으로 답해요.</p>
+      <h1 className="mt-2 text-title font-display">내 서류함</h1>
+      <p className="mb-5 mt-1 text-muted">안내문·약봉투·영수증을 찍으면 글자만 읽어 넣어 둬요. 씩씩이가 이 내용으로 답해요.</p>
       <ScanFlow auth={auth} base={base} initialDocs={docs} />
     </>
   );

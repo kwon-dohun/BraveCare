@@ -30,7 +30,7 @@ export default async function More(props: PageProps<"/c/[token]/more">) {
         : ["/family", "users", data.isSelfCare ? "함께 챙기는 사람" : "가족과 나누기", `${data.members.length}명 참여 중`, "bg-[#ffe9dc] text-[#9a3f12]"],
     ]],
     ["서류", [
-      ["/scan", "camera", "서류 찍어서 정리", "안내문·약봉투·병원 문자", "bg-[#f1e9ff] text-[#5b3aa6]"],
+      ["/scan", "camera", "내 서류함", "안내문·약봉투·병원 문자를 찍어 넣어요", "bg-[#f1e9ff] text-[#5b3aa6]"],
       ["/docs", "file", "보험 청구 서류", `${data.packet.length}/${PACKET.length}개 준비`, "bg-[#fff4cc] text-[#7a5a00]"],
     ]],
     ["도움말", [
