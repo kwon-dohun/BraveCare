@@ -199,8 +199,8 @@ export default async function Home(props: PageProps<"/c/[token]">) {
           </div>
           <p className="mt-1 text-sm text-muted">
             {checkedToday
-              ? "오늘 데일리 체크를 남겼어요. 외래 리포트에 자동으로 정리되고 있어요."
-              : "약 복용, 체온, 통증, 배변을 10초 만에 남겨요. 낮이든 밤이든 언제든 기록할 수 있어요."}
+              ? "오늘 남겼어요. 외래 리포트에 정리돼요"
+              : "약, 체온, 통증, 배변을 10초 만에 남겨요"}
           </p>
           {checkedToday ? (
             <div className="mt-3 flex gap-2">

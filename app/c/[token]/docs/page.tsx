@@ -19,8 +19,8 @@ export default async function Docs(props: PageProps<"/c/[token]/docs">) {
       <h1 className="mt-2 text-title font-display">보험 청구 서류</h1>
       <p className="mt-1 text-muted">
         {post
-          ? "이미 퇴원했어도 괜찮아요. 보험 청구에 필요한 서류는 병원에서 나중에도 발급받을 수 있어요."
-          : "퇴원 당일 원무과에서 한 번에 받아두면, 보험 청구 때문에 병원에 다시 갈 일이 줄어요."}
+          ? "퇴원 뒤에도 병원에서 발급받을 수 있어요."
+          : "퇴원 당일 원무과에서 한 번에 받아두면 병원에 다시 갈 일이 줄어요."}
       </p>
       <PacketForm
         auth={auth}

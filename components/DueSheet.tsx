@@ -31,7 +31,6 @@ export default function DueSheet({ open, onClose, today, endDate, initial, pendi
       <button disabled={pending} onClick={() => onPick(pick)} className="mt-4 w-full rounded-xl bg-primary px-5 py-3.5 font-semibold text-ink disabled:opacity-60">
         {pending ? "저장하는 중…" : confirmText(pick)}
       </button>
-      <p className="mt-2 text-center text-sm text-muted">날짜는 나중에 할 일에서 바꿀 수 있어요</p>
     </Sheet>
   );
 }

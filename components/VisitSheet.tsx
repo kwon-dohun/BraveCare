@@ -36,7 +36,6 @@ export default function VisitSheet({ auth, open, onClose, questions, visitTitle,
       <div className="max-h-[60vh] space-y-5 overflow-y-auto">
         {questions.length > 0 && (
           <section>
-            <p className="mb-3 text-sm text-muted">들은 답을 적어 두면 씩씩이가 나중에 &ldquo;그때 뭐라고 하셨지?&rdquo;에 답해 드려요.</p>
             <ul className="space-y-4">
               {questions.map((q) => (
                 <li key={q.id}>
@@ -77,10 +76,7 @@ export default function VisitSheet({ auth, open, onClose, questions, visitTitle,
       </div>
       {err && <p role="alert" className="mt-2 text-warn">{err}</p>}
       {adds && <p className="mt-3 text-center text-sm text-muted">저장하면 {adds}가 추가돼요</p>}
-      <div className="mt-3 flex gap-2">
-        <button type="button" onClick={onClose} className="flex-1 rounded-full bg-background px-5 py-3 font-semibold text-muted">나중에</button>
-        <button type="button" disabled={pending || !(filled.length || nextDate || newTasks.length)} onClick={save} className="flex-[2] rounded-full bg-primary px-5 py-3 font-semibold text-ink disabled:opacity-40">저장</button>
-      </div>
+      <button type="button" disabled={pending || !(filled.length || nextDate || newTasks.length)} onClick={save} className="mt-3 w-full rounded-full bg-primary px-5 py-3 font-semibold text-ink disabled:opacity-40">저장</button>
     </Sheet>
   );
 }

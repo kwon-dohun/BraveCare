@@ -36,14 +36,14 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
         <Mascot size={60} mood={today ? "cheer" : "idle"} />
         <div>
           <h1 className="text-title font-display">데일리 체크</h1>
-          <p className="text-sm text-muted">{today ? "오늘 기록을 남겼어요. 상태가 바뀌면 언제든 고칠 수 있어요." : "환자의 오늘 복약·체온·통증을 10초 만에 남겨요"}</p>
+          <p className="text-sm text-muted">{today ? "오늘 기록을 남겼어요" : "환자의 오늘 복약·체온·통증을 10초 만에 남겨요"}</p>
         </div>
       </div>
       {isPre && (
         <div className="mt-3 rounded-2xl bg-accent-soft p-3.5 text-xs text-accent leading-relaxed">
           <p className="font-semibold text-ink">아직 입원 중이신가요?</p>
           <p className="mt-0.5 opacity-90">
-            병원에 계실 때는 간호·의료진이 투약과 활력징후를 직접 챙겨주므로 기록하지 않으셔도 괜찮아요. 퇴원 후 집으로 돌아오신 뒤부터 매일 남겨주시면 다음 외래 진료 때 큰 도움이 됩니다. (원하시면 지금 미리 써보셔도 좋아요.)
+            퇴원해서 집에 온 뒤부터 남기면 돼요. 미리 써 봐도 좋아요.
           </p>
         </div>
       )}
@@ -65,7 +65,7 @@ export default async function DailyPage(props: PageProps<"/c/[token]/daily">) {
       <section className="mt-8" aria-labelledby="dh">
         <h2 id="dh" className="font-semibold">지난 기록 ({checks.length}일)</h2>
         {checks.length === 0 ? (
-          <p className="mt-2 rounded-xl bg-card shadow-card p-4 text-muted">아직 기록이 없어요. 하루만 남겨도 외래 리포트가 만들어져요.</p>
+          <p className="mt-2 rounded-xl bg-card shadow-card p-4 text-muted">아직 기록이 없어요</p>
         ) : (
           <ul className="mt-2 divide-y divide-line rounded-xl bg-card shadow-card">
             {checks.slice(0, 14).map((c) => (
