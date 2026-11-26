@@ -10,7 +10,7 @@ import Icon from "@/components/Icon";
 
 const TYPES: DocType[] = ["medication", "guide", "certificate", "receipt", "other"];
 
-// 찍은 서류를 양식에 맞춰 보여주고, 틀린 칸만 고쳐 '맞아요'로 확인받는다. 못 읽은 칸은 비워 두고 눈에 띄게.
+// 찍은 서류를 양식에 맞춰 보여주고 틀린 칸만 고쳐 저장한다. 약은 한 번에 하나씩 넘겨 보고, 못 읽은 칸은 비워 두고 눈에 띄게.
 export default function ConfirmCard({ auth, id, type: t0, fields: f0, onDone, onLater }: {
   auth: Auth; id: string; type: DocType; fields: DocFields;
   onDone: (type: DocType, fields: DocFields) => void; onLater?: () => void;
@@ -18,6 +18,7 @@ export default function ConfirmCard({ auth, id, type: t0, fields: f0, onDone, on
   const [type, setType] = useState<DocType>(t0);
   const [values, setValues] = useState<Record<string, string>>(f0.values);
   const [meds, setMeds] = useState(f0.meds.length || t0 !== "medication" ? f0.meds : [{ name: "", how: "" }]);
+  const [step, setStep] = useState(0);
   const { run, pending, err } = useAct();
   const miss = missingCount(type, { values, meds: meds.filter((m) => m.name.trim()) });
   const field = (empty: boolean) => `mt-1 w-full rounded-xl border bg-card px-3 py-2.5 ${empty ? "border-warn/50 bg-warn-soft/40" : "border-line"}`;
@@ -42,69 +43,73 @@ export default function ConfirmCard({ auth, id, type: t0, fields: f0, onDone, on
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 처음 읽은 이름으로 한 번만
   }, []);
 
+  const medMode = type === "medication";
+  const total = medMode ? meds.length + 1 : 1; // 약마다 한 단계 + 마지막에 나머지 칸
+  const at = Math.min(step, total - 1);
+  const isMed = medMode && at < meds.length;
+  const isLast = at === total - 1;
+  const m = isMed ? meds[at] : null;
+
   return (
     <section className="view-in mt-4 rounded-xl bg-card p-4 shadow-card">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h2 className="font-semibold">{DOC_TYPE_LABEL[type]} 내용이 맞는지 봐 주세요</h2>
-          <p className="mt-0.5 text-sm text-muted">{miss ? `못 읽은 칸 ${miss}개는 직접 써 주면 정확해져요. 틀린 칸만 고치면 돼요.` : "틀린 칸만 고치면 돼요."}</p>
-        </div>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-semibold">{DOC_TYPE_LABEL[type]}{isMed && <span className="ml-2 text-sm font-normal text-muted tabular-nums">약 {at + 1}/{meds.length}</span>}</h2>
+        {onLater && <button type="button" aria-label="닫기" onClick={onLater} className="-mr-2 flex h-11 w-11 min-h-0 items-center justify-center text-muted"><Icon name="close" size={18} /></button>}
       </div>
+      {miss > 0 && <p className="text-sm text-muted">못 읽은 칸 {miss}개</p>}
 
-      <label className="mt-3 block text-sm font-semibold">서류 종류
-        <select value={type} onChange={(e) => setType(e.target.value as DocType)} className={field(false)}>
-          {TYPES.map((k) => <option key={k} value={k}>{DOC_TYPE_LABEL[k]}</option>)}
-        </select>
-      </label>
-
-      {type === "medication" && (
-        <div className="mt-4">
-          <p className="text-sm font-semibold">약과 먹는 법</p>
-          <ul className="mt-1 space-y-2">
-            {meds.map((m, i) => (
-              <li key={i} className="rounded-xl bg-background p-2.5">
-                <div className="flex items-center gap-2">
-                  <input aria-label={`${i + 1}번째 약 이름`} value={m.name} onChange={(e) => setMed(i, { name: e.target.value })} placeholder="약 이름" className={`${field(!m.name.trim())} mt-0 font-semibold`} />
-                  <button type="button" aria-label={`${m.name || "이"} 약 빼기`} onClick={() => setMeds((ms) => ms.filter((_, j) => j !== i))} className="flex h-11 w-11 shrink-0 items-center justify-center text-muted"><Icon name="close" size={16} /></button>
-                </div>
-                {suggest[m.name]?.length > 0 && (
-                  <div className="mt-1.5 text-sm text-ink">
-                    혹시 이 중 하나인가요? <span className="text-xs text-muted">식약처 허가 목록 기준</span>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      {suggest[m.name].map((s) => (
-                        <button key={s} type="button" onClick={() => setMed(i, { name: m.name.replace(baseName(m.name), s) })} className="min-h-0 rounded-full bg-accent-soft px-3 py-1.5 font-semibold text-accent">{s}</button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <input aria-label={`${m.name || "약"} 먹는 법`} value={m.how} onChange={(e) => setMed(i, { how: e.target.value })} placeholder="못 읽었어요. 먹는 법을 써 주세요 (예: 1일 1회 아침식사 직후)" className={field(!m.how.trim())} />
-              </li>
-            ))}
-          </ul>
-          <button type="button" onClick={() => setMeds((ms) => [...ms, { name: "", how: "" }])} className="mt-2 flex min-h-0 items-center gap-1 py-1 text-sm font-semibold text-accent"><Icon name="plus" size={14} />약 추가</button>
+      {isMed && m && (
+        <div className="mt-3">
+          <label className="block text-sm font-semibold">약 이름
+            <input value={m.name} onChange={(e) => setMed(at, { name: e.target.value })} className={`${field(!m.name.trim())} font-semibold`} />
+          </label>
+          {suggest[m.name]?.length > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-muted">
+              혹시
+              {suggest[m.name].map((x) => (
+                <button key={x} type="button" onClick={() => setMed(at, { name: m.name.replace(baseName(m.name), x) })} className="min-h-0 rounded-full bg-accent-soft px-3 py-1.5 font-semibold text-accent">{x}</button>
+              ))}
+            </div>
+          )}
+          <label className="mt-3 block text-sm font-semibold">먹는 법
+            <input value={m.how} onChange={(e) => setMed(at, { how: e.target.value })} placeholder="예: 1일 3회 식후" className={`${field(!m.how.trim())} font-normal`} />
+          </label>
+          <div className="mt-2 flex items-center justify-between">
+            <button type="button" onClick={() => { setMeds((ms) => (ms.length > 1 ? ms.filter((_, j) => j !== at) : [{ name: "", how: "" }])); setStep(Math.max(0, at - (at === meds.length - 1 ? 1 : 0))); }} className="min-h-0 py-2 text-sm text-muted underline underline-offset-2">이 약 빼기</button>
+            <button type="button" onClick={() => { setMeds((ms) => [...ms, { name: "", how: "" }]); setStep(meds.length); }} className="flex min-h-0 items-center gap-1 py-2 text-sm font-semibold text-accent"><Icon name="plus" size={14} />약 추가</button>
+          </div>
         </div>
       )}
 
-      {hasForm(type) && (
-        <div className="mt-3 space-y-2.5">
-          {FIELD_LABELS[type].map((k) => (
-            <label key={k} className="block text-sm font-semibold">{k}
-              <input value={values[k] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [k]: e.target.value }))} onBlur={k === "질병코드" ? (e) => checkKcd(e.target.value) : undefined} placeholder="못 읽었어요. 서류를 보고 써 주세요" className={`${field(!(values[k] ?? "").trim())} font-normal`} />
-            </label>
-          ))}
-        </div>
+      {!isMed && (
+        <>
+          <label className="mt-3 block text-sm font-semibold">서류 종류
+            <select value={type} onChange={(e) => { setType(e.target.value as DocType); setStep(0); }} className={field(false)}>
+              {TYPES.map((k) => <option key={k} value={k}>{DOC_TYPE_LABEL[k]}</option>)}
+            </select>
+          </label>
+          {hasForm(type) && (
+            <div className="mt-3 space-y-2.5">
+              {FIELD_LABELS[type].map((k) => (
+                <label key={k} className="block text-sm font-semibold">{k}
+                  <input value={values[k] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [k]: e.target.value }))} onBlur={k === "질병코드" ? (e) => checkKcd(e.target.value) : undefined} className={`${field(!(values[k] ?? "").trim())} font-normal`} />
+                </label>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
-      {type === "receipt" && receiptNote(values) && <p className="mt-3 rounded-xl bg-warn-soft p-3 text-sm text-warn">{receiptNote(values)}</p>}
+      {!isMed && type === "receipt" && receiptNote(values) && <p className="mt-3 rounded-xl bg-warn-soft p-3 text-sm text-warn">{receiptNote(values)}</p>}
 
-      {type === "certificate" && kcd && (
+      {!isMed && type === "certificate" && kcd && (
         kcd.hit ? (
           <div className="mt-3 rounded-xl bg-background p-3 text-sm">
             {kcd.hit.names.some((n) => n === (values["병명"] ?? "").trim()) ? (
               <p className="font-semibold text-accent">병명이 질병코드 {kcd.hit.code}와 맞아요</p>
             ) : (
               <>
-                <p>질병코드 <b>{kcd.hit.code}</b>의 공식 병명이에요 <span className="text-xs text-muted">출처: 건강보험심사평가원 상병마스터{kcd.hit.exact ? "" : ", 뒷자리는 서류 그대로 두세요"}. 맞으면 눌러서 병명에 넣어요</span></p>
+                <p>질병코드 <b>{kcd.hit.code}</b>의 공식 병명 <span className="text-xs text-muted">(건강보험심사평가원{kcd.hit.exact ? "" : ", 뒷자리는 서류 그대로"})</span></p>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {kcd.hit.names.map((n) => (
                     <button key={n} type="button" onClick={() => setValues((v) => ({ ...v, 병명: n }))} className="min-h-0 rounded-full bg-accent-soft px-3 py-1.5 font-semibold text-accent">{n}</button>
@@ -119,10 +124,12 @@ export default function ConfirmCard({ auth, id, type: t0, fields: f0, onDone, on
       )}
 
       {err && <p role="alert" className="mt-2 text-sm text-warn">{err}</p>}
-      <button type="button" disabled={pending} onClick={save} className="mt-4 w-full rounded-full bg-primary px-5 py-3.5 font-semibold text-ink">
-        {pending ? "저장하는 중…" : "맞아요, 저장"}
-      </button>
-      {onLater && <button type="button" onClick={onLater} className="mt-1 w-full text-sm text-muted underline underline-offset-2">나중에 확인할게요</button>}
+      <div className={`mt-4 grid gap-2 ${at > 0 ? "grid-cols-[auto_1fr]" : ""}`}>
+        {at > 0 && <button type="button" onClick={() => setStep(at - 1)} className="rounded-full bg-accent-soft px-6 py-3.5 font-semibold text-accent">이전</button>}
+        <button type="button" disabled={pending} onClick={isLast ? save : () => setStep(at + 1)} className="rounded-full bg-primary px-5 py-3.5 font-semibold text-ink">
+          {isLast ? (pending ? "저장 중…" : "저장") : "다음"}
+        </button>
+      </div>
     </section>
   );
 }
