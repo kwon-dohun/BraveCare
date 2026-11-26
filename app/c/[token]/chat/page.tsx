@@ -14,8 +14,10 @@ export default async function Chat(props: PageProps<"/c/[token]/chat">) {
   const { token } = await props.params;
   const { actor, auth, data: caseData, base } = await adminPage(token);
   const q = (await props.searchParams).q;
-  const { data } = await db.from("documents").select("id,doc_type,transcript").eq("case_id", actor.caseId).order("created_at", { ascending: false }).limit(5);
-  const docs = (data ?? []) as { id: string; doc_type: DocType; transcript: string }[];
+  // 서류 글자는 이 화면에서 쓰지 않는다(답은 서버가 읽는다). 종류만 가져와 서류함 요약과 추천 질문에 쓴다
+  const { data } = await db.from("documents").select("doc_type").eq("case_id", actor.caseId).order("created_at", { ascending: false });
+  const docs = (data ?? []) as { doc_type: DocType }[];
+  const byType = docs.reduce((m, d) => m.set(d.doc_type, (m.get(d.doc_type) ?? 0) + 1), new Map<DocType, number>());
   const isPre = !caseData.input.dischargeDate || caseData.today <= caseData.input.dischargeDate;
 
   return (
@@ -32,12 +34,14 @@ export default async function Chat(props: PageProps<"/c/[token]/chat">) {
 
       {docs.length > 0 && (
         <details className="mt-3 rounded-xl bg-card shadow-card">
-          <summary className="cursor-pointer px-4 py-2.5 text-xs font-semibold text-muted">내 서류함 ({docs.length}장) 내용 보기</summary>
-          <ul className="space-y-2 px-4 pb-3">
-            {docs.map((d) => (
-              <li key={d.id} className="rounded-lg bg-background p-2.5">
-                <p className="text-caption font-semibold text-accent">{DOC_TYPE_LABEL[d.doc_type]}</p>
-                <p className="mt-0.5 whitespace-pre-wrap text-xs text-ink/80">{d.transcript.slice(0, 150)}{d.transcript.length > 150 ? "…" : ""}</p>
+          <summary className="cursor-pointer px-4 py-2.5 text-xs font-semibold text-muted">내 서류함</summary>
+          <ul className="divide-y divide-line px-4 pb-1">
+            {[...byType].map(([type, n]) => (
+              <li key={type}>
+                <Link href={`${base}/scan#kp`} className="flex min-h-11 items-center justify-between text-sm">
+                  <span>{DOC_TYPE_LABEL[type]} <span className="tabular-nums text-muted">{n}장</span></span>
+                  <Icon name="right" size={16} className="text-muted" />
+                </Link>
               </li>
             ))}
           </ul>

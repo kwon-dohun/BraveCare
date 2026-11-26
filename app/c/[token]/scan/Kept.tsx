@@ -7,6 +7,8 @@ import { DOC_TYPE_LABEL, fieldLines, hasForm, type DocFields, type DocType } fro
 import type { SavedDoc } from "./ScanFlow";
 import ConfirmCard from "./ConfirmCard";
 
+const isUnchecked = (d: SavedDoc) => !!d.fields && !d.confirmed && hasForm(d.type);
+
 // 내 서류함: 서류마다 접힌 서랍. 펼치면 양식으로 정리한 내용이 먼저, 원문은 접어 둔다.
 // 아직 사람이 확인하지 않은 서류에는 '확인 안 함' 표시와 확인하기 버튼.
 export default function Kept({ auth, docs, onDelete, onConfirmed }: {
@@ -20,10 +22,10 @@ export default function Kept({ auth, docs, onDelete, onConfirmed }: {
     <>
       {err && <p role="alert" className="text-warn">{err}</p>}
       <ul className={`mt-2 space-y-2 ${pending ? "opacity-60" : ""}`}>
-        {docs.map((d) => {
+        {[...docs].sort((a, b) => Number(isUnchecked(b)) - Number(isUnchecked(a))).map((d) => { // 확인하지 않은 서류를 위로(나머지는 최근 순 그대로)
           const lines = d.fields ? fieldLines(d.type, d.fields) : [];
           const all = opened.includes(d.id);
-          const unchecked = !!d.fields && !d.confirmed && hasForm(d.type);
+          const unchecked = isUnchecked(d);
           const preview = d.fields?.meds.length
             ? `${d.fields.meds.slice(0, 2).map((m) => m.name).join(", ")}${d.fields.meds.length > 2 ? ` 외 ${d.fields.meds.length - 2}개` : ""}`
             : lines[0] ?? d.text.split("\n")[0];
