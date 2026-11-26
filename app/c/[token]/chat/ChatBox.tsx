@@ -112,7 +112,7 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
             <p className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-callout text-ink">{t.q}</p>
             {t.a ? (
               <Answer a={t.a} onGrow={() => end.current?.scrollIntoView({ block: "end" })}>
-                {t.a.sourceQuote ? (
+                {t.a.sourceQuote && t.a.source !== "씩씩케어 정보" ? ( // 우리 집 정보(할 일·일정)에서 온 답은 근거가 답을 되풀이할 뿐이라 칸을 두지 않는다
                   <details className="group mt-2 rounded-lg" onToggle={() => end.current?.scrollIntoView({ block: "end" })}>
                     <summary className="flex min-h-0 w-fit cursor-pointer list-none items-center gap-1 py-1 text-caption font-semibold text-accent [&::-webkit-details-marker]:hidden">
                       근거 보기 <Icon name="right" size={14} className="rotate-90 transition-transform group-open:-rotate-90" />
