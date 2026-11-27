@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { taskIcs, feedIcs } from "./ics.ts";
 import { summarize, type Daily } from "./report.ts";
 import { timeContextCheer, weekendDischargeWarning } from "./format.ts";
-import { searchGlossary } from "./glossary.ts";
+import { searchGlossary, GLOSSARY } from "./glossary.ts";
 import { isEmergency, isCrisis, verifyAnswer, parseChatJson, chips } from "./chat.ts";
 import { itemsFromText, maskIds } from "./extract.ts";
 import { phaseOf, seedTasks } from "./timeline.ts";
@@ -163,6 +163,11 @@ test("달력: 일요일 시작 격자, 퇴원일·할 일·미신청 지원 마�
   assert.ok(deadlines.length > 0);
   const applied = Object.fromEntries(deadlines.map((e) => [e.benefitId!, "applied"]));
   assert.equal([...buildEvents({ input, results, status: applied, tasks: [] }).values()].flat().filter((e) => e.kind === "deadline").length, 0);
+});
+
+test("추천 질문에 나오는 용어는 모두 쉬운 용어 사전에 있다", () => {
+  const all = chips(["certificate", "medication", "guide", "receipt"], false).concat(chips([], true)).join(" ");
+  for (const w of ["실손24", "재난적의료비"]) if (all.includes(w)) assert.ok(GLOSSARY.some((g) => g.word === w), `${w}가 용어 사전에 없어요`);
 });
 
 test("시간대별 씩씩이 멘트: 새벽, 오전, 저녁 맞춤", () => {
