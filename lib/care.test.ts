@@ -186,6 +186,21 @@ test("제도 이름 없이 넓게 묻는 지원 질문은 목록 자료를 받�
   assert.deepEqual(v.followUps, ["재난적의료비 지원이 뭐야?"]);
 });
 
+test("지원 제도 찾기: 줄임말·띄어쓰기 변형은 제도를 찾고, 분야만 묻는 말은 목록으로 간다", () => {
+  const specific: [string, string][] = [
+    ["산정특례가 뭐야?", "산정특례"], ["상병수당 받을 수 있어?", "상병수당"], ["장기요양 신청하고 싶어", "장기요양"],
+    ["휠체어 빌려주는 데 있어?", "휠체어"], ["콜택시 타려면?", "콜택시"], ["돌봄SOS 알려줘", "돌봄SOS"], ["가족돌봄휴가 쓸 수 있어?", "가족돌봄휴가"],
+    ["상한제 환급", "본인부담상한제"], ["실손보험 청구", "민간보험"], ["간호간병통합서비스 병동이 뭐야", "간병통합서비스"],
+    ["재난적의료비 신청 조건이 뭐야?", "재난적의료비"], ["긴급복지 신청", "긴급복지"],
+  ];
+  for (const [q, name] of specific) assert.ok(relatedBenefits(q).some((b) => b.name.includes(name)), `${q} -> ${name}`);
+  for (const q of ["의료비 지원 있어?", "간병 지원 있어?", "병원 동행 서비스", "통합돌봄 신청은 어디서 해?", "보조기기 지원은?", "집에서 돌봐주는 서비스 뭐 있어?"]) {
+    assert.equal(relatedBenefits(q).length, 0, `${q}는 특정 제도가 아니에요`);
+    assert.ok(isBroadSupportQuestion(q), `${q}는 목록 질문이에요`);
+  }
+  for (const q of ["오늘 뭐부터 하면 돼?", "샤워는 언제부터 돼?", "이 약 언제 먹어?", "실손24가 뭐야?"]) assert.ok(!isBroadSupportQuestion(q), `${q}에는 목록을 붙이지 않아요`);
+});
+
 test("이전 대화는 최근 3번까지만 붙인다", () => {
   const h = Array.from({ length: 5 }, (_, i) => ({ q: `질문${i}`, a: `답${i}` }));
   assert.equal(historyText(h).split("\n").length, 6);

@@ -129,14 +129,18 @@ export function verifyAnswer(a: ChatAnswer, sources: Source[] | string[]): ChatA
 
 // 질문에 이름이 나온 지원 제도(조건에 안 맞는 제도 포함)의 상세 정보. 이름의 낱말이 질문에 있으면 최대 2개
 // 넓은 분야 낱말은 제도 이름으로 치지 않는다("의료비 지원 있어?"는 특정 제도가 아니라 분야를 묻는 질문)
-const GENERIC = new Set(["지원", "신청", "사업", "서비스", "제도", "지원사업", "퇴원", "후", "의료비", "병원비", "의료지원", "간병", "돌봄", "통합돌봄", "병원동행", "방문요양"]);
+const GENERIC = new Set(["지원", "신청", "사업", "서비스", "제도", "지원사업", "퇴원", "후", "의료비", "병원비", "의료지원", "간병", "돌봄", "통합돌봄", "병원동행", "동행서비스", "병원동행서비스", "방문요양", "장애인", "생활비", "입원생활비", "지원금", "무료", "대여", "이용", "시범사업"]);
+// 제도 이름의 낱말(가운뎃점·띄어쓰기로 나눔)과, 앞의 지역·대상 말을 뗀 꼬리("노인장기요양" -> "장기요양", "장애인콜택시" -> "콜택시")가 질문에 있으면 그 제도를 찾는다
+const nameKeys = (name: string) =>
+  name.replace(/[()]/g, " ").split(/[\s·]+/).flatMap((w) => [w, ...[2, 3, 4].map((n) => w.slice(n))])
+    .filter((k) => (k.length >= 3 || k === "실손") && ![...GENERIC].some((g) => g.includes(k))); // 분야 낱말의 일부("합돌봄")도 제도 이름으로 치지 않는다
 export function relatedBenefits(q: string, list: Benefit[] = BENEFITS): Benefit[] {
   const qn = q.replace(/\s/g, "");
-  return list.filter((b) => b.name.replace(/\(.*?\)/g, " ").split(/\s+/).some((w) => w.length >= 3 && !GENERIC.has(w) && qn.includes(w))).slice(0, 2);
+  return list.filter((b) => nameKeys(b.name).some((k) => qn.includes(k))).slice(0, 2);
 }
 
 // 제도 이름 없이 넓게 묻는 지원 질문("의료비 지원 있어?"): 전체 제도 이름과 한 줄 설명, 내 조건 표시를 자료로 준다
-export const isBroadSupportQuestion = (q: string) => /지원|혜택|보조|감면|면제|받을 수|도움/.test(q) && relatedBenefits(q).length === 0;
+export const isBroadSupportQuestion = (q: string) => /지원|혜택|보조|감면|면제|받을 수|도움|제도|서비스|신청|대여|빌려|돌봐|수당|환급|휴가/.test(q) && relatedBenefits(q).length === 0;
 
 export function catalogSource(verdicts: Record<string, string>, list: Benefit[] = BENEFITS): Source {
   const tag: Record<string, string> = { high: "가능성 높음", check: "확인 필요", no: "해당 어려움" };
