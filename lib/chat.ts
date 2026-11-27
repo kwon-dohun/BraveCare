@@ -106,7 +106,8 @@ export function parseChatJson(raw: string): ChatAnswer {
 // 모델이 목록을 한 줄로 붙여 쓰면 문장(". ") 단위로 줄을 나눠 읽기 쉽게 만든 뒤 센다. 약 목록이 없는 답은 그대로 둔다.
 export function fixMedCount(summary: string): string {
   const listLine = /^[^:：.]{1,20}[:：]\s*(.+)$/;
-  const lines = summary.split(/\n|(?<=[.。])\s+/).map((l) => l.trim()).filter(Boolean);
+  // 줄바꿈·마침표 없이 이어 붙인 "아침 …: 가, 나 저녁 …: 다"도 먹는 때 이름 앞에서 나눈다
+  const lines = summary.split(/\n|(?<=[.。])\s+|\s+(?=(?:아침|점심|저녁|취침|자기\s*전|그\s*밖에)[^:：\n]{0,12}[:：])/).map((l) => l.trim()).filter(Boolean);
   const [first, ...rest] = lines;
   const names = new Set(rest.flatMap((l) => {
     const m = l.match(listLine);

@@ -188,6 +188,7 @@ export function parseDate(text: string, today: string): string | null {
   };
   for (const m of text.matchAll(/(\d{4})\s*[-./년]\s*(\d{1,2})\s*[-./월]\s*(\d{1,2})\s*일?/g)) add(+m[1], +m[2], +m[3]);
   const noYear = text.replace(/(\d{4})\s*[-./년]\s*(\d{1,2})\s*[-./월]\s*(\d{1,2})\s*일?/g, " ");
+  for (const m of noYear.matchAll(/(?<![\d.])([23]\d)\.(\d{1,2})\.(\d{1,2})(?![\d:.])/g)) add(+m[1], +m[2], +m[3]); // 26.12.03
   for (const m of noYear.matchAll(/(?<!\d)(\d{1,2})\s*월\s*(\d{1,2})\s*일/g)) add(null, +m[1], +m[2]);
   for (const m of noYear.matchAll(/(?<![\d.:])(\d{1,2})\s*[/.]\s*(\d{1,2})(?![\d:.])/g)) add(null, +m[1], +m[2]);
   return found.size === 1 ? [...found][0] : null;
