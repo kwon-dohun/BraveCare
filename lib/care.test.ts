@@ -4,7 +4,7 @@ import { taskIcs, feedIcs } from "./ics.ts";
 import { summarize, type Daily } from "./report.ts";
 import { timeContextCheer, weekendDischargeWarning } from "./format.ts";
 import { searchGlossary, GLOSSARY } from "./glossary.ts";
-import { isEmergency, isCrisis, verifyAnswer, parseChatJson, chips, clipSentence, relatedBenefits, historyText } from "./chat.ts";
+import { isEmergency, isCrisis, verifyAnswer, parseChatJson, chips, clipSentence, relatedBenefits, historyText, isBroadSupportQuestion, catalogSource } from "./chat.ts";
 import { itemsFromText, maskIds } from "./extract.ts";
 import { phaseOf, seedTasks } from "./timeline.ts";
 import { identifyScannedPacketDocs } from "./packet.ts";
@@ -175,6 +175,15 @@ test("질문에 이름이 나온 지원 제도는 조건에 안 맞아도 찾는
   assert.equal(relatedBenefits("재난적의료비 신청 조건이 뭐야?")[0]?.id, "catastrophic_medical");
   assert.equal(relatedBenefits("오늘 날씨 어때?").length, 0);
   assert.ok(relatedBenefits("긴급복지 재난적의료비 일상회복서비스 다 알려줘").length <= 2);
+});
+
+test("제도 이름 없이 넓게 묻는 지원 질문은 목록 자료를 받고, 눌러 묻는 후속 질문은 답할 수 있는 것만 남는다", () => {
+  assert.ok(isBroadSupportQuestion("의료비 지원 있어?"));
+  assert.ok(!isBroadSupportQuestion("재난적의료비 지원이 뭐야?"));
+  assert.ok(!isBroadSupportQuestion("오늘 뭐부터 하면 돼?"));
+  assert.ok(catalogSource({ catastrophic_medical: "high" }).text.includes("재난적의료비 지원") && catalogSource({ catastrophic_medical: "high" }).text.includes("가능성 높음"));
+  const v = verifyAnswer({ summary: "관련 지원이에요", sourceQuote: "", advice: "", followUps: ["재난적의료비 지원이 뭐야?", "오늘 날씨는?", "재난적의료비 지원이 뭐야?"] }, [{ label: "x", text: "y" }]);
+  assert.deepEqual(v.followUps, ["재난적의료비 지원이 뭐야?"]);
 });
 
 test("이전 대화는 최근 3번까지만 붙인다", () => {

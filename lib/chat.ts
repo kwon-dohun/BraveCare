@@ -10,6 +10,7 @@ export interface ChatAnswer {
   advice: string;
   source?: string;
   suggestDoctorQuestion?: string;
+  followUps?: string[]; // 넓게 물었을 때 눌러서 이어 묻는 구체적인 질문(제도 이름이 들어 있다)
   unverified?: boolean; // 자료를 인용했다고 했는데 그 문장이 자료에 없을 때
 }
 
@@ -61,7 +62,8 @@ export function buildChatPrompt(isSelfCare = false): string {
 - sourceQuote에는 [자료]에 있는 문장을 한 글자도 바꾸지 않고 그대로 복사해. 근거가 될 문장이 없으면 빈 문자열.
 - "병원에 확인해 보세요" 같은 확인 권유는 advice에만 한 번 쓰고 summary에 되풀이하지 마.
 - 이모지와 특수 기호는 쓰지 마. 한국어 존댓말, 다정하게.
-JSON만 출력해: {"summary": "답", "sourceQuote": "자료 원문 그대로 또는 빈 문자열", "advice": "다음에 할 일이나 누구에게 확인할지 한 문장 또는 빈 문자열", "suggestDoctorQuestion": "외래 때 물어볼 질문 한 줄 또는 빈 문자열"}`;
+- [지원 제도 목록]이 있으면 지원을 넓게 물은 질문이야("의료비 지원 있어?" 같은). 목록에서 질문과 관련 있는 제도 2~4개의 이름과 한 줄 설명을 알려 주고, 내 조건 표시(가능성 높음·확인 필요·해당 어려움)를 같이 말해 줘. 마지막에 "제도 이름을 넣어 물어보면 조건과 신청처를 자세히 알려 드려요"라고 안내하고, followUps에 제도 이름이 들어간 짧은 후속 질문(예: "재난적의료비 지원이 뭐야?")을 2~3개 적어. 제도 이름은 목록에 있는 그대로 써. 넓게 묻는 질문이 아니면 followUps는 빈 배열.
+JSON만 출력해: {"summary": "답", "sourceQuote": "자료 원문 그대로 또는 빈 문자열", "advice": "다음에 할 일이나 누구에게 확인할지 한 문장 또는 빈 문자열", "suggestDoctorQuestion": "외래 때 물어볼 질문 한 줄 또는 빈 문자열", "followUps": []}`;
 }
 
 
@@ -83,6 +85,7 @@ export function parseChatJson(raw: string): ChatAnswer {
       sourceQuote: s(j.sourceQuote),
       advice: s(j.advice),
       suggestDoctorQuestion: s(j.suggestDoctorQuestion) || undefined,
+      followUps: Array.isArray(j.followUps) ? j.followUps.map((f: unknown) => s(f, 40)).filter(Boolean).slice(0, 3) : undefined,
     };
   } catch {
     return { summary: "", sourceQuote: "", advice: "" };
@@ -118,15 +121,29 @@ export function verifyAnswer(a: ChatAnswer, sources: Source[] | string[]): ChatA
     source: hit?.label,
     advice: a.advice || (a.summary ? "" : "정확한 내용은 병원 간호사실이나 약국에 확인해 보세요."),
     suggestDoctorQuestion: a.suggestDoctorQuestion,
+    // 눌렀을 때 답할 수 있는 질문만 남긴다: 제도 이름이 들어 있어서 상세 정보가 붙는 것
+    followUps: [...new Set(a.followUps ?? [])].filter((f) => relatedBenefits(f).length > 0).slice(0, 3),
     unverified: !!q && !hit && !notFound,
   };
 }
 
 // 질문에 이름이 나온 지원 제도(조건에 안 맞는 제도 포함)의 상세 정보. 이름의 낱말이 질문에 있으면 최대 2개
-const GENERIC = new Set(["지원", "신청", "사업", "서비스", "제도", "지원사업", "퇴원", "후"]);
+// 넓은 분야 낱말은 제도 이름으로 치지 않는다("의료비 지원 있어?"는 특정 제도가 아니라 분야를 묻는 질문)
+const GENERIC = new Set(["지원", "신청", "사업", "서비스", "제도", "지원사업", "퇴원", "후", "의료비", "병원비", "의료지원", "간병", "돌봄", "통합돌봄", "병원동행", "방문요양"]);
 export function relatedBenefits(q: string, list: Benefit[] = BENEFITS): Benefit[] {
   const qn = q.replace(/\s/g, "");
   return list.filter((b) => b.name.replace(/\(.*?\)/g, " ").split(/\s+/).some((w) => w.length >= 3 && !GENERIC.has(w) && qn.includes(w))).slice(0, 2);
+}
+
+// 제도 이름 없이 넓게 묻는 지원 질문("의료비 지원 있어?"): 전체 제도 이름과 한 줄 설명, 내 조건 표시를 자료로 준다
+export const isBroadSupportQuestion = (q: string) => /지원|혜택|보조|감면|면제|받을 수|도움/.test(q) && relatedBenefits(q).length === 0;
+
+export function catalogSource(verdicts: Record<string, string>, list: Benefit[] = BENEFITS): Source {
+  const tag: Record<string, string> = { high: "가능성 높음", check: "확인 필요", no: "해당 어려움" };
+  return {
+    label: "지원 제도 목록",
+    text: list.map((b) => `- ${b.name}: ${b.summary.split(/(?<=[.요])\s/)[0].slice(0, 70)}${verdicts[b.id] ? ` (내 조건: ${tag[verdicts[b.id]] ?? ""})` : ""}`).join("\n"),
+  };
 }
 
 export function benefitSource(b: Benefit): Source {

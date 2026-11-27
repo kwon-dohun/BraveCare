@@ -127,6 +127,13 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
                   <p className="mt-2 text-caption text-muted">서류 문장과 정확히 맞춰 보지 못한 답이에요. 중요한 건 서류나 병원에 한 번 더 확인해 주세요.</p>
                 )}
                 {t.a.advice && <p className="mt-2.5 text-sm leading-relaxed text-muted">{t.a.advice}</p>}
+                {!!t.a.followUps?.length && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {t.a.followUps.map((f) => (
+                      <button key={f} type="button" disabled={busy} onClick={() => ask(f)} className="min-h-0 rounded-full bg-accent-soft px-3 py-2 text-xs font-semibold text-accent disabled:opacity-50">{f}</button>
+                    ))}
+                  </div>
+                )}
 
                 {/* 민감한 의료 질문 발생 시 -> 의료진에게 물어볼 질문 리스트 추가 연결 */}
                 {t.a.suggestDoctorQuestion && (

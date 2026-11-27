@@ -7,7 +7,7 @@ import { askJson, hasModel } from "@/lib/openai";
 import { limit } from "@/lib/scan";
 import { kcdLookup, type KcdHit } from "@/lib/kcd";
 import { itemsFromText, maskIds, cleanFields, fieldLines, DOC_TYPES, type DocFields, type DocItem, type DocType } from "@/lib/extract";
-import { buildChatPrompt, parseChatJson, verifyAnswer, relatedBenefits, benefitSource, historyText, type ChatAnswer, type Past, type Source } from "@/lib/chat";
+import { buildChatPrompt, parseChatJson, verifyAnswer, relatedBenefits, benefitSource, isBroadSupportQuestion, catalogSource, historyText, type ChatAnswer, type Past, type Source } from "@/lib/chat";
 import { DOC_TYPE_LABEL } from "@/lib/extract";
 import { loadCase } from "@/lib/load";
 import { caseBrief } from "@/lib/brief";
@@ -147,6 +147,7 @@ export async function askChat(a: Auth, question: string, history: Past[] = []): 
     sources.push({ label: "식약처 DUR(의약품 안전사용 정보, 가장 최근 약봉투의 약끼리 확인)", text: found.length ? found.join("\n") : `가장 최근 약봉투의 약(${latestMeds.map(baseName).join(", ")})끼리는 식약처 DUR 병용금기·효능군중복에 걸리는 조합이 없어요.` });
   }
   for (const b of relatedBenefits(q)) sources.push(benefitSource(b));
+  if (isBroadSupportQuestion(q)) sources.push(catalogSource(Object.fromEntries(data.results.map((r) => [r.benefit.id, r.verdict]))));
   const prompt = buildChatPrompt(!!data.isSelfCare);
   const past = historyText(Array.isArray(history) ? history : []);
   const raw = await askJson(prompt, [{ type: "text", text: `[자료]\n${sources.map((s) => `--- ${s.label} ---\n${s.text}`).join("\n")}\n\n${past ? `[이전 대화]\n${past}\n\n` : ""}[질문]\n${q}` }]);
