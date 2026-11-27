@@ -7,7 +7,7 @@ import { askJson, hasModel } from "@/lib/openai";
 import { limit } from "@/lib/scan";
 import { kcdLookup, type KcdHit } from "@/lib/kcd";
 import { itemsFromText, maskIds, cleanFields, fieldLines, DOC_TYPES, type DocFields, type DocItem, type DocType } from "@/lib/extract";
-import { buildChatPrompt, parseChatJson, verifyAnswer, type ChatAnswer, type Source } from "@/lib/chat";
+import { buildChatPrompt, parseChatJson, verifyAnswer, relatedBenefits, benefitSource, historyText, type ChatAnswer, type Past, type Source } from "@/lib/chat";
 import { DOC_TYPE_LABEL } from "@/lib/extract";
 import { loadCase } from "@/lib/load";
 import { caseBrief } from "@/lib/brief";
@@ -103,7 +103,7 @@ export async function deleteDocument(a: Auth, id: string) {
 
 // ---- 돌봄 챗봇 ----
 
-export async function askChat(a: Auth, question: string): Promise<ChatAnswer> {
+export async function askChat(a: Auth, question: string, history: Past[] = []): Promise<ChatAnswer> {
   const actor = await resolve(a);
   const q = question.trim().slice(0, 300);
   if (!q) throw new Error("질문을 입력해주세요");
@@ -111,10 +111,14 @@ export async function askChat(a: Auth, question: string): Promise<ChatAnswer> {
   await limit(actor.caseId, "chat_asked", 30, "오늘은 질문 횟수를 다 썼어요. 급한 내용은 병원에 직접 문의해주세요");
 
   // 자료: 보관한 서류 + 우리 집 씩씩케어 정보 + 쉬운 용어 사전. 답의 근거 문장은 이 글자 안에서만 인정한다.
-  const [{ data: docs }, data] = await Promise.all([
-    db.from("documents").select("doc_type,transcript,fields,confirmed_at,created_at").eq("case_id", actor.caseId).order("created_at", { ascending: false }).limit(5),
+  const [{ data: allDocs }, data] = await Promise.all([
+    db.from("documents").select("doc_type,transcript,fields,confirmed_at,created_at").eq("case_id", actor.caseId).order("created_at", { ascending: false }).limit(30),
     loadCase(actor.caseId),
   ]);
+  // 서류는 종류마다 가장 최근 한 장을 먼저 넣고, 남는 자리(8장까지)를 최근 순으로 채운다. 오래된 안내문이 밀려나지 않게
+  const seenType = new Set<string>();
+  const first = (allDocs ?? []).filter((d) => !seenType.has(d.doc_type as string) && seenType.add(d.doc_type as string));
+  const docs = [...first, ...(allDocs ?? []).filter((d) => !first.includes(d))].slice(0, 8).sort((x, y) => String(y.created_at).localeCompare(String(x.created_at)));
   const sources: Source[] = [
     // 서류마다 넣은 날을 붙이고(최근 것부터), 정리본이 있으면 원문 앞에 둔다. 정리본 값도 원문 글자 그대로라 근거로 인용할 수 있다
     // 같은 날 여러 장을 넣어도 구분되게 시각까지 붙이고, 종류마다 가장 최근 한 장에 표시를 단다(목록이 최신순이라 처음 나온 것)
@@ -142,8 +146,10 @@ export async function askChat(a: Auth, question: string): Promise<ChatAnswer> {
     const found = durFindings(await durMeds(latestMeds), age >= 65);
     sources.push({ label: "식약처 DUR(의약품 안전사용 정보, 가장 최근 약봉투의 약끼리 확인)", text: found.length ? found.join("\n") : `가장 최근 약봉투의 약(${latestMeds.map(baseName).join(", ")})끼리는 식약처 DUR 병용금기·효능군중복에 걸리는 조합이 없어요.` });
   }
+  for (const b of relatedBenefits(q)) sources.push(benefitSource(b));
   const prompt = buildChatPrompt(!!data.isSelfCare);
-  const raw = await askJson(prompt, [{ type: "text", text: `[자료]\n${sources.map((s) => `--- ${s.label} ---\n${s.text}`).join("\n")}\n\n[질문]\n${q}` }]);
+  const past = historyText(Array.isArray(history) ? history : []);
+  const raw = await askJson(prompt, [{ type: "text", text: `[자료]\n${sources.map((s) => `--- ${s.label} ---\n${s.text}`).join("\n")}\n\n${past ? `[이전 대화]\n${past}\n\n` : ""}[질문]\n${q}` }]);
   if (raw === null) throw new Error("지금은 답을 만들지 못했어요. 잠시 뒤에 다시 물어봐 주세요");
   return verifyAnswer(parseChatJson(raw), sources);
 }

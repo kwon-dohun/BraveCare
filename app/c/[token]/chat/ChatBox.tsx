@@ -45,7 +45,8 @@ export default function ChatBox({ auth, chips, docCount, initial }: { auth: Auth
     setBusy(true);
     setTurns((t) => [...t, { q }]);
     try {
-      const a = await askChat(auth, q);
+      const past = turns.filter((t) => t.a).slice(-3).map((t) => ({ q: t.q, a: t.a!.summary }));
+      const a = await askChat(auth, q, past);
       setTurns((t) => t.map((x, i) => (i === t.length - 1 ? { ...x, a } : x)));
     } catch (e) {
       const msg = e instanceof Error ? e.message : "문제가 생겼어요";

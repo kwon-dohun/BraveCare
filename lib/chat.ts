@@ -2,6 +2,7 @@
 // 자료에 없는 퇴원 후 돌봄 질문은 널리 알려진 일반 상식 수준으로만 답한다.
 // 자료 = 사용자가 보관한 서류 + 우리 집 씩씩케어 정보(일정·할 일·지원) + 쉬운 용어 사전.
 import { norm } from "./extract.ts";
+import { BENEFITS, type Benefit } from "./benefits.ts";
 
 export interface ChatAnswer {
   summary: string;
@@ -52,7 +53,10 @@ export function buildChatPrompt(isSelfCare = false): string {
 - 일반 상식으로 답할 때는 바로 해 볼 수 있게 구체적인 예시(음식 이름, 자세, 횟수 등)를 3~4개 넣어 summary를 3~4문장으로 써. 서류나 일정을 찾아 답할 때는 1~2문장으로 짧게.
 - 병원비·보험·지원 제도·서류·약·의료 용어를 묻는 질문은 모두 돌봄 질문이야. 쉬운 용어 사전에 있는 말은 그 설명으로 답하고, 설명이 없는 세부 조건은 "사전에는 여기까지 나와 있어요"라고 밝힌 뒤 어디에 확인할지 advice에 적어. 이런 질문에 아래 "답하기 어려워요" 문장을 쓰지 마.
 - 날씨, 뉴스, 주식처럼 돌봄과 상관없는 질문은 summary에 "저는 퇴원 후 돌봄을 돕는 씩씩이라 그건 답하기 어려워요"라고만 쓰고 advice는 빈 문자열.
-- 진단, 처방, 약의 양을 바꾸거나 끊으라는 지시는 절대 하지 마. 약 양 조절이나 이상 반응처럼 환자 상태를 알아야 하는 질문은 summary에 "환자 상태와 처방에 따라 달라서 제가 직접 답하기 어려워요"라고 쓰고, advice에 약국이나 병원에 확인하라고 적고, suggestDoctorQuestion에 외래 때 물어볼 질문 한 줄을 적어.
+- 증상·약·검사·치료가 일반적으로 무슨 뜻인지, 보통 어떤 경우에 생기는지, 집에서 하는 일반적인 관리, 병원에 가야 하는 일반적인 신호는 일반 의학 정보로 쉬운 말로 설명해도 돼. 자료에 근거가 있으면 그 문장을 sourceQuote에 붙이고 없으면 빈 문자열. 이때 "일반적으로"라고 밝히고 이 환자에게 단정하지 마.
+- 아래는 절대 하지 마: 이 환자의 병이나 원인을 진단하기, "이 정도면 괜찮다/위험하다" 판정, 약을 늘리거나 줄이거나 끊으라는 지시, 처방 바꾸기. 이런 판단을 구하는 질문(예: "이 약 두 알 먹어도 돼?", "열이 이 정도인데 괜찮아?", "우리 아버지 왜 이래?")에는 summary에 "환자 상태와 처방에 따라 달라서 제가 직접 판단하기는 어려워요"라고 쓰고 도움이 될 일반 정보가 있으면 한두 문장 덧붙여. advice에 약국이나 병원에 확인하라고 적고, suggestDoctorQuestion에 외래 때 물어볼 질문 한 줄을 적어.
+- [이전 대화]가 있으면 "그날", "그 약", "그럼"처럼 이어지는 말을 푸는 데만 써. 사실은 언제나 [자료]에서 다시 찾고, 이전 답이 [자료]와 다르면 [자료]를 따라. 이전 대화에 있던 내용을 새 근거로 삼지 마.
+- [지원 제도 정보]가 있으면 사용자 조건에 해당하지 않는 제도라도 그 정보로 답해. 대상·조건 안내를 그대로 알려 주고, 해당 여부는 신청처 심사로 정해진다고 안내해.
 - 의학 용어는 쉬운 말로 풀어서 말해. 읽는 사람은 의료 지식이 없어.
 - sourceQuote에는 [자료]에 있는 문장을 한 글자도 바꾸지 않고 그대로 복사해. 근거가 될 문장이 없으면 빈 문자열.
 - "병원에 확인해 보세요" 같은 확인 권유는 advice에만 한 번 쓰고 summary에 되풀이하지 마.
@@ -61,12 +65,21 @@ JSON만 출력해: {"summary": "답", "sourceQuote": "자료 원문 그대로 �
 }
 
 
+// 길이 상한을 넘으면 문장 중간이 아니라 마지막 문장 끝에서 자른다(끝이 보이지 않는 문장으로 끝나지 않게)
+export function clipSentence(text: string, max: number): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const end = Math.max(cut.lastIndexOf("."), cut.lastIndexOf("?"), cut.lastIndexOf("!"), cut.lastIndexOf("\n"));
+  return end >= max * 0.4 ? cut.slice(0, end + 1).trim() : cut.trim();
+}
+
 export function parseChatJson(raw: string): ChatAnswer {
   try {
     const j = JSON.parse(raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim());
-    const s = (v: unknown) => (typeof v === "string" ? v.trim().slice(0, 500) : "");
+    const s = (v: unknown, max = 500) => (typeof v === "string" ? clipSentence(v, max) : "");
     return {
-      summary: s(j.summary).replace(/\\n/g, "\n"), // 모델이 줄바꿈을 글자 그대로 "\n"으로 쓸 때가 있다
+      summary: s(j.summary, 900).replace(/\\n/g, "\n"), // 모델이 줄바꿈을 글자 그대로 "\n"으로 쓸 때가 있다
       sourceQuote: s(j.sourceQuote),
       advice: s(j.advice),
       suggestDoctorQuestion: s(j.suggestDoctorQuestion) || undefined,
@@ -108,6 +121,26 @@ export function verifyAnswer(a: ChatAnswer, sources: Source[] | string[]): ChatA
     unverified: !!q && !hit && !notFound,
   };
 }
+
+// 질문에 이름이 나온 지원 제도(조건에 안 맞는 제도 포함)의 상세 정보. 이름의 낱말이 질문에 있으면 최대 2개
+const GENERIC = new Set(["지원", "신청", "사업", "서비스", "제도", "지원사업", "퇴원", "후"]);
+export function relatedBenefits(q: string, list: Benefit[] = BENEFITS): Benefit[] {
+  const qn = q.replace(/\s/g, "");
+  return list.filter((b) => b.name.replace(/\(.*?\)/g, " ").split(/\s+/).some((w) => w.length >= 3 && !GENERIC.has(w) && qn.includes(w))).slice(0, 2);
+}
+
+export function benefitSource(b: Benefit): Source {
+  const who = [...new Set([...b.rules.map((r) => r.reason), b.fallback.reason])].join(" / ");
+  return {
+    label: `지원 제도 정보(${b.name})`,
+    text: `${b.name} (${b.operator}): ${b.summary} 혜택: ${b.cost}. 대상·조건 안내: ${who}. 신청: ${b.apply.place}${b.apply.phone ? ` (${b.apply.phone})` : ""}. 필요 서류: ${b.docs.join(", ")}. 출처: ${b.source.label}`,
+  };
+}
+
+// 직전 대화(브라우저가 들고 있는 최근 질문과 답). 서버에는 저장하지 않는다
+export interface Past { q: string; a: string }
+export const historyText = (h: Past[] = []) =>
+  h.slice(-3).map((p) => `사용자: ${String(p.q).slice(0, 200)}\n씩씩이: ${String(p.a).slice(0, 400)}`).join("\n");
 
 // 바로 누를 수 있는 추천 질문. 서류 여부와 퇴원 전·후 시점에 맞춰 실생활에 필요한 질문으로 제공.
 export function chips(docTypes: string[], isPre = false): string[] {

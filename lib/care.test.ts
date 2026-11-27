@@ -4,7 +4,7 @@ import { taskIcs, feedIcs } from "./ics.ts";
 import { summarize, type Daily } from "./report.ts";
 import { timeContextCheer, weekendDischargeWarning } from "./format.ts";
 import { searchGlossary, GLOSSARY } from "./glossary.ts";
-import { isEmergency, isCrisis, verifyAnswer, parseChatJson, chips } from "./chat.ts";
+import { isEmergency, isCrisis, verifyAnswer, parseChatJson, chips, clipSentence, relatedBenefits, historyText } from "./chat.ts";
 import { itemsFromText, maskIds } from "./extract.ts";
 import { phaseOf, seedTasks } from "./timeline.ts";
 import { identifyScannedPacketDocs } from "./packet.ts";
@@ -163,6 +163,25 @@ test("달력: 일요일 시작 격자, 퇴원일·할 일·미신청 지원 마�
   assert.ok(deadlines.length > 0);
   const applied = Object.fromEntries(deadlines.map((e) => [e.benefitId!, "applied"]));
   assert.equal([...buildEvents({ input, results, status: applied, tasks: [] }).values()].flat().filter((e) => e.kind === "deadline").length, 0);
+});
+
+test("답이 길어도 문장 중간에서 끊지 않는다", () => {
+  const long = "첫 문장이에요. 둘째 문장이에요. 셋째 문장은 아주 길게 이어져서 상한을 넘어요";
+  assert.equal(clipSentence(long, 30), "첫 문장이에요. 둘째 문장이에요.");
+  assert.equal(clipSentence("짧아요", 30), "짧아요");
+});
+
+test("질문에 이름이 나온 지원 제도는 조건에 안 맞아도 찾는다(최대 2개)", () => {
+  assert.equal(relatedBenefits("재난적의료비 신청 조건이 뭐야?")[0]?.id, "catastrophic_medical");
+  assert.equal(relatedBenefits("오늘 날씨 어때?").length, 0);
+  assert.ok(relatedBenefits("긴급복지 재난적의료비 일상회복서비스 다 알려줘").length <= 2);
+});
+
+test("이전 대화는 최근 3번까지만 붙인다", () => {
+  const h = Array.from({ length: 5 }, (_, i) => ({ q: `질문${i}`, a: `답${i}` }));
+  assert.equal(historyText(h).split("\n").length, 6);
+  assert.ok(!historyText(h).includes("질문1") && historyText(h).includes("질문4"));
+  assert.equal(historyText(), "");
 });
 
 test("추천 질문에 나오는 용어는 모두 쉬운 용어 사전에 있다", () => {
